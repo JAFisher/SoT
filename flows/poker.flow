@@ -1,0 +1,139 @@
+graph TD
+  %% ---- Entities and Properties ----
+  Deck[Deck.ts { cards: string[] }]
+  Hand[Hand.ts { cards: string[], isDealer: boolean }]
+  Game[Game.ts { deck: Deck, playerHand: Hand, dealerHand: Hand }]
+
+  %% ---- Relationships ----
+  Game --> Deck
+  Game --> Hand
+
+  extern->commander from 'commander'
+
+  %% ---- Logic: Deck Construction & Shuffle ----
+  @Deck.shuffle{}: void
+  @@Deck.shuffle.code
+    const suits = ['♠', '♥', '♦', '♣'];
+    const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+    this.cards = [];
+    for (const s of suits) {
+      for (const v of values) { this.cards.push(v + s); }
+    }
+    // Randomize the array
+    this.cards.sort(() => Math.random() - 0.5);
+    console.log("Deck shuffled and ready.");
+  @@Deck.shuffle.end
+
+  %% ---- Logic: Hand Scoring (The "Brain") ----
+  @Hand.getScore{}: number
+  @@Hand.getScore.code
+    let score = 0;
+    let aces = 0;
+    for (const card of this.cards) {
+      const val = card.slice(0, -1);
+      if (['J', 'Q', 'K'].includes(val)) score += 10;
+      else if (val === 'A') { score += 11; aces++; }
+      else score += parseInt(val);
+    }
+    // Adjust for Aces if busting
+    while (score > 21 && aces > 0) { score -= 10; aces--; }
+    return score;
+  @@Hand.getScore.end
+
+  %% ---- Logic: Dealer AI (The House Rules) ----
+  @Game.dealerTurn{}: void
+  @@Game.dealerTurn.code
+    console.log("\n--- Dealer's Turn ---");
+    console.log(`Dealer reveals: ${this.dealerHand.cards.join(' ')}`);
+    
+    const play = () => {
+      const dScore = this.dealerHand.getScore();
+      const pScore = this.playerHand.getScore();
+      console.log(`Dealer Score: ${dScore}`);
+
+      if (dScore > 21) {
+        console.log("Dealer BUSTS! You win! 🎉");
+        return;
+      }
+
+      if (dScore < 17) {
+        console.log("Dealer hits...");
+        this.dealerHand.cards.push(this.deck.cards.pop());
+        // Small recursion to simulate turns
+        play();
+      } else {
+        console.log("Dealer stands.");
+        if (dScore > pScore) console.log("Dealer wins. Better luck next time!");
+        else if (dScore < pScore) console.log("You win! You beat the house!");
+        else console.log("It's a Push (Tie)!");
+      }
+    };
+    play();
+  @@Game.dealerTurn.end
+
+  %% ---- Logic: Interactive Player Loop ----
+  @Game.start{}: void
+  @@Game.start.code
+    const readline = require('readline').createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
+
+    console.clear();
+    console.log("========================");
+    console.log("   SOT BLACKJACK CLI   ");
+    console.log("========================");
+    
+    const turn = () => {
+      const pScore = this.playerHand.getScore();
+      console.log(`\nYour Hand: ${this.playerHand.cards.join(' ')} (Score: ${pScore})`);
+      console.log(`Dealer showing: ${this.dealerHand.cards[0]} [?]`);
+
+      if (pScore > 21) {
+        console.log("!!! BUST !!! Dealer wins.");
+        readline.close();
+        return;
+      }
+
+      readline.question('Action: [h]it, [s]tand, [q]uit: ', (opt) => {
+        const choice = opt.toLowerCase();
+        if (choice === 'h' || choice === 'hit') {
+          this.playerHand.cards.push(this.deck.cards.pop());
+          turn();
+        } else if (choice === 's' || choice === 'stand') {
+          readline.close(); 
+          this.dealerTurn(); 
+        } else if (choice === 'q' || choice === 'quit') {
+          console.log("Thanks for playing!");
+          readline.close();
+        } else {
+          console.log("Invalid option. Type 'h' or 's'.");
+          turn();
+        }
+      });
+    };
+
+    turn();
+  @@Game.start.end
+
+  %% ---- Main Entry Point ----
+  @@main.code
+    const deck = new Deck();
+    deck.shuffle();
+
+    // Initial Deal (2 each)
+    const player = new Hand();
+    player.cards = [deck.cards.pop(), deck.cards.pop()];
+    player.isDealer = false;
+
+    const dealer = new Hand();
+    dealer.cards = [deck.cards.pop(), deck.cards.pop()];
+    dealer.isDealer = true;
+
+    const blackjack = new Game();
+    blackjack.deck = deck;
+    blackjack.playerHand = player;
+    blackjack.dealerHand = dealer;
+
+    blackjack.start();
+  @@main.end

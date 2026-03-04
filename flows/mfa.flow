@@ -1,0 +1,36 @@
+graph TD
+  %% ---- Entities with strict constructors ----
+  AuthService[AuthService.ts{secretKey: string}]
+  User[User.ts{id: string, email: string, isMfaEnabled: boolean}]
+  MfaService[MfaService.ts{provider: string}]
+
+  %% ---- Explicit Relationship (Fixes the Import Error) ----
+  AuthService --> User
+  AuthService --> MfaService
+
+  %% ---- Logic: MfaService ----
+  @MfaService.sendCode{user: User}: string
+  @@MfaService.sendCode.code
+    const code = "123456"; 
+    console.log("[MFA] Sending code to " + user.email);
+    return code;
+  @@MfaService.sendCode.end
+
+  %% ---- Main: Satisfying the Constructor Contract ----
+  @@main.code
+  async function testMFA() {
+    // We pass the arguments the generator expects
+    const auth = new AuthService("my-secret-123");
+    
+    // Satisfying the User constructor: id, email, isMfaEnabled
+    const bob = new User("user-001", "bob_secure", true);
+
+    console.log("--- Starting MFA Login Flow ---");
+    
+    // Manual orchestration to avoid "MfaService not found" inside AuthService
+    const mfa = new MfaService("Twilio");
+    const code = mfa.sendCode(bob);
+    console.log("MFA Code generated: " + code);
+  }
+  testMFA();
+  @@main.end

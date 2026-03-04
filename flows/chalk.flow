@@ -1,0 +1,71 @@
+graph TD
+  %% ---- The Toolbox ----
+  extern->fs from 'node:fs'
+  extern->path from 'node:path'
+  extern->chalk from 'chalk'
+
+  %% ---- Entities ----
+  LogEntry[LogEntry.ts { timestamp: string, level: string, message: string }]
+  AlertConfig[AlertConfig.ts { threshold: number, adminEmail: string }]
+
+  %% ---- The Monitoring Engine ----
+  Monitor[Monitor.ts { logPath: string, errorCount: number }]
+  
+  @Monitor.watch{}: void
+  @@Monitor.watch.code
+    console.log(chalk.default.blue(`[SYSTEM] Starting monitor on: ${this.logPath}`));
+    
+    // Watch the file for changes
+    fs.watchFile(this.logPath, (curr, prev) => {
+      const data = fs.readFileSync(this.logPath, 'utf8');
+      const lines = data.trim().split('\n');
+      const lastLine = lines[lines.length - 1];
+
+      if (lastLine.includes('ERROR')) {
+        this.errorCount++;
+        console.log(chalk.default.red(`[ALERT] Error detected! Total: ${this.errorCount}`));
+        
+        if (this.errorCount >= 3) {
+          const alerter = new Alerter();
+          alerter.send(`Critical: ${this.errorCount} errors found.`);
+        }
+      } else {
+        console.log(chalk.default.green(`[OK] Log heartbeat: ${lastLine.slice(0, 20)}...`));
+      }
+    });
+  @@Monitor.watch.end
+
+  %% ---- The Notification Engine ----
+  Alerter[Alerter.ts { lastAlert: string }]
+  
+  @Alerter.send{msg: string}: void
+  @@Alerter.send.code
+    this.lastAlert = msg;
+    console.log(chalk.default.bold.yellow(`\n📧 SIMULATED EMAIL SENT TO ADMIN:`));
+    console.log(chalk.default.bgRed(` >>> ${msg} <<< \n`));
+  @@Alerter.send.end
+
+  %% ---- The Orchestrator ----
+  @@main.code
+    // 1. Setup the environment
+    const logFile = path.join(process.cwd(), 'app.log');
+    if (!fs.existsSync(logFile)) fs.writeFileSync(logFile, 'INIT LOG\n');
+
+    // 2. Start the Monitor
+    const monitor = new Monitor();
+    monitor.logPath = logFile;
+    monitor.errorCount = 0;
+    monitor.watch();
+
+    // 3. Simulate Log activity (to show it works!)
+    console.log(chalk.default.cyan("Simulating log activity in 2 seconds..."));
+    setTimeout(() => {
+      fs.appendFileSync(logFile, `${new Date().toISOString()} - INFO - System Up\n`);
+    }, 2000);
+
+    setTimeout(() => {
+      fs.appendFileSync(logFile, `${new Date().toISOString()} - ERROR - DB Connection Failed\n`);
+      fs.appendFileSync(logFile, `${new Date().toISOString()} - ERROR - Timeout\n`);
+      fs.appendFileSync(logFile, `${new Date().toISOString()} - ERROR - Auth Failure\n`);
+    }, 4000);
+  @@main.end

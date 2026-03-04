@@ -1,0 +1,54 @@
+graph TD
+  extern->http from 'node:http'
+  extern->fs from 'node:fs'
+  extern->path from 'node:path'
+
+  %% ---- The Web UI ----
+  web->index.html.code
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>SoT Project Profile</title>
+      <style>
+        body { font-family: sans-serif; background: #1a1a1a; color: #00ffcc; padding: 50px; }
+        .card { border: 1px solid #00ffcc; padding: 20px; border-radius: 8px; }
+        h1 { color: #fff; }
+      </style>
+    </head>
+    <body>
+      <div class="card">
+        <h1>Single Oriented Transformation</h1>
+        <p id="philosophy">Loading philosophy...</p>
+        <div id="stats"></div>
+      </div>
+      <script>
+        fetch('/api/profile').then(r => r.json()).then(data => {
+          document.getElementById('philosophy').innerText = data.philosophy;
+        });
+      </script>
+    </body>
+    </html>
+  web->index.html.end
+
+  %% ---- The Hosted Server ----
+  SoTServer[Server.ts { port: number }]
+  
+  @SoTServer.start{}: void
+  @@SoTServer.start.code
+    const server = http.createServer((req, res) => {
+      if (req.url === '/') {
+        res.setHeader('Content-Type', 'text/html');
+        res.end(fs.readFileSync(path.join(__dirname, 'index.html')));
+      } else if (req.url === '/api/profile') {
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ philosophy: "The DSL is the Partner." }));
+      }
+    });
+    server.listen(this.port, () => console.log("Check http://localhost:4000"));
+  @@SoTServer.start.end
+
+  @@main.code
+    const srv = new SoTServer();
+    srv.port = 4000;
+    srv.start();
+  @@main.end

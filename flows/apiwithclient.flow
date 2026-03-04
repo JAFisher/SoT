@@ -1,0 +1,70 @@
+graph TD
+  %% ---- Shared Data Schema ----
+  Task[Task.ts { id: number, title: string, done: boolean }]
+
+  %% ---- The Backend (Server) ----
+  Server[Server.ts { port: number, tasks: Task[] }]
+  
+  extern->http from 'node:http'
+  extern->commander from 'commander'
+
+  @Server.start{}: void
+  @@Server.start.code
+    const server = http.createServer((req, res) => {
+      res.setHeader('Content-Type', 'application/json');
+
+      // GET /tasks
+      if (req.method === 'GET' && req.url === '/tasks') {
+        res.end(JSON.stringify(this.tasks));
+      } 
+      // POST /tasks
+      else if (req.method === 'POST' && req.url === '/tasks') {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', () => {
+          const newTask = JSON.parse(body);
+          newTask.id = this.tasks.length + 1;
+          this.tasks.push(newTask);
+          res.end(JSON.stringify(newTask));
+        });
+      }
+    });
+
+    server.listen(this.port, () => {
+      console.log(`[BACKEND] Server running on port ${this.port}`);
+    });
+  @@Server.start.end
+
+  %% ---- The Frontend (Client) ----
+  Client[Client.ts { serverUrl: string }]
+  
+  @Client.fetchTasks{}: void
+  @@Client.fetchTasks.code
+    http.get(`${this.serverUrl}/tasks`, (res) => {
+      let data = '';
+      res.on('data', chunk => { data += chunk; });
+      res.on('end', () => {
+        console.log("\n--- CLIENT: CURRENT TASKS ---");
+        console.table(JSON.parse(data));
+      });
+    });
+  @@Client.fetchTasks.end
+
+  %% ---- The Orchestrator (Main) ----
+  @@main.code
+    // 1. Initialize Backend
+    const backend = new Server();
+    backend.port = 3000;
+    backend.tasks = [{ id: 1, title: "Finish SoT Project", done: false }];
+    backend.start();
+
+    // 2. Initialize Client
+    const client = new Client();
+    client.serverUrl = "http://localhost:3000";
+
+    // 3. Simulate a "Mind Blowing" Sync
+    console.log("[SYSTEM] Waiting for server to spin up...");
+    setTimeout(() => {
+      client.fetchTasks();
+    }, 1000);
+  @@main.end
