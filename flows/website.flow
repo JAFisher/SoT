@@ -1,54 +1,161 @@
 graph TD
+  %% ---- The Toolbox ----
   extern->http from 'node:http'
   extern->fs from 'node:fs'
   extern->path from 'node:path'
+  extern->chalk from 'chalk'
 
-  %% ---- The Web UI ----
+  %% ---- The Schema ----
+  type->SystemStats {
+    version: string,
+    isSelfAware: boolean,
+    runtime: string
+  }
+
+  %% ---- The Web Assets ----
+  
+  web->style.css.code
+    :root {
+      --neon: #00f2ff;
+      --bg: #050505;
+      --glass: rgba(255, 255, 255, 0.03);
+    }
+    body { 
+      background: var(--bg); 
+      color: #e0e0e0; 
+      font-family: 'Monaco', 'Courier New', monospace;
+      margin: 0; padding: 20px;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 20px;
+      width: 100%;
+      max-width: 1200px;
+      margin-top: 50px;
+    }
+    .panel {
+      background: var(--glass);
+      border: 1px solid rgba(0, 242, 255, 0.1);
+      border-radius: 12px;
+      padding: 20px;
+      backdrop-filter: blur(15px);
+    }
+    .terminal {
+      background: #000;
+      color: var(--neon);
+      font-size: 0.85rem;
+      height: 300px;
+      overflow-y: auto;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid #222;
+    }
+    .neon-text { text-shadow: 0 0 10px var(--neon); color: var(--neon); }
+    .status-bar { color: #555; font-size: 0.7rem; margin-top: 10px; }
+  web->style.css.end
+
   web->index.html.code
     <!DOCTYPE html>
     <html>
     <head>
-      <title>SoT Project Profile</title>
-      <style>
-        body { font-family: sans-serif; background: #1a1a1a; color: #00ffcc; padding: 50px; }
-        .card { border: 1px solid #00ffcc; padding: 20px; border-radius: 8px; }
-        h1 { color: #fff; }
-      </style>
+      <title>SoT | Dashboard</title>
+      <link rel="stylesheet" href="style.css">
     </head>
     <body>
-      <div class="card">
-        <h1>Single Oriented Transformation</h1>
-        <p id="philosophy">Loading philosophy...</p>
-        <div id="stats"></div>
+      <h1 class="neon-text">SOT_PARTNER_OS v1.2</h1>
+      <div class="grid">
+        <div class="panel">
+          <h2 class="neon-text">CORE_DATA</h2>
+          <p>Status: <span style="color:var(--neon)">ACTIVE</span></p>
+          <p>Uptime: <span id="uptime">0s</span></p>
+          <hr style="border: 0.5px solid #222">
+          <p id="philosophy" style="font-style: italic; color: #888;">Synchronizing...</p>
+        </div>
+        <div class="panel">
+          <h2 class="neon-text">EVENT_STREAM</h2>
+          <div class="terminal" id="log-window"></div>
+          <div class="status-bar">Connection: localhost:4000/api/profile</div>
+        </div>
       </div>
-      <script>
-        fetch('/api/profile').then(r => r.json()).then(data => {
-          document.getElementById('philosophy').innerText = data.philosophy;
-        });
-      </script>
+      <script src="app.js"></script>
     </body>
     </html>
   web->index.html.end
 
-  %% ---- The Hosted Server ----
-  SoTServer[Server.ts { port: number }]
+  web->app.js.code
+    const logWindow = document.getElementById('log-window');
+    const log = (msg) => {
+      const entry = document.createElement('div');
+      entry.innerHTML = `<span style="color:#444">></span> ${new Date().toLocaleTimeString()} | ${msg}`;
+      logWindow.appendChild(entry);
+      logWindow.scrollTop = logWindow.scrollHeight;
+    };
+
+    async function init() {
+      log("Initializing handshake...");
+      try {
+        const res = await fetch('/api/profile');
+        const data = await res.json();
+        document.getElementById('philosophy').innerText = `"${data.philosophy}"`;
+        log("Profile data received successfully.");
+        log(`System Version: ${data.stats.version}`);
+      } catch (e) {
+        log("CRITICAL: Backend unreachable.");
+      }
+    }
+
+    let sec = 0;
+    setInterval(() => {
+      sec++;
+      document.getElementById('uptime').innerText = sec + 's';
+      if(sec % 10 === 0) log("Heartbeat: Server Responsive");
+    }, 1000);
+
+    init();
+  web->app.js.end
+
+  %% ---- The Server Logic ----
+  SoTServer[Server.ts { port: number, stats: SystemStats }]
   
   @SoTServer.start{}: void
   @@SoTServer.start.code
     const server = http.createServer((req, res) => {
-      if (req.url === '/') {
-        res.setHeader('Content-Type', 'text/html');
-        res.end(fs.readFileSync(path.join(__dirname, 'index.html')));
-      } else if (req.url === '/api/profile') {
+      // 1. Resolve Path
+      let url = req.url === '/' ? '/index.html' : req.url;
+      const fullPath = path.join(process.cwd(), url);
+
+      // 2. API Routing
+      if (req.url === '/api/profile') {
         res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify({ philosophy: "The DSL is the Partner." }));
+        return res.end(JSON.stringify({
+          philosophy: "The DSL is the Partner, not the Tool.",
+          stats: this.stats
+        }));
       }
+
+      // 3. Static File Serving
+      if (fs.existsSync(fullPath) && !fs.lstatSync(fullPath).isDirectory()) {
+        const ext = path.extname(fullPath);
+        const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript' };
+        res.setHeader('Content-Type', types[ext] || 'text/plain');
+        return res.end(fs.readFileSync(fullPath));
+      }
+
+      res.statusCode = 404;
+      res.end("Not Found");
     });
-    server.listen(this.port, () => console.log("Check http://localhost:4000"));
+
+    server.listen(this.port, () => {
+      console.log(chalk.default.cyan(`[SoT] Pro Dashboard: http://localhost:${this.port}`));
+    });
   @@SoTServer.start.end
 
+  %% ---- Entry Point ----
   @@main.code
     const srv = new SoTServer();
     srv.port = 4000;
+    srv.stats = { version: "1.2.0", isSelfAware: true, runtime: "NodeJS" };
     srv.start();
   @@main.end

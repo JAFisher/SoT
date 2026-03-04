@@ -1,0 +1,121 @@
+graph TD
+  %% ---- Tools ----
+  extern->http from 'node:http'
+  extern->fs from 'node:fs'
+  extern->path from 'node:path'
+
+  %% ---- Documentation Content (HTML) ----
+  web->index.html.code
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <title>SoT Docs | Single Oriented Transformation</title>
+      <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+      <nav class="sidebar">
+        <div class="logo">SoT_</div>
+        <a href="#intro">Introduction</a>
+        <a href="#syntax">Syntax Guide</a>
+        <a href="#web">Web Generation</a>
+        <a href="#server">Server Logic</a>
+      </nav>
+      
+      <main class="content">
+        <section id="intro">
+          <h1>Introduction</h1>
+          <p>Single Oriented Transformation (SoT) is a <strong>Partner-based DSL</strong> designed to transform architectural intent into full-stack reality.</p>
+          <div class="callout">The DSL is the source of truth. No manual boilerplate.</div>
+        </section>
+
+        <section id="syntax">
+          <h1>Syntax Guide</h1>
+          <pre><code>// Define an External Library
+extern->chalk from 'chalk'
+
+// Define a Type
+type->User { id: number, name: string }</code></pre>
+        </section>
+
+        <section id="web">
+          <h1>Web Generation</h1>
+          <p>Use the <code>web-></code> keyword to output HTML, CSS, and JS files alongside your TypeScript backend.</p>
+        </section>
+      </main>
+    </body>
+    </html>
+  web->index.html.end
+
+  %% ---- Professional Doc Styling ----
+  web->style.css.code
+    :root {
+      --primary: #6366f1;
+      --bg: #0f172a;
+      --sidebar-bg: #1e293b;
+      --text: #f8fafc;
+      --code-bg: #000000;
+    }
+    body { 
+      margin: 0; display: flex; 
+      background: var(--bg); color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+    .sidebar {
+      width: 260px; height: 100vh;
+      background: var(--sidebar-bg);
+      padding: 40px 20px;
+      position: fixed;
+      border-right: 1px solid rgba(255,255,255,0.1);
+    }
+    .logo { font-weight: 800; font-size: 1.5rem; margin-bottom: 2rem; color: var(--primary); }
+    .sidebar a {
+      display: block; color: #94a3b8; text-decoration: none;
+      margin-bottom: 1rem; transition: 0.2s;
+    }
+    .sidebar a:hover { color: var(--primary); }
+    
+    .content { margin-left: 280px; padding: 60px; max-width: 800px; }
+    h1 { font-size: 2.5rem; border-bottom: 1px solid #334155; padding-bottom: 10px; }
+    pre { 
+      background: var(--code-bg); padding: 20px; 
+      border-radius: 8px; border: 1px solid #334155;
+      overflow-x: auto;
+    }
+    code { color: #818cf8; }
+    .callout {
+      background: rgba(99, 102, 241, 0.1);
+      border-left: 4px solid var(--primary);
+      padding: 20px; margin: 20px 0; border-radius: 4px;
+    }
+  web->style.css.end
+
+  %% ---- The Documentation Server ----
+  DocServer[Server.ts { port: number }]
+
+  @DocServer.start{}: void
+  @@DocServer.start.code
+    const server = http.createServer((req, res) => {
+      let url = req.url === '/' ? '/index.html' : req.url;
+      const fullPath = path.join(process.cwd(), url);
+
+      if (fs.existsSync(fullPath) && !fs.lstatSync(fullPath).isDirectory()) {
+        const ext = path.extname(fullPath);
+        const types = { '.html': 'text/html', '.css': 'text/css' };
+        res.setHeader('Content-Type', types[ext] || 'text/plain');
+        return res.end(fs.readFileSync(fullPath));
+      }
+      res.statusCode = 404;
+      res.end("Not Found");
+    });
+
+    server.listen(this.port, () => {
+      console.log(`\x1b[36m[SoT DOCS] Portal live at http://localhost:${this.port}\x1b[0m`);
+    });
+  @@DocServer.start.end
+
+  @@main.code
+    const docs = new DocServer();
+    docs.port = 3000;
+    docs.start();
+  @@main.end
