@@ -35,6 +35,32 @@ graph TD
 generateFromFlowchart(flow, "./src/generated");
 ```
 
+## Microservices Runner (`build.js`)
+
+For larger projects, you can organize your system into multiple independent microservices using `.flow` files.
+
+### 1. The `flows/` Directory
+Place your flowchart definitions in the `./flows` directory with a `.flow` extension (e.g., `auth.flow`, `orders.flow`).
+
+### 2. Building Services
+Run the `build.js` script to scan the `flows/` directory and generate code for each service:
+
+```bash
+node build.js
+```
+
+This will:
+- Create a corresponding directory in `./src/` for each `.flow` file.
+- Generate all classes, types, and the `main.ts` entry point for that service.
+- Automatically handle imports and resolve duplicate references within the generated code.
+
+### 3. Running a Service
+Generated services can be run directly using `tsx`:
+
+```bash
+npx tsx ./src/auth/main.ts
+```
+
 ## Syntax Guide
 
 The generator uses a custom syntax that extends Mermaid flowchart definitions.
@@ -118,15 +144,7 @@ graph TD
 `;
 ```
 
-## Running the Generator
-
-Simply execute your script with Node.js:
-
-```bash
-node index.js
-```
-
-The generated files will appear in the specified directory (e.g., `./src/generated`).
+The generated files will appear in the specified directory (e.g., `./src/generated` or `./src/auth`).
 
 ## Using the Generated Code
 
