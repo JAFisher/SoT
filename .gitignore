@@ -11,3 +11,4 @@ src/generated/*
 .env.test.production
 .env.test.development
 .env.test.example
+src/*

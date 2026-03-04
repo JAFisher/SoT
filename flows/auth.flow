@@ -1,0 +1,87 @@
+graph TD
+  %% ---- Auth Service ----
+  AuthService[AuthService.ts{secretKey: string, tokenExpiry: number}]
+
+  %% ---- User Model ----
+  AuthService[AuthService.ts] --> User[User.ts{id: string, username: string, passwordHash: string, role: string, createdAt: number}];
+  AuthService[AuthService.ts] --> Session[Session.ts{token: string, userId: string, expiresAt: number, isActive: boolean}];
+
+  %% ---- Types ----
+  type->LoginRequest{username: string, password: string}
+  type->AuthResult{success: boolean, token: string, message: string}
+
+  %% ---- AuthService: register ----
+  @AuthService.register{req: LoginRequest}: User
+  @@AuthService.register.code
+    const user = new User();
+    user.id = Math.random().toString(36).substr(2, 9);
+    user.username = req.username;
+    user.passwordHash = "[hashed:" + req.password + "]";
+    user.role = "user";
+    user.createdAt = Date.now();
+    console.log("[Auth] Registered user: " + user.username);
+    return user;
+  @@AuthService.register.end
+
+  %% ---- AuthService: login ----
+  @AuthService.login{req: LoginRequest, user: User}: AuthResult
+  @@AuthService.login.code
+    const valid = user.passwordHash === "[hashed:" + req.password + "]";
+    if (!valid) {
+      return { success: false, token: "", message: "Invalid credentials" };
+    }
+    const session = new Session();
+    session.token = Math.random().toString(36).substr(2, 16);
+    session.userId = user.id;
+    session.expiresAt = Date.now() + (this.tokenExpiry * 1000);
+    session.isActive = true;
+    console.log("[Auth] Login successful for: " + user.username + " | Token: " + session.token);
+    return { success: true, token: session.token, message: "OK" };
+  @@AuthService.login.end
+
+  %% ---- Session: validate ----
+  @Session.validate{}: boolean
+  @@Session.validate.code
+    if (!this.isActive) { return false; }
+    if (Date.now() > this.expiresAt) {
+      this.isActive = false;
+      console.log("[Auth] Session expired for userId: " + this.userId);
+      return false;
+    }
+    return true;
+  @@Session.validate.end
+
+  %% ---- Session: revoke ----
+  @Session.revoke{}: void
+  @@Session.revoke.code
+    this.isActive = false;
+    console.log("[Auth] Session revoked for userId: " + this.userId);
+  @@Session.revoke.end
+
+  %% ---- Main ----
+  @@main.code
+  async function runAuthDemo() {
+    console.log("=== [Auth Service] Demo ===");
+
+    const auth = new AuthService();
+    auth.secretKey = "super-secret-key-123";
+    auth.tokenExpiry = 3600;
+
+    const req = { username: "alice", password: "hunter2" };
+    const user = auth.register(req);
+
+    const result = auth.login(req, user);
+    console.log("Login result: " + result.message + " | Token: " + result.token);
+
+    const session = new Session();
+    session.token = result.token;
+    session.userId = user.id;
+    session.expiresAt = Date.now() + 10000;
+    session.isActive = true;
+
+    console.log("Session valid: " + session.validate());
+    session.revoke();
+    console.log("Session valid after revoke: " + session.validate());
+  }
+  runAuthDemo();
+  @@main.end

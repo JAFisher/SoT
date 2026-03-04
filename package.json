@@ -2,8 +2,12 @@
   "name": "sot",
   "version": "1.0.0",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "node build.js",
+    "run:rpg": "npx tsx ./src/rpg/main.ts",
+    "run:auth": "npx tsx ./src/auth/main.ts",
+    "run:orders": "npx tsx ./src/orders/main.ts"
   },
   "author": "",
   "license": "ISC",

@@ -1,0 +1,121 @@
+graph TD
+  %% ---- Base Class ----
+  Entity[Entity.ts{id: string, name: string, health: number, isAlive: boolean}]
+
+  %% ---- Inheritance ----
+  Player[Player.ts{level: number, experience: number, weapon: Weapon, inventory: Inventory, stats: Stats}] ---|> Entity[Entity.ts];
+  Enemy[Enemy.ts{lootTable: string[], stats: Stats}] ---|> Entity[Entity.ts];
+
+  %% ---- Composition ----
+  Player[Player.ts] --> Weapon[Weapon.ts{name: string, damage: number, type: string}];
+  Player[Player.ts] --> Inventory[Inventory.ts{items: Item[], capacity: number}];
+  Inventory[Inventory.ts] --> Item[Item.ts{name: string, description: string, value: number, quantity: number}];
+
+  %% ---- Types ----
+  type->Stats{strength: number, agility: number, intelligence: number, defense: number}
+  interface->IActivatable{cooldown: number, lastUsed: number}
+
+  %% ---- Entity Constructor ----
+  @@Entity.constructor.code
+    this.id = Math.random().toString(36).substr(2, 9);
+    this.health = 100;
+    this.isAlive = true;
+  @@Entity.constructor.end
+
+  %% ---- Player: attack ----
+  @Player.attack{target: Enemy}: number
+  @@Player.attack.code
+    if (!this.isAlive) { return 0; }
+    const baseDamage = this.stats.strength * 1.5;
+    const weaponBonus = this.weapon ? this.weapon.damage : 0;
+    const damage = Math.floor(baseDamage + weaponBonus);
+    target.health -= damage;
+    if (target.health <= 0) { target.isAlive = false; }
+    console.log(this.name + " attacks " + target.name + " for " + damage + " damage!");
+    return damage;
+  @@Player.attack.end
+
+  %% ---- Player: gainExperience ----
+  @Player.gainExperience{amount: number}: void
+  @@Player.gainExperience.code
+    this.experience += amount;
+    if (this.experience >= this.level * 100) {
+      this.level++;
+      this.experience = 0;
+      this.stats.strength += 2;
+      console.log(this.name + " leveled up to level " + this.level + "!");
+    }
+  @@Player.gainExperience.end
+
+  %% ---- Enemy: takeTurn ----
+  @Enemy.takeTurn{target: Player}: void
+  @@Enemy.takeTurn.code
+    if (!this.isAlive) { return; }
+    const damage = Math.max(0, Math.floor(this.stats.strength * 0.8) - target.stats.defense);
+    target.health -= damage;
+    if (target.health <= 0) { target.isAlive = false; }
+    console.log(this.name + " hits " + target.name + " for " + damage + " damage!");
+  @@Enemy.takeTurn.end
+
+  %% ---- Enemy: dropLoot ----
+  @Enemy.dropLoot{}: string
+  @@Enemy.dropLoot.code
+    if (this.lootTable.length === 0) { return "nothing"; }
+    return this.lootTable[Math.floor(Math.random() * this.lootTable.length)];
+  @@Enemy.dropLoot.end
+
+  %% ---- Inventory: addItem ----
+  @Inventory.addItem{item: Item}: boolean
+  @@Inventory.addItem.code
+    if (this.items.length >= this.capacity) { console.log("Inventory full!"); return false; }
+    this.items.push(item);
+    console.log("Added " + item.name + " x" + item.quantity + " to inventory.");
+    return true;
+  @@Inventory.addItem.end
+
+  %% ---- Main ----
+  @@main.code
+  async function startBattle() {
+    console.log("=== [RPG Service] Battle Simulation ===");
+
+    const player = new Player();
+    player.name = "Hero";
+    player.level = 1;
+    player.experience = 0;
+    player.stats = { strength: 15, agility: 10, intelligence: 8, defense: 5 };
+
+    const sword = new Weapon();
+    sword.name = "Excalibur";
+    sword.damage = 10;
+    sword.type = "sword";
+    player.weapon = sword;
+
+    const inventory = new Inventory();
+    inventory.capacity = 10;
+    inventory.items = [];
+    player.inventory = inventory;
+
+    const enemy = new Enemy();
+    enemy.name = "Goblin King";
+    enemy.stats = { strength: 12, agility: 5, intelligence: 2, defense: 2 };
+    enemy.lootTable = ["Gold Coin", "Old Dagger", "Health Potion"];
+
+    console.log("Hero HP: " + player.health + " | Goblin King HP: " + enemy.health);
+
+    let round = 1;
+    while (player.isAlive && enemy.isAlive && round <= 10) {
+      console.log("--- Round " + round + " ---");
+      player.attack(enemy);
+      if (enemy.isAlive) { enemy.takeTurn(player); }
+      round++;
+    }
+
+    if (!enemy.isAlive) {
+      console.log("Victory! Dropped: " + enemy.dropLoot());
+      player.gainExperience(150);
+    } else {
+      console.log("Defeat!");
+    }
+  }
+  startBattle();
+  @@main.end

@@ -291,25 +291,73 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
       }
     }
 
-    // Imports for types/interfaces referenced in methods
+    // Imports for types/interfaces referenced in methods (params, return type, and body code)
     if (methods[className]) {
       for (const [mName, methodData] of Object.entries(methods[className])) {
         if (!methodData) continue;
+
+        // Return type
         const rt = methodData.returnType;
         if (rt && (types[rt] || interfaces[rt])) customImports.add(rt);
+
+        // Params
         if (methodData.params) {
           for (const param of methodData.params) {
             if (types[param.type] || interfaces[param.type]) customImports.add(param.type);
+            // Also check if param type is a known class (not yet imported via composition/parent)
+            if (classNames.has(param.type) && param.type !== className) {
+              customImports.add("__class__" + param.type);
+            }
+          }
+        }
+
+        // Body code — scan for word-boundary matches against all known names
+        if (methodData.code) {
+          const allKnownNames = [...classNames, ...Object.keys(types), ...Object.keys(interfaces)];
+          for (const name of allKnownNames) {
+            if (name === className) continue; // skip self
+            if (new RegExp(`\\b${name}\\b`).test(methodData.code)) {
+              if (types[name] || interfaces[name]) {
+                customImports.add(name);
+              } else if (classNames.has(name)) {
+                customImports.add("__class__" + name);
+              }
+            }
           }
         }
       }
     }
 
+    // Build import statements — differentiate class value imports from type imports
     const customImportStatements = Array.from(customImports)
-      .map((name) => `import type { ${name} } from "./${stripTs(name)}";`)
+      .map((entry) => {
+        if (entry.startsWith("__class__")) {
+          // Value import for a class — look up its file path from nodes
+          const name = entry.slice("__class__".length);
+          // Find the node whose basename matches this class name
+          let fileName = name + ".ts";
+          for (const node of Object.values(nodes)) {
+            if (toPascalCase(path.basename(node.file, path.extname(node.file))) === name) {
+              fileName = node.file;
+              break;
+            }
+          }
+          let relPath = path.relative(path.dirname(filename), fileName).replace(/\\/g, "/");
+          if (!relPath.startsWith(".")) relPath = "./" + relPath;
+          relPath = stripTs(relPath);
+          return `import { ${name} } from "${relPath}";`;
+        }
+        // Type/interface import
+        return `import type { ${entry} } from "./${stripTs(entry)}";`;
+      })
       .join("\n");
 
-    const imports = [parentImport, compositionImports, customImportStatements].filter(Boolean).join("\n");
+    // Deduplicate all imports — body scanning may overlap with composition/parent edges
+    const allImportLines = [parentImport, compositionImports, customImportStatements]
+      .filter(Boolean)
+      .flatMap((block) => block.split("\n"))
+      .filter(Boolean);
+    const imports = [...new Set(allImportLines)].join("\n");
 
     // Fields
     const fields = props.map((p) => `  ${p.name}: ${p.type};`).join("\n");

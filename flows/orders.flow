@@ -1,0 +1,101 @@
+graph TD
+  %% ---- Order Service ----
+  OrderService[OrderService.ts{taxRate: number, processingFee: number}]
+
+  %% ---- Models ----
+  OrderService[OrderService.ts] --> Order[Order.ts{id: string, customerId: string, status: string, createdAt: number}];
+  Order[Order.ts] --> LineItem[LineItem.ts{productId: string, productName: string, quantity: number, unitPrice: number}];
+  OrderService[OrderService.ts] --> PaymentProcessor[PaymentProcessor.ts{provider: string, apiKey: string}];
+
+  %% ---- Types ----
+  type->OrderSummary{orderId: string, total: number, tax: number, status: string}
+  type->PaymentResult{approved: boolean, transactionId: string, message: string}
+
+  %% ---- Order: addItem ----
+  @Order.addItem{item: LineItem}: void
+  @@Order.addItem.code
+    this.items.push(item);
+    console.log("[Order] Added " + item.quantity + "x " + item.productName + " @ $" + item.unitPrice);
+  @@Order.addItem.end
+
+  %% ---- Order: getTotal ----
+  @Order.getTotal{}: number
+  @@Order.getTotal.code
+    return this.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+  @@Order.getTotal.end
+
+  %% ---- OrderService: placeOrder ----
+  @OrderService.placeOrder{order: Order}: OrderSummary
+  @@OrderService.placeOrder.code
+    const subtotal = order.getTotal();
+    const tax = subtotal * this.taxRate;
+    const total = subtotal + tax + this.processingFee;
+    order.status = "pending";
+    console.log("[Orders] Placing order " + order.id + " | Total: $" + total.toFixed(2));
+    return { orderId: order.id, total, tax, status: order.status };
+  @@OrderService.placeOrder.end
+
+  %% ---- OrderService: refundOrder ----
+  @OrderService.refundOrder{orderId: string, order: Order}: boolean
+  @@OrderService.refundOrder.code
+    if (order.status === "refunded") { console.log("[Orders] Already refunded."); return false; }
+    order.status = "refunded";
+    console.log("[Orders] Order " + orderId + " refunded successfully.");
+    return true;
+  @@OrderService.refundOrder.end
+
+  %% ---- PaymentProcessor: charge ----
+  @PaymentProcessor.charge{amount: number, customerId: string}: PaymentResult
+  @@PaymentProcessor.charge.code
+    const approved = amount > 0 && amount < 10000;
+    const transactionId = approved ? "txn-" + Math.random().toString(36).substr(2, 8) : "";
+    console.log("[Payment] " + this.provider + " charge $" + amount.toFixed(2) + " -> " + (approved ? "APPROVED" : "DECLINED"));
+    return { approved, transactionId, message: approved ? "Payment successful" : "Payment declined" };
+  @@PaymentProcessor.charge.end
+
+  %% ---- Main ----
+  @@main.code
+  async function runOrdersDemo() {
+    console.log("=== [Orders Service] Demo ===");
+
+    const orderSvc = new OrderService();
+    orderSvc.taxRate = 0.08;
+    orderSvc.processingFee = 2.50;
+
+    const payment = new PaymentProcessor();
+    payment.provider = "Stripe";
+    payment.apiKey = "sk_test_abc123";
+
+    const order = new Order();
+    order.id = "ord-" + Math.random().toString(36).substr(2, 6);
+    order.customerId = "cust-42";
+    order.status = "new";
+    order.createdAt = Date.now();
+    order.items = [];
+
+    const item1 = new LineItem();
+    item1.productId = "prod-001";
+    item1.productName = "Dragon Sword";
+    item1.quantity = 1;
+    item1.unitPrice = 149.99;
+    order.addItem(item1);
+
+    const item2 = new LineItem();
+    item2.productId = "prod-002";
+    item2.productName = "Health Potion";
+    item2.quantity = 5;
+    item2.unitPrice = 9.99;
+    order.addItem(item2);
+
+    const summary = orderSvc.placeOrder(order);
+    const payResult = payment.charge(summary.total, order.customerId);
+
+    if (payResult.approved) {
+      order.status = "confirmed";
+      console.log("Order confirmed! Transaction: " + payResult.transactionId);
+    }
+
+    orderSvc.refundOrder(order.id, order);
+  }
+  runOrdersDemo();
+  @@main.end
