@@ -1,0 +1,16 @@
+{
+  "name": "sot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@mermaid-js/parser": "^0.6.2",
+    "jsdom": "^26.1.0",
+    "mermaid": "^11.9.0"
+  }
+}

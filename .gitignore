@@ -1,0 +1,13 @@
+dist/*
+node_modules/*
+src/generated/*
+.env
+.env.local
+.env.production
+.env.development
+.env.test
+.env.example
+.env.test.local
+.env.test.production
+.env.test.development
+.env.test.example
