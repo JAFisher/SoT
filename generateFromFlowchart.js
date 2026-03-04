@@ -11,7 +11,8 @@ import path from "path";
  *   extendsEdges: Array<{childId: string, parentId: string}>,
  *   methods: object,
  *   types: object,
- *   interfaces: object
+ *   interfaces: object,
+ *   mainBlocks: Array<string>
  * }}
  */
 function parseFlowchart(definition) {
@@ -21,6 +22,7 @@ function parseFlowchart(definition) {
   const methods = {};
   const types = {};
   const interfaces = {};
+  const mainBlocks = [];
 
   const lines = definition
     .split("\n")
@@ -39,6 +41,10 @@ function parseFlowchart(definition) {
   const typePattern = /type->(\w+)\s*\{([^}]+)\}/;
   // Regex for new interface definition
   const interfacePattern = /interface->(\w+)\s*\{([^}]+)\}/;
+  // Regex for main code block start (accepts @ or @@)
+  const mainCodeStartPattern = /@{1,2}main\.code/;
+  // Regex for main code block end (accepts @ or @@)
+  const mainCodeEndPattern = /@{1,2}main\.end/;
 
   /**
    * Helper to add/update a node in the nodes map.
@@ -96,6 +102,18 @@ function parseFlowchart(definition) {
       continue;
     }
 
+    // main code block start
+    if (line.match(new RegExp(`^${mainCodeStartPattern.source}$`))) {
+      let codeBlock = "";
+      i++;
+      while (i < lines.length && !lines[i].match(new RegExp(`^${mainCodeEndPattern.source}$`))) {
+        codeBlock += lines[i] + "\n";
+        i++;
+      }
+      mainBlocks.push(codeBlock.trim());
+      continue;
+    }
+
     // method/ctor code block start
     const methodCodeStartMatch = line.match(new RegExp(`^${methodCodeStartPattern.source}$`));
     if (methodCodeStartMatch) {
@@ -138,7 +156,7 @@ function parseFlowchart(definition) {
     }
   }
 
-  return { nodes, compositionEdges, extendsEdges, methods, types, interfaces };
+  return { nodes, compositionEdges, extendsEdges, methods, types, interfaces, mainBlocks };
 }
 
 /**
@@ -182,12 +200,15 @@ function stripTs(p) {
  *   extendsEdges: Array<{childId: string, parentId: string}>,
  *   methods: object,
  *   types: object,
- *   interfaces: object
+ *   interfaces: object,
+ *   mainBlocks: Array<string>
  * }} parsedData
  */
-function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods, types, interfaces }) {
+function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods, types, interfaces, mainBlocks }) {
   // All class names, for quick checks
   const classNames = new Set(Object.values(nodes).map((n) => path.basename(n.file, path.extname(n.file))));
+  const interfaceNames = new Set(Object.keys(interfaces));
+  const typeNames = new Set(Object.keys(types));
 
   // === Types ===
   for (const [typeName, props] of Object.entries(types)) {
@@ -343,6 +364,43 @@ ${fields ? fields + "\n" : ""}${ctorContent}${methodsContent}
     const outPath = path.join(baseDir, filename);
     fs.mkdirSync(path.dirname(outPath), { recursive: true });
     fs.writeFileSync(outPath, content, "utf-8");
+    console.log(`✅ Created ${outPath}`);
+  }
+
+  // === Main Entry Point ===
+  if (mainBlocks.length > 0) {
+    const mainContent = mainBlocks.join("\n\n");
+    const allNames = new Set([...classNames, ...interfaceNames, ...typeNames]);
+    const imports = [];
+
+    // Simple heuristic: if a word in the main block matches a class/type/interface name, import it.
+    for (const name of allNames) {
+      if (new RegExp(`\\b${name}\\b`).test(mainContent)) {
+        // Find the file for classes (nodes), otherwise use name.ts
+        let fileName = name + ".ts";
+        for (const node of Object.values(nodes)) {
+          if (path.basename(node.file, path.extname(node.file)) === name) {
+            fileName = node.file;
+            break;
+          }
+        }
+
+        let relPath = fileName.replace(/\\/g, "/");
+        if (!relPath.startsWith(".")) relPath = "./" + relPath;
+        relPath = stripTs(relPath);
+
+        if (interfaceNames.has(name) || typeNames.has(name)) {
+          imports.push(`import type { ${name} } from "${relPath}";`);
+        } else {
+          imports.push(`import { ${name} } from "${relPath}";`);
+        }
+      }
+    }
+
+    const finalContent = `${imports.join("\n")}\n\n${mainContent}\n`;
+    const outPath = path.join(baseDir, "main.ts");
+    fs.mkdirSync(path.dirname(outPath), { recursive: true });
+    fs.writeFileSync(outPath, finalContent, "utf-8");
     console.log(`✅ Created ${outPath}`);
   }
 }
