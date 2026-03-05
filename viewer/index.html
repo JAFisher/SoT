@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SoT Flow Visualizer</title>
+  <meta name="description" content="Interactive visualizer for SoT .flow DSL files — renders class diagrams, types, interfaces, and methods.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ─── Sidebar ─── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <span class="logo-icon">⬡</span>
+        <span class="logo-text">SoT<span class="logo-accent">_</span></span>
+      </div>
+      <p class="logo-sub">Flow Visualizer</p>
+    </div>
+
+    <div class="sidebar-section">
+      <h3 class="sidebar-title">Flows</h3>
+      <ul class="flow-list" id="flowList">
+        <!-- Populated by JS -->
+      </ul>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="stats" id="globalStats"></div>
+    </div>
+  </aside>
+
+  <!-- ─── Main Content ─── -->
+  <main class="main" id="main">
+
+    <!-- Welcome / Empty State -->
+    <div class="welcome" id="welcome">
+      <div class="welcome-icon">⬡</div>
+      <h1>SoT Flow Visualizer</h1>
+      <p>Select a <code>.flow</code> file from the sidebar to render its architecture diagram.</p>
+    </div>
+
+    <!-- Flow View (hidden until selection) -->
+    <div class="flow-view hidden" id="flowView">
+
+      <!-- Top bar -->
+      <header class="flow-header">
+        <div class="flow-header-left">
+          <span class="flow-badge" id="flowBadge">flow</span>
+          <h1 class="flow-title" id="flowTitle"></h1>
+        </div>
+        <div class="flow-header-right">
+          <div class="flow-stat" id="statNodes"><span class="stat-num">0</span> nodes</div>
+          <div class="flow-stat" id="statEdges"><span class="stat-num">0</span> edges</div>
+          <div class="flow-stat" id="statMethods"><span class="stat-num">0</span> methods</div>
+        </div>
+      </header>
+
+      <!-- Diagram -->
+      <div class="diagram-container" id="diagramContainer">
+        <div class="diagram" id="diagram"></div>
+      </div>
+
+      <!-- Detail Panels -->
+      <div class="details" id="details">
+        <!-- Types -->
+        <div class="detail-panel" id="typesPanel" style="display:none">
+          <h2 class="detail-title"><span class="detail-icon">◆</span> Types</h2>
+          <div class="detail-content" id="typesContent"></div>
+        </div>
+
+        <!-- Interfaces -->
+        <div class="detail-panel" id="interfacesPanel" style="display:none">
+          <h2 class="detail-title"><span class="detail-icon">◇</span> Interfaces</h2>
+          <div class="detail-content" id="interfacesContent"></div>
+        </div>
+
+        <!-- Methods -->
+        <div class="detail-panel" id="methodsPanel" style="display:none">
+          <h2 class="detail-title"><span class="detail-icon">ƒ</span> Methods</h2>
+          <div class="detail-content" id="methodsContent"></div>
+        </div>
+
+        <!-- Externals -->
+        <div class="detail-panel" id="externalsPanel" style="display:none">
+          <h2 class="detail-title"><span class="detail-icon">↗</span> Externals</h2>
+          <div class="detail-content" id="externalsContent"></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
