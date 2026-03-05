@@ -194,7 +194,7 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
 
     // 3. Classes
     for (const [id, { file: filename, props }] of Object.entries(nodes)) {
-        console.log(props);
+
         const className = toPascalCase(path.basename(filename, path.extname(filename)));
         const parentRelationship = extendsEdges.find((r) => r.childId === id);
         let extendsClause = "";
@@ -223,7 +223,7 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
 
         for (const p of props) {
             for (const ref of extractReferencedTypes(p.type)) {
-                console.log(ref)
+
                 if (
                     (types[ref] && !classNames.has(ref) || interfaces[ref] && !classNames.has(ref))
                 ) {
