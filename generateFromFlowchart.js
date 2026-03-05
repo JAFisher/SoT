@@ -158,7 +158,7 @@ function generateFiles(baseDir, data) {
     fs.writeFileSync(path.join(baseDir, "package.json"), JSON.stringify({
         name: "sot-project",
         version: "1.0.0",
-        scripts: { start: " node main.js", build: "tsc main.ts" },
+        scripts: { start: " node dist/main.js", build: "tsc main.ts --outDir dist" },
         dependencies
     }, null, 2));
 
