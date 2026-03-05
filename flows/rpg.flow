@@ -9,6 +9,8 @@ graph TD
   %% ---- Composition ----
   Player[Player.ts] --> Weapon[Weapon.ts{name: string, damage: number, type: string}];
   Player[Player.ts] --> Inventory[Inventory.ts{items: Item[], capacity: number}];
+
+  
   Inventory[Inventory.ts] --> Item[Item.ts{name: string, description: string, value: number, quantity: number}];
 
   %% ---- Types ----
@@ -21,6 +23,14 @@ graph TD
     this.health = 100;
     this.isAlive = true;
   @@Entity.constructor.end
+
+  @Player.constructor.code
+    super();
+  @Player.constructor.end
+
+  @Enemy.constructor.code
+    super();
+  @Enemy.constructor.end
 
   %% ---- Player: attack ----
   @Player.attack{target: Enemy}: number
