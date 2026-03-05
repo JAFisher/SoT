@@ -218,7 +218,7 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
             let depPath = path.relative(path.dirname(filename), depFile).replace(/\\/g, "/");
             if (!depPath.startsWith(".")) depPath = "./" + depPath;
             return `import { ${depClass} } from "${stripTs(depPath)}";`;
-        }).join("\n");
+        });
 
 
         for (const p of props) {
@@ -267,10 +267,29 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
                 return `import { ${name} } from "${stripTs(rp)}";`;
             }
             return `import type { ${entry} } from "./${stripTs(entry)}";`;
-        }).join("\n");
+        });
 
-        const allImports = [...new Set([parentImport, compositionImports, customImportStatements, ...externalImportLines])]
-            .filter(Boolean).join("\n");
+        function filterNonUniqueUsingSet(arr) {
+            // Use filter to find unique items and create a Set to ensure uniqueness
+            const uniqueItems = new Set(arr.filter(item => {
+                
+                return arr.filter(x => x.trim() === item.trim()).length === 1
+                }
+            ));
+            
+            // Convert the Set back to an array and return it
+            return [...uniqueItems];
+        }
+
+
+        let allImports = [...new Set([parentImport, ...compositionImports, ...customImportStatements, ...externalImportLines])]
+            .filter(Boolean);
+
+
+        
+        allImports = filterNonUniqueUsingSet(allImports);
+
+        allImports = allImports.join("\n");
 
         // Build the class string (Fields, Ctor, Methods)
         const fields = props.map((p) => `  ${p.name}: ${p.type};`).join("\n");

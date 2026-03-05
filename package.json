@@ -10,8 +10,6 @@
     "run:orders": "npx tsx ./src/orders/main.ts",
     "run:poker": "npx tsx ./src/poker/main.ts",
     "run:api": "npx tsx ./src/apiwithclient/main.ts"
-
-
   },
   "author": "",
   "license": "ISC",
