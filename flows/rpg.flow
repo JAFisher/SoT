@@ -9,6 +9,7 @@ graph TD
   %% ---- Composition ----
   Player[Player.ts] --> Weapon[Weapon.ts{name: string, damage: number, type: string}];
   Player[Player.ts] --> Inventory[Inventory.ts{items: Item[], capacity: number}];
+  Enemy[Enemy.ts] --> Player[Player.ts];
 
   
   Inventory[Inventory.ts] --> Item[Item.ts{name: string, description: string, value: number, quantity: number}];

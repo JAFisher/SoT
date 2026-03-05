@@ -194,6 +194,7 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
 
     // 3. Classes
     for (const [id, { file: filename, props }] of Object.entries(nodes)) {
+        console.log(props);
         const className = toPascalCase(path.basename(filename, path.extname(filename)));
         const parentRelationship = extendsEdges.find((r) => r.childId === id);
         let extendsClause = "";
@@ -218,6 +219,19 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
             if (!depPath.startsWith(".")) depPath = "./" + depPath;
             return `import { ${depClass} } from "${stripTs(depPath)}";`;
         }).join("\n");
+
+
+        for (const p of props) {
+            for (const ref of extractReferencedTypes(p.type)) {
+                console.log(ref)
+                if (
+                    (types[ref] && !classNames.has(ref) || interfaces[ref] && !classNames.has(ref))
+                ) {
+                    
+                    customImports.add(ref);
+                }
+            }
+        }
 
         // Scan methods for both internal AND external dependencies
         if (methods[className]) {
@@ -375,7 +389,21 @@ This project was automatically generated using the **Single Oriented Transformat
         fs.writeFileSync(path.join(baseDir, "main.ts"), `${Array.from(mainImports).join("\n")}\n\n${mainContent}\n`, "utf-8");
     }
 
+}
 
+function extractReferencedTypes(typeStr) {
+    if (!typeStr) return [];
+    // Match Array<Foo>, Foo[], Foo, etc.
+    const matches = [];
+    // Array<Foo>
+    const genericMatch = typeStr.match(/Array<(\w+)>/);
+    if (genericMatch) matches.push(genericMatch[1]);
+    // Foo[]
+    const arrayMatch = typeStr.match(/^(\w+)\[\]$/);
+    if (arrayMatch) matches.push(arrayMatch[1]);
+    // Single type
+    if (/^\w+$/.test(typeStr)) matches.push(typeStr);
+    return matches;
 }
 
 export function generateFromFlowchart(definition, outDir = "./out") {
