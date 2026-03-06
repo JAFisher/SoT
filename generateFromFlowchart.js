@@ -23,12 +23,12 @@ function parseFlowchart(definition) {
     const externals = {};
     const processedFiles = new Set();
 
-    const nodePattern = /(\w+)\[([^\]{]+)(?:\{([^}]+)\})?\]/;
-    const methodPattern = /(@async\s+)?@(\w+)\.([^\{]+)(?:\{([^}]+)\})?:\s*(.+)/;
+    const nodePattern = /(\w+)\[([^\]{]+)(?:\{([^}]*)\})?\]/;
+    const methodPattern = /(@async\s+)?@(\w+)\.([^\{]+)(?:\{([^}]*)\})?:\s*(.+)/;
     const methodCodeStartPattern = /(@async\s+)?@{1,2}([\w.]+)\.code/;
     const methodCodeEndPattern = /@{1,2}([\w.]+)\.end/;
-    const typePattern = /type->(\w+)\s*\{([^}]+)\}/;
-    const interfacePattern = /interface->(\w+)\s*\{([^}]+)\}/;
+    const typePattern = /type->(\w+)\s*\{([^}]*)\}/;
+    const interfacePattern = /interface->(\w+)\s*\{([^}]*)\}/;
     const mainCodeStartPattern = /(@async\s+)?@{1,2}main\.code/;
     const mainCodeEndPattern = /@{1,2}main\.end/;
     const externPattern = /extern->(\w+)\s*from\s*['"]([^'"]+)['"]/;
@@ -149,7 +149,7 @@ function parseFlowchart(definition) {
                     methods[className].constructor = { code: trimmed };
                 } else {
                     if (!methods[className][methodName]) {
-                        methods[className][methodName] = { params: [], returnType: "any" };
+                        methods[className][methodName] = { params: [], returnType: "void" };
                     }
                     methods[className][methodName].code = trimmed;
                     if (asyncFlag) methods[className][methodName].async = true;
@@ -276,9 +276,28 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
             }
         }
 
+        // Scan methods for both internal AND external dependencies
         if (methods[className]) {
             for (const methodData of Object.values(methods[className])) {
-                if (!methodData || !methodData.code) continue;
+                if (!methodData) continue;
+
+                // Scan Method Signature (Params & ReturnType)
+                if (methodData.params) {
+                    for (const p of methodData.params) {
+                        for (const ref of extractReferencedTypes(p.type)) {
+                            if ((types[ref] || interfaces[ref]) && !classNames.has(ref)) customImports.add(ref);
+                            else if (classNames.has(ref)) customImports.add("__class__" + ref);
+                        }
+                    }
+                }
+                if (methodData.returnType) {
+                    for (const ref of extractReferencedTypes(methodData.returnType)) {
+                        if ((types[ref] || interfaces[ref]) && !classNames.has(ref)) customImports.add(ref);
+                        else if (classNames.has(ref)) customImports.add("__class__" + ref);
+                    }
+                }
+
+                if (!methodData.code) continue;
                 const allKnownNames = [...classNames, ...Object.keys(types), ...Object.keys(interfaces)];
                 for (const name of allKnownNames) {
                     if (name === className) continue;

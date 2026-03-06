@@ -23,12 +23,12 @@ async function parseFlowchart(definition) {
     const externals = {};
     const processedFiles = new Set();
 
-    const nodePattern = /(\w+)\[([^\]{}]+?)(?:\.ts)?\s*(?:\{([^}]+)\})?\]/;
-    const methodPattern = /(@async\s+)?@(\w+)\.([^{]+)(?:\{([^}]+)\})?:\s*(.+)/;
+    const nodePattern = /(\w+)\[([^\]{}]+?)(?:\.ts)?\s*(?:\{([^}]*)\})?\]/;
+    const methodPattern = /(@async\s+)?@(\w+)\.([^{]+)(?:\{([^}]*)\})?:\s*(.+)/;
     const methodCodeStartPattern = /(@async\s+)?@{1,2}([\w.]+)\.code/;
     const methodCodeEndPattern = /@{1,2}([\w.]+)\.end/;
-    const typePattern = /type->(\w+)\s*\{([^}]+)\}/;
-    const interfacePattern = /interface->(\w+)\s*\{([^}]+)\}/;
+    const typePattern = /type->(\w+)\s*\{([^}]*)\}/;
+    const interfacePattern = /interface->(\w+)\s*\{([^}]*)\}/;
     const mainCodeStartPattern = /@{1,2}main\.code/;
     const mainCodeEndPattern = /@{1,2}main\.end/;
     const externPattern = /extern->(\w+)\s*from\s*['"]([^'"]+)['"]/;
@@ -152,7 +152,7 @@ async function parseFlowchart(definition) {
                     methods[className].constructor = { code: codeBlock.trim() };
                 } else {
                     if (!methods[className][methodName]) {
-                        methods[className][methodName] = { params: [], returnType: "any" };
+                        methods[className][methodName] = { params: [], returnType: "void" };
                     }
                     methods[className][methodName].code = codeBlock.trim();
                     if (asyncFlag) methods[className][methodName].async = true;

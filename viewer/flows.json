@@ -1,6 +1,6 @@
 {
   "apiwithclient": {
-    "diagram": "graph TD\n  Task[\"Task\n─────────────────\nid: number\ntitle: string\ndone: boolean\"]\n  Server[\"Server\n─────────────────\nport: number\ntasks: Task[]\n─────────────────\nstart(): any\"]\n  Client[\"Client\n─────────────────\nserverUrl: string\n─────────────────\nfetchTasks(): any\"]",
+    "diagram": "graph TD\n  Task[\"Task\n─────────────────\nid: number\ntitle: string\ndone: boolean\"]\n  Server[\"Server\n─────────────────\nport: number\ntasks: Task[]\n─────────────────\nstart(): void\"]\n  Client[\"Client\n─────────────────\nserverUrl: string\n─────────────────\nfetchTasks(): void\"]",
     "metadata": {
       "nodeCount": 3,
       "compositionEdgeCount": 0,
@@ -11,14 +11,14 @@
         {
           "class": "Server",
           "name": "start",
-          "signature": "Server.start(): any",
+          "signature": "Server.start(): void",
           "async": false,
           "hasCode": true
         },
         {
           "class": "Client",
           "name": "fetchTasks",
-          "signature": "Client.fetchTasks(): any",
+          "signature": "Client.fetchTasks(): void",
           "async": false,
           "hasCode": true
         }
@@ -30,7 +30,7 @@
     }
   },
   "auth": {
-    "diagram": "graph TD\n  AuthService[\"AuthService\n─────────────────\nsecretKey: string\ntokenExpiry: number\n─────────────────\nregister(req: LoginRequest): User\nlogin(req: LoginRequest, user: User): AuthResult\"]\n  User[\"User\n─────────────────\nid: string\nusername: string\npasswordHash: string\nrole: string\ncreatedAt: number\"]\n  Session[\"Session\n─────────────────\ntoken: string\nuserId: string\nexpiresAt: number\nisActive: boolean\n─────────────────\nvalidate(): any\nrevoke(): any\"]\n  AuthService --> User\n  AuthService --> Session\n\n  subgraph Types\n    direction TB\n    T_LoginRequest[\"«type»\nLoginRequest\n─────────────────\nusername: string\npassword: string\"]\n    T_AuthResult[\"«type»\nAuthResult\n─────────────────\nsuccess: boolean\ntoken: string\nmessage: string\"]\n  end",
+    "diagram": "graph TD\n  AuthService[\"AuthService\n─────────────────\nsecretKey: string\ntokenExpiry: number\n─────────────────\nregister(req: LoginRequest): User\nlogin(req: LoginRequest, user: User): AuthResult\"]\n  User[\"User\n─────────────────\nid: string\nusername: string\npasswordHash: string\nrole: string\ncreatedAt: number\"]\n  Session[\"Session\n─────────────────\ntoken: string\nuserId: string\nexpiresAt: number\nisActive: boolean\n─────────────────\nvalidate(): boolean\nrevoke(): void\"]\n  AuthService --> User\n  AuthService --> Session\n\n  subgraph Types\n    direction TB\n    T_LoginRequest[\"«type»\nLoginRequest\n─────────────────\nusername: string\npassword: string\"]\n    T_AuthResult[\"«type»\nAuthResult\n─────────────────\nsuccess: boolean\ntoken: string\nmessage: string\"]\n  end",
     "metadata": {
       "nodeCount": 3,
       "compositionEdgeCount": 2,
@@ -65,14 +65,14 @@
         {
           "class": "Session",
           "name": "validate",
-          "signature": "Session.validate(): any",
+          "signature": "Session.validate(): boolean",
           "async": false,
           "hasCode": true
         },
         {
           "class": "Session",
           "name": "revoke",
-          "signature": "Session.revoke(): any",
+          "signature": "Session.revoke(): void",
           "async": false,
           "hasCode": true
         }
@@ -80,7 +80,7 @@
     }
   },
   "chalk": {
-    "diagram": "graph TD\n  LogEntry[\"LogEntry\n─────────────────\ntimestamp: string\nlevel: string\nmessage: string\"]\n  AlertConfig[\"AlertConfig\n─────────────────\nthreshold: number\nadminEmail: string\"]\n  Monitor[\"Monitor\n─────────────────\nlogPath: string\nerrorCount: number\n─────────────────\nwatch(): any\"]\n  Alerter[\"Alerter\n─────────────────\nlastAlert: string\n─────────────────\nsend(msg: string): void\"]",
+    "diagram": "graph TD\n  LogEntry[\"LogEntry\n─────────────────\ntimestamp: string\nlevel: string\nmessage: string\"]\n  AlertConfig[\"AlertConfig\n─────────────────\nthreshold: number\nadminEmail: string\"]\n  Monitor[\"Monitor\n─────────────────\nlogPath: string\nerrorCount: number\n─────────────────\nwatch(): void\"]\n  Alerter[\"Alerter\n─────────────────\nlastAlert: string\n─────────────────\nsend(msg: string): void\"]",
     "metadata": {
       "nodeCount": 4,
       "compositionEdgeCount": 0,
@@ -91,7 +91,7 @@
         {
           "class": "Monitor",
           "name": "watch",
-          "signature": "Monitor.watch(): any",
+          "signature": "Monitor.watch(): void",
           "async": false,
           "hasCode": true
         },
@@ -211,7 +211,7 @@
     }
   },
   "orders": {
-    "diagram": "graph TD\n  OrderService[\"OrderService\n─────────────────\ntaxRate: number\nprocessingFee: number\n─────────────────\nplaceOrder(order: Order): OrderSummary\nrefundOrder(orderId: string, order: Order): boolean\"]\n  Order[\"Order\n─────────────────\nid: string\ncustomerId: string\nstatus: string\ncreatedAt: number\n─────────────────\naddItem(item: LineItem): void\ngetTotal(): any\"]\n  LineItem[\"LineItem\n─────────────────\nproductId: string\nproductName: string\nquantity: number\nunitPrice: number\"]\n  PaymentProcessor[\"PaymentProcessor\n─────────────────\nprovider: string\napiKey: string\n─────────────────\ncharge(amount: number, customerId: string): PaymentResult\"]\n  OrderService --> Order\n  Order --> LineItem\n  OrderService --> PaymentProcessor\n\n  subgraph Types\n    direction TB\n    T_OrderSummary[\"«type»\nOrderSummary\n─────────────────\norderId: string\ntotal: number\ntax: number\nstatus: string\"]\n    T_PaymentResult[\"«type»\nPaymentResult\n─────────────────\napproved: boolean\ntransactionId: string\nmessage: string\"]\n  end",
+    "diagram": "graph TD\n  OrderService[\"OrderService\n─────────────────\ntaxRate: number\nprocessingFee: number\n─────────────────\nplaceOrder(order: Order): OrderSummary\nrefundOrder(orderId: string, order: Order): boolean\"]\n  Order[\"Order\n─────────────────\nid: string\ncustomerId: string\nstatus: string\ncreatedAt: number\n─────────────────\naddItem(item: LineItem): void\ngetTotal(): number\"]\n  LineItem[\"LineItem\n─────────────────\nproductId: string\nproductName: string\nquantity: number\nunitPrice: number\"]\n  PaymentProcessor[\"PaymentProcessor\n─────────────────\nprovider: string\napiKey: string\n─────────────────\ncharge(amount: number, customerId: string): PaymentResult\"]\n  OrderService --> Order\n  Order --> LineItem\n  OrderService --> PaymentProcessor\n\n  subgraph Types\n    direction TB\n    T_OrderSummary[\"«type»\nOrderSummary\n─────────────────\norderId: string\ntotal: number\ntax: number\nstatus: string\"]\n    T_PaymentResult[\"«type»\nPaymentResult\n─────────────────\napproved: boolean\ntransactionId: string\nmessage: string\"]\n  end",
     "metadata": {
       "nodeCount": 4,
       "compositionEdgeCount": 3,
@@ -241,7 +241,7 @@
         {
           "class": "Order",
           "name": "getTotal",
-          "signature": "Order.getTotal(): any",
+          "signature": "Order.getTotal(): number",
           "async": false,
           "hasCode": true
         },
@@ -270,7 +270,7 @@
     }
   },
   "poker": {
-    "diagram": "graph TD\n  Deck[\"Deck\n─────────────────\ncards: string[]\n─────────────────\nshuffle(): any\"]\n  Hand[\"Hand\n─────────────────\ncards: string[]\nisDealer: boolean\n─────────────────\ngetScore(): any\"]\n  Game[\"Game\n─────────────────\ndeck: Deck\nplayerHand: Hand\ndealerHand: Hand\n─────────────────\ndealerTurn(): any\nstart(): any\"]\n  Game --> Deck\n  Game --> Hand",
+    "diagram": "graph TD\n  Deck[\"Deck\n─────────────────\ncards: string[]\n─────────────────\nshuffle(): void\"]\n  Hand[\"Hand\n─────────────────\ncards: string[]\nisDealer: boolean\n─────────────────\ngetScore(): number\"]\n  Game[\"Game\n─────────────────\ndeck: Deck\nplayerHand: Hand\ndealerHand: Hand\n─────────────────\ndealerTurn(): void\nstart(): void\"]\n  Game --> Deck\n  Game --> Hand",
     "metadata": {
       "nodeCount": 3,
       "compositionEdgeCount": 2,
@@ -281,28 +281,28 @@
         {
           "class": "Deck",
           "name": "shuffle",
-          "signature": "Deck.shuffle(): any",
+          "signature": "Deck.shuffle(): void",
           "async": false,
           "hasCode": true
         },
         {
           "class": "Hand",
           "name": "getScore",
-          "signature": "Hand.getScore(): any",
+          "signature": "Hand.getScore(): number",
           "async": false,
           "hasCode": true
         },
         {
           "class": "Game",
           "name": "dealerTurn",
-          "signature": "Game.dealerTurn(): any",
+          "signature": "Game.dealerTurn(): void",
           "async": false,
           "hasCode": true
         },
         {
           "class": "Game",
           "name": "start",
-          "signature": "Game.start(): any",
+          "signature": "Game.start(): void",
           "async": false,
           "hasCode": true
         }
@@ -313,7 +313,7 @@
     }
   },
   "rpg": {
-    "diagram": "graph TD\n  Entity[\"Entity\n─────────────────\nid: string\nname: string\nhealth: number\nisAlive: boolean\"]\n  Player[\"Player\n─────────────────\nlevel: number\nexperience: number\nweapon: Weapon\ninventory: Inventory\nstats: Stats\n─────────────────\nattack(target: Enemy): number\ngainExperience(amount: number): void\"]\n  Enemy[\"Enemy\n─────────────────\nlootTable: string[]\nstats: Stats\n─────────────────\ntakeTurn(target: Player): void\ndropLoot(): any\"]\n  Weapon[\"Weapon\n─────────────────\nname: string\ndamage: number\ntype: string\"]\n  Inventory[\"Inventory\n─────────────────\nitems: Item[]\ncapacity: number\n─────────────────\naddItem(item: Item): boolean\"]\n  Item[\"Item\n─────────────────\nname: string\ndescription: string\nvalue: number\nquantity: number\"]\n  Player -->|extends| Entity\n  Enemy -->|extends| Entity\n  Player --> Weapon\n  Player --> Inventory\n  Enemy --> Player\n  Inventory --> Item\n\n  subgraph Types\n    direction TB\n    T_Stats[\"«type»\nStats\n─────────────────\nstrength: number\nagility: number\nintelligence: number\ndefense: number\"]\n  end\n\n  subgraph Interfaces\n    direction TB\n    I_IActivatable[\"«interface»\nIActivatable\n─────────────────\ncooldown: number\nlastUsed: number\"]\n  end",
+    "diagram": "graph TD\n  Entity[\"Entity\n─────────────────\nid: string\nname: string\nhealth: number\nisAlive: boolean\"]\n  Player[\"Player\n─────────────────\nlevel: number\nexperience: number\nweapon: Weapon\ninventory: Inventory\nstats: Stats\n─────────────────\nattack(target: Enemy): number\ngainExperience(amount: number): void\"]\n  Enemy[\"Enemy\n─────────────────\nlootTable: string[]\nstats: Stats\n─────────────────\ntakeTurn(target: Player): void\ndropLoot(): string\"]\n  Weapon[\"Weapon\n─────────────────\nname: string\ndamage: number\ntype: string\"]\n  Inventory[\"Inventory\n─────────────────\nitems: Item[]\ncapacity: number\n─────────────────\naddItem(item: Item): boolean\"]\n  Item[\"Item\n─────────────────\nname: string\ndescription: string\nvalue: number\nquantity: number\"]\n  Player -->|extends| Entity\n  Enemy -->|extends| Entity\n  Player --> Weapon\n  Player --> Inventory\n  Enemy --> Player\n  Inventory --> Item\n\n  subgraph Types\n    direction TB\n    T_Stats[\"«type»\nStats\n─────────────────\nstrength: number\nagility: number\nintelligence: number\ndefense: number\"]\n  end\n\n  subgraph Interfaces\n    direction TB\n    I_IActivatable[\"«interface»\nIActivatable\n─────────────────\ncooldown: number\nlastUsed: number\"]\n  end",
     "metadata": {
       "nodeCount": 6,
       "compositionEdgeCount": 4,
@@ -357,7 +357,7 @@
         {
           "class": "Enemy",
           "name": "dropLoot",
-          "signature": "Enemy.dropLoot(): any",
+          "signature": "Enemy.dropLoot(): string",
           "async": false,
           "hasCode": true
         },
@@ -369,6 +369,55 @@
           "hasCode": true
         }
       ]
+    }
+  },
+  "sqlite_service": {
+    "diagram": "graph TD\n  DB[\"SqliteDatabase\n─────────────────\n⚡ init(): Promise<void>\n⚡ addUser(name: string, email: string): Promise<void>\n⚡ getUsers(): Promise<Array<UserRecord>>\"]\n\n  subgraph Types\n    direction TB\n    T_UserRecord[\"«type»\nUserRecord\n─────────────────\nid: number\nname: string\nemail: string\"]\n  end",
+    "metadata": {
+      "nodeCount": 1,
+      "compositionEdgeCount": 0,
+      "inheritanceEdgeCount": 0,
+      "types": {
+        "UserRecord": [
+          "id: number",
+          "name: string",
+          "email: string"
+        ]
+      },
+      "interfaces": {},
+      "methods": [
+        {
+          "class": "SqliteDatabase",
+          "name": "init",
+          "signature": "SqliteDatabase.init(): Promise<void>",
+          "async": true,
+          "hasCode": true
+        },
+        {
+          "class": "SqliteDatabase",
+          "name": "addUser",
+          "signature": "SqliteDatabase.addUser(name: string, email: string): Promise<void>",
+          "async": true,
+          "hasCode": true
+        },
+        {
+          "class": "SqliteDatabase",
+          "name": "getUsers",
+          "signature": "SqliteDatabase.getUsers(): Promise<Array<UserRecord>>",
+          "async": true,
+          "hasCode": true
+        },
+        {
+          "class": "",
+          "name": "main",
+          "signature": ".main(): void",
+          "async": true,
+          "hasCode": true
+        }
+      ],
+      "externals": {
+        "sqlite3": "sqlite3"
+      }
     }
   },
   "user_service": {
@@ -407,7 +456,7 @@
         {
           "class": "",
           "name": "main",
-          "signature": ".main(): any",
+          "signature": ".main(): void",
           "async": true,
           "hasCode": true
         }

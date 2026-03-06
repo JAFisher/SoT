@@ -1,0 +1,8 @@
+graph TD
+    type->UserRecord {id: number, name: string, email: string}
+
+    interface->IDatabase {
+        init: (): Promise<void>,
+        addUser: (name: string, email: string): Promise<void>,
+        getUsers: (): Promise<Array<UserRecord>>
+    }
