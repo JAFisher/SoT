@@ -1,0 +1,45 @@
+graph TD
+    extern->socketio from "socket.io"
+
+    ChatManager[ChatManager.ts{io: any, users: Map<string, string>}]
+
+    @ChatManager.constructor
+    @@ChatManager.constructor.code
+        this.users = new Map();
+    @@ChatManager.constructor.end
+
+    @ChatManager.attach{server: any}: void
+    @@ChatManager.attach.code
+        this.io = new socketio.Server(server);
+        
+        this.io.on("connection", (socket) => {
+            console.log("🔌 User connected:", socket.id);
+
+            socket.on("join", (username) => {
+                this.users.set(socket.id, username);
+                this.io.emit("message", {
+                    user: "System",
+                    text: `${username} joined the chat`
+                });
+            });
+
+            socket.on("chatMessage", (text) => {
+                const username = this.users.get(socket.id) || "Anonymous";
+                this.io.emit("message", {
+                    user: username,
+                    text: text
+                });
+            });
+
+            socket.on("disconnect", () => {
+                const username = this.users.get(socket.id);
+                if (username) {
+                    this.io.emit("message", {
+                        user: "System",
+                        text: `${username} left the chat`
+                    });
+                }
+                this.users.delete(socket.id);
+            });
+        });
+    @@ChatManager.end

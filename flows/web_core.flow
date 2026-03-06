@@ -1,0 +1,29 @@
+graph TD
+    extern->express from "express"
+    extern->http from "node:http"
+    extern->path from "node:path"
+
+    WebServer[WebServer.ts{app: any, server: any, port: number}]
+
+    @WebServer.constructor
+    @@WebServer.constructor.code
+        this.app = express();
+        this.server = http.createServer(this.app);
+        this.port = 3000;
+        
+        // Default middleware
+        this.app.use(express.json());
+        this.app.use(express.static(path.join(process.cwd(), "public")));
+    @@WebServer.constructor.end
+
+    @WebServer.start: void
+    @@WebServer.start.code
+        this.server.listen(this.port, () => {
+            console.log(`🌐 WebServer running at http://localhost:${this.port}`);
+        });
+    @@WebServer.end
+
+    @WebServer.get{path: string, callback: any}: void
+    @@WebServer.get.code
+        this.app.get(path, callback);
+    @@WebServer.end

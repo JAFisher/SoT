@@ -20,10 +20,13 @@ function parseFlowchart(definition) {
     const types = {};
     const interfaces = {};
     const mainBlocks = [];
+    const webBlocks = [];
     const externals = {};
     const processedFiles = new Set();
 
     const nodePattern = /(\w+)(?:\[([^\]{]+)(?:\{([^}]*)\})?\])?/;
+    const webStartPattern = /web->(.+)\.code/;
+    const webEndPattern = /web->(.+)\.end/;
     const methodPattern = /(@async\s+)?@(\w+)\.([^\{]+)(?:\{([^}]*)\})?:\s*(.+)/;
     const methodCodeStartPattern = /(@async\s+)?@{1,2}([\w.]+)\.code/;
     const methodCodeEndPattern = /@{1,2}([\w.]+)\.end/;
@@ -60,9 +63,9 @@ function parseFlowchart(definition) {
                 if (fs.existsSync(fullPath)) {
                     const content = fs.readFileSync(fullPath, "utf-8");
                     const subLines = content.split("\n").map(l => l.trim()).filter(l => l && !/^graph\b/.test(l));
-                    // Namespace is the relative path from the flows root or just the filename
-                    const subNamespace = path.join(namespace, path.dirname(includeFile), path.basename(includeFile, ".flow")).replace(/\\/g, "/").replace(/^\.\//, "");
-                    parseWorker(subLines, path.dirname(fullPath), subNamespace);
+                    const baseNamespace = namespace === "root" ? "" : namespace;
+                    const subNamespace = path.join(baseNamespace, path.dirname(includeFile), path.basename(includeFile, ".flow")).replace(/\\/g, "/").replace(/^\//, "").replace(/\/$/, "");
+                    parseWorker(subLines, path.dirname(fullPath), subNamespace || "root");
                 } else {
                     console.warn(`⚠️  Include not found: ${fullPath}`);
                 }
@@ -180,6 +183,20 @@ function parseFlowchart(definition) {
                 continue;
             }
 
+            // 8.5 Web Blocks
+            const webStartMatch = line.match(new RegExp(`^${webStartPattern.source}$`));
+            if (webStartMatch) {
+                const filename = webStartMatch[1];
+                let codeBlock = "";
+                i++;
+                while (i < lines.length && !lines[i].match(new RegExp(`^${webEndPattern.source}$`))) {
+                    codeBlock += lines[i] + "\n";
+                    i++;
+                }
+                webBlocks.push({ filename, code: codeBlock.trim() });
+                continue;
+            }
+
             // 9. Composition
             const compositionMatch = line.match(new RegExp(`^${nodePattern.source}(?:\\s*-->\\s*${nodePattern.source})?\\s*;?$`));
             if (compositionMatch) {
@@ -197,7 +214,7 @@ function parseFlowchart(definition) {
     const rootLines = definition.split("\n").map(l => l.trim()).filter(l => l && !/^graph\b/.test(l));
     parseWorker(rootLines, "./flows", "");
 
-    return { nodes, compositionEdges, extendsEdges, methods, types, interfaces, mainBlocks, externals };
+    return { nodes, compositionEdges, extendsEdges, methods, types, interfaces, mainBlocks, webBlocks, externals };
 }
 
 /** Helper functions: parseProps, indent, stripTs, toPascalCase (identical to your original) **/
@@ -248,10 +265,19 @@ function toPascalCase(str) { return str.replace(/[-_](.)/g, (_, c) => c.toUpperC
 /**
  * GENERATE FILES
  */
-function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods, types, interfaces, mainBlocks, externals }) {
-    const classNames = new Set(Object.values(nodes).map((n) => toPascalCase(path.basename(n.file, path.extname(n.file)))));
-    const interfaceNames = new Set(Object.keys(interfaces));
-    const typeNames = new Set(Object.keys(types));
+function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods, types, interfaces, mainBlocks, webBlocks, externals }) {
+    // === Pre-calculate all component names (for cross-namespace imports) ===
+    const allClassNames = new Set(Object.entries(nodes).map(([id, n]) => toPascalCase(path.basename(n.file || id, ".ts"))));
+    const allInterfaceNames = new Set(Object.keys(interfaces));
+    const allTypeNames = new Set(Object.keys(types));
+
+    // === 0. Web Blocks (Static Files) ===
+    for (const web of webBlocks) {
+        const outPath = path.join(baseDir, web.filename);
+        fs.mkdirSync(path.dirname(outPath), { recursive: true });
+        fs.writeFileSync(outPath, web.code, "utf-8");
+        console.log("📄 Web file generated: " + web.filename);
+    }
 
     function getRelativeImport(fromNamespace, toNamespace, filename) {
         const fromDir = path.join(baseDir, fromNamespace);
@@ -266,7 +292,7 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
         const typeOrClassImports = new Set();
         const fields = props.map((p) => {
             for (const ref of extractReferencedTypes(p.type)) {
-                if (types[ref] || interfaces[ref] || classNames.has(ref)) {
+                if (types[ref] || interfaces[ref] || allClassNames.has(ref)) {
                     if (ref !== typeName) typeOrClassImports.add(ref);
                 }
             }
@@ -345,9 +371,9 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
 
         for (const p of props) {
             for (const ref of extractReferencedTypes(p.type)) {
-                if ((types[ref] || interfaces[ref]) && !classNames.has(ref)) {
+                if ((types[ref] || interfaces[ref]) && !allClassNames.has(ref)) {
                     customImports.add(ref);
-                } else if (classNames.has(ref)) {
+                } else if (allClassNames.has(ref)) {
                     customImports.add("__class__" + ref);
                 }
             }
@@ -362,30 +388,30 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
                 if (methodData.params) {
                     for (const p of methodData.params) {
                         for (const ref of extractReferencedTypes(p.type)) {
-                            if ((types[ref] || interfaces[ref]) && !classNames.has(ref)) customImports.add(ref);
-                            else if (classNames.has(ref)) customImports.add("__class__" + ref);
+                            if ((types[ref] || interfaces[ref]) && !allClassNames.has(ref)) customImports.add(ref);
+                            else if (allClassNames.has(ref)) customImports.add("__class__" + ref);
                         }
                     }
                 }
                 if (methodData.returnType) {
                     for (const ref of extractReferencedTypes(methodData.returnType)) {
-                        if ((types[ref] || interfaces[ref]) && !classNames.has(ref)) customImports.add(ref);
-                        else if (classNames.has(ref)) customImports.add("__class__" + ref);
+                        if ((types[ref] || interfaces[ref]) && !allClassNames.has(ref)) customImports.add(ref);
+                        else if (allClassNames.has(ref)) customImports.add("__class__" + ref);
                     }
                 }
 
                 if (!methodData.code) continue;
-                const allKnownNames = [...classNames, ...Object.keys(types), ...Object.keys(interfaces)];
+                const allKnownNames = [...allClassNames, ...Object.keys(types), ...Object.keys(interfaces)];
                 for (const name of allKnownNames) {
                     if (name === className) continue;
                     if (new RegExp(`\\b${name}\\b`).test(methodData.code)) {
                         if (types[name] || interfaces[name]) customImports.add(name);
-                        else if (classNames.has(name)) customImports.add("__class__" + name);
+                        else if (allClassNames.has(name)) customImports.add("__class__" + name);
                     }
                 }
                 for (const [libName, libPath] of Object.entries(externals)) {
                     if (new RegExp(`\\b${libName}\\b`).test(methodData.code)) {
-                        externalImportLines.add(`import * as ${libName} from "${libPath}";`);
+                        externalImportLines.add(`import ${libName} from "${libPath}";`);
                     }
                 }
             }
@@ -457,22 +483,30 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
         const mainImports = new Set();
         const fullMainCode = mainBlocks.map(b => b.code).join("\n");
 
-        // Use a map to track name collisions for aliasing
-        const nameToComponent = new Map();
-
-        for (const name of [...classNames, ...interfaceNames, ...typeNames]) {
+        for (const name of [...allClassNames, ...allInterfaceNames, ...allTypeNames]) {
             if (new RegExp(`\\b${name}\\b`).test(fullMainCode)) {
-                const target = types[name] || interfaces[name] || Object.values(nodes).find(n => toPascalCase(path.basename(n.file, ".ts")) === name);
-                const relPath = getRelativeImport("", target.namespace, target.file || (name + ".ts"));
-                mainImports.add(`import ${interfaceNames.has(name) || typeNames.has(name) ? 'type ' : ''}{ ${name} } from "${relPath}";`);
+                // Find the source component regardless of its namespace
+                let target = types[name] || interfaces[name];
+                if (!target) {
+                    // Search nodes by ID or by PascalCase(file)
+                    const nodeEntry = Object.entries(nodes).find(([id, n]) => id === name || toPascalCase(path.basename(n.file || id, ".ts")) === name);
+                    if (nodeEntry) target = nodeEntry[1];
+                }
+
+                if (target) {
+                    const fileName = target.file || (name + ".ts");
+                    const relPath = getRelativeImport("", target.namespace, fileName);
+                    mainImports.add(`import ${allInterfaceNames.has(name) || allTypeNames.has(name) ? 'type ' : ''}{ ${name} } from "${relPath}";`);
+                }
             }
         }
         for (const [libName, libPath] of Object.entries(externals)) {
             if (new RegExp(`\\b${libName}\\b`).test(fullMainCode)) {
-                mainImports.add(`import * as ${libName} from "${libPath}";`);
+                mainImports.add(`import ${libName} from "${libPath}";`);
             }
         }
-        fs.writeFileSync(path.join(baseDir, "main.ts"), `${Array.from(mainImports).sort().join("\n")}\n\n${mainContent}\n`, "utf-8");
+        const finalMainContent = `${Array.from(mainImports).sort().join("\n")}\n\n${mainContent}\n`;
+        fs.writeFileSync(path.join(baseDir, "main.ts"), finalMainContent, "utf-8");
     }
 }
 
