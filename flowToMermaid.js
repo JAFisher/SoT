@@ -50,7 +50,7 @@ async function parseFlowchart(definition) {
     const externals = {};
     const processedFiles = new Set();
 
-    const nodePattern = /(\w+)\[([^\]{}]+?)(?:\.ts)?\s*(?:\{([^}]*)\})?\]/;
+    const nodePattern = /(\w+)(?:\[([^\]{]+)(?:\{([^}]*)\})?\])?/;
     const methodPattern = /(@async\s+)?@(\w+)\.([^{]+)(?:\{([^}]*)\})?:\s*(.+)/;
     const methodCodeStartPattern = /(@async\s+)?@{1,2}([\w.]+)\.code/;
     const methodCodeEndPattern = /@{1,2}([\w.]+)\.end/;
@@ -64,11 +64,11 @@ async function parseFlowchart(definition) {
     const includePattern = /include->([^ \n]+)/;
 
     function addNode(id, rawFile, props) {
-        const file = rawFile ? rawFile.trim().replace(/\.ts$/, "") : id;
+        const file = rawFile ? rawFile.trim().replace(/\.ts$/, "") : (nodes[id]?.file || id);
         if (!nodes[id]) {
             nodes[id] = { file, props: parseProps(props) };
         } else {
-            nodes[id].file = file;
+            if (rawFile) nodes[id].file = file;
             if (props) nodes[id].props = parseProps(props);
         }
     }
@@ -145,12 +145,8 @@ async function parseFlowchart(definition) {
                 continue;
             }
 
-            // Inheritance: ChildID[...] ---|> ParentID[...]
-            const fullNodePat = /(\w+)\[([^\]{}]+?)(?:\.ts)?\s*(?:\{([^}]+)\})?\]/;
-            const extendsRegex = new RegExp(
-                `^${fullNodePat.source}\\s*---\\|>\\s*${fullNodePat.source}\\s*;?$`
-            );
-            const extendsMatch = line.match(extendsRegex);
+            // 5. Inheritance
+            const extendsMatch = line.match(new RegExp(`^${nodePattern.source}\\s*---\\|>\\s*${nodePattern.source}\\s*;?$`));
             if (extendsMatch) {
                 const [, childId, childFile, childProps, parentId, parentFile, parentProps] = extendsMatch;
                 addNode(childId, childFile, childProps);
@@ -211,25 +207,12 @@ async function parseFlowchart(definition) {
                 continue;
             }
 
-            // Composition: simple form  A --> B  (no brackets)
-            const simpleCompMatch = line.match(/^(\w+)\s*-->\s*(\w+)\s*;?\s*$/);
-            if (simpleCompMatch && !line.includes("[")) {
-                const [, fromId, toId] = simpleCompMatch;
-                addNode(fromId, null, null);
-                addNode(toId, null, null);
-                compositionEdges.push([fromId, toId]);
-                continue;
-            }
-
-            // Composition with node defs
-            const compRegex = new RegExp(
-                `^${fullNodePat.source}(?:\\s*-->\\s*${fullNodePat.source})?\\s*;?$`
-            );
-            const compositionMatch = line.match(compRegex);
+            // 9. Composition
+            const compositionMatch = line.match(new RegExp(`^${nodePattern.source}(?:\\s*-->\\s*${nodePattern.source})?\\s*;?$`));
             if (compositionMatch) {
                 const [, fromId, fromFile, fromProps, toId, toFile, toProps] = compositionMatch;
                 addNode(fromId, fromFile, fromProps);
-                if (toId && toFile) {
+                if (toId) {
                     addNode(toId, toFile, toProps);
                     compositionEdges.push([fromId, toId]);
                 }

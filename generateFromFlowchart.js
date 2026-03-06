@@ -23,7 +23,7 @@ function parseFlowchart(definition) {
     const externals = {};
     const processedFiles = new Set();
 
-    const nodePattern = /(\w+)\[([^\]{]+)(?:\{([^}]*)\})?\]/;
+    const nodePattern = /(\w+)(?:\[([^\]{]+)(?:\{([^}]*)\})?\])?/;
     const methodPattern = /(@async\s+)?@(\w+)\.([^\{]+)(?:\{([^}]*)\})?:\s*(.+)/;
     const methodCodeStartPattern = /(@async\s+)?@{1,2}([\w.]+)\.code/;
     const methodCodeEndPattern = /@{1,2}([\w.]+)\.end/;
@@ -36,11 +36,12 @@ function parseFlowchart(definition) {
 
     function addNode(id, file, props, namespace) {
         if (!nodes[id]) {
-            nodes[id] = { file: file.trim(), props: parseProps(props), namespace };
+            const fileName = (file || id + ".ts").trim();
+            nodes[id] = { file: fileName, props: parseProps(props), namespace };
         } else {
-            nodes[id].file = file.trim();
+            if (file) nodes[id].file = file.trim();
             if (props) nodes[id].props = parseProps(props);
-            nodes[id].namespace = namespace;
+            if (namespace !== undefined) nodes[id].namespace = namespace;
         }
     }
 
@@ -182,9 +183,9 @@ function parseFlowchart(definition) {
             // 9. Composition
             const compositionMatch = line.match(new RegExp(`^${nodePattern.source}(?:\\s*-->\\s*${nodePattern.source})?\\s*;?$`));
             if (compositionMatch) {
-                const [, fromId, fromFile, findProps, toId, toFile, toProps] = compositionMatch;
-                addNode(fromId, fromFile, findProps, namespace);
-                if (toId && toFile) {
+                const [, fromId, fromFile, fromProps, toId, toFile, toProps] = compositionMatch;
+                addNode(fromId, fromFile, fromProps, namespace);
+                if (toId) {
                     addNode(toId, toFile, toProps, namespace);
                     compositionEdges.push([fromId, toId]);
                 }
@@ -346,6 +347,8 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
             for (const ref of extractReferencedTypes(p.type)) {
                 if ((types[ref] || interfaces[ref]) && !classNames.has(ref)) {
                     customImports.add(ref);
+                } else if (classNames.has(ref)) {
+                    customImports.add("__class__" + ref);
                 }
             }
         }
