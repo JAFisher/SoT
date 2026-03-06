@@ -23,9 +23,9 @@ function parseFlowchart(definition) {
         .filter((l) => l && !/^graph\b/.test(l));
 
     const nodePattern = /(\w+)\[([^\]{]+)(?:\{([^}]+)\})?\]/;
-    const methodPattern = /@(\w+)\.([^\{]+)(?:\{([^}]+)\})?:\s*(.+)/;
-    const methodCodeStartPattern = /@{1,2}(\w+)\.([^.]+)\.code/;
-    const methodCodeEndPattern = /@{1,2}(\w+)\.([^.]+)\.end/;
+    const methodPattern = /(@async\s+)?@(\w+)\.([^\{]+)(?:\{([^}]+)\})?:\s*(.+)/;
+    const methodCodeStartPattern = /(@async\s+)?@{1,2}([\w.]+)\.code/;
+    const methodCodeEndPattern = /@{1,2}([\w.]+)\.end/;
     const typePattern = /type->(\w+)\s*\{([^}]+)\}/;
     const interfacePattern = /interface->(\w+)\s*\{([^}]+)\}/;
     const mainCodeStartPattern = /@{1,2}main\.code/;
@@ -83,9 +83,10 @@ function parseFlowchart(definition) {
         // Handle Method Signatures
         const methodMatch = line.match(new RegExp(`^${methodPattern.source}`));
         if (methodMatch) {
-            const [, className, methodName, params, returnType] = methodMatch;
+            const [, asyncFlag, className, methodName, params, returnType] = methodMatch;
             if (!methods[className]) methods[className] = {};
             methods[className][methodName] = {
+                async: !!asyncFlag,
                 params: parseProps(params),
                 returnType: (returnType || "").trim(),
             };
@@ -107,7 +108,11 @@ function parseFlowchart(definition) {
         // Handle Method Code Blocks
         const methodCodeStartMatch = line.match(new RegExp(`^${methodCodeStartPattern.source}$`));
         if (methodCodeStartMatch) {
-            const [, className, methodName] = methodCodeStartMatch;
+            const [, asyncFlag, targetFull] = methodCodeStartMatch;
+            const parts = targetFull.split('.');
+            const methodName = parts.pop();
+            const className = parts.join('.').replace(/^@+/, ""); // Strip leading @ if any remain
+
             let codeBlock = "";
             i++;
             while (i < lines.length && !lines[i].match(new RegExp(`^${methodCodeEndPattern.source}$`))) {
@@ -123,13 +128,14 @@ function parseFlowchart(definition) {
                     methods[className][methodName] = { params: [], returnType: "any" };
                 }
                 methods[className][methodName].code = trimmed;
+                if (asyncFlag) methods[className][methodName].async = true;
             }
             continue;
         }
 
         // Handle Composition
         const compositionMatch = line.match(new RegExp(`^${nodePattern.source}(?:\\s*-->\\s*${nodePattern.source})?\\s*;?$`));
-        
+
         if (compositionMatch) {
 
             const [, fromId, fromFile, fromProps, toId, toFile, toProps] = compositionMatch;
@@ -227,7 +233,7 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
                 if (
                     (types[ref] && !classNames.has(ref) || interfaces[ref] && !classNames.has(ref))
                 ) {
-                    
+
                     customImports.add(ref);
                 }
             }
@@ -272,11 +278,11 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
         function filterNonUniqueUsingSet(arr) {
             // Use filter to find unique items and create a Set to ensure uniqueness
             const uniqueItems = new Set(arr.filter(item => {
-                
+
                 return arr.filter(x => x.trim() === item.trim()).length === 1
-                }
+            }
             ));
-            
+
             // Convert the Set back to an array and return it
             return [...uniqueItems];
         }
@@ -286,7 +292,7 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
             .filter(Boolean);
 
 
-        
+
         allImports = filterNonUniqueUsingSet(allImports);
 
         allImports = allImports.join("\n");
@@ -303,7 +309,7 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
 
         const methodsContent = Object.entries(methods[className] || {})
             .filter(([name]) => name !== "constructor")
-            .map(([mName, mData]) => `\n  public ${mName}(${(mData.params || []).map(p => `${p.name}: ${p.type}`).join(', ')}): ${mData.returnType || 'any'} {\n${indent(mData.code || '', 4)}\n  }`).join("");
+            .map(([mName, mData]) => `\n  public ${mData.async ? 'async ' : ''}${mName}(${(mData.params || []).map(p => `${p.name}: ${p.type}`).join(', ')}): ${mData.returnType || 'any'} {\n${indent(mData.code || '', 4)}\n  }`).join("");
 
         const content = `${allImports ? allImports + "\n\n" : ""}export class ${className}${extendsClause} {\n${fields}${ctorContent}${methodsContent}\n}`;
         fs.writeFileSync(path.join(baseDir, filename), content.trimStart(), "utf-8");

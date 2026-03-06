@@ -1,0 +1,132 @@
+graph TD
+  %% ---- Entities ----
+  Ship[Ship.ts{name: string, fuel: number, location: Planet, cargo: string[]}]
+  Planet[Planet.ts{name: string, x: number, y: number, resource: string}]
+  Trader[Trader.ts{name: string, credits: number, ship: Ship}]
+
+  %% ---- Relationships ----
+  Ship --> Planet
+  Trader --> Ship
+
+  type->TradeResult{success: boolean, message: string}
+
+  %% ---- Ship Logic ----
+  @Ship.calculateDistance{target: Planet}: number
+  @@Ship.calculateDistance.code
+    const dx = target.x - this.location.x;
+    const dy = target.y - this.location.y;
+    return Math.sqrt(dx * dx + dy * dy);
+  @@Ship.calculateDistance.end
+
+  @Ship.flyTo{target: Planet}: boolean
+  @@Ship.flyTo.code
+    const dist = this.calculateDistance(target);
+    const fuelCost = Math.floor(dist * 2);
+    if (this.fuel < fuelCost) {
+      console.log(this.name + " doesn't have enough fuel to reach " + target.name + "!");
+      return false;
+    }
+    this.fuel -= fuelCost;
+    this.location = target;
+    console.log(this.name + " arrived at " + target.name + ". Fuel remaining: " + this.fuel);
+    return true;
+  @@Ship.flyTo.end
+
+  %% ---- Planet Logic ----
+  @Planet.getPrice{item: string}: number
+  @@Planet.getPrice.code
+    // Dynamic pricing based on planet name length and item
+    let base = this.name.length * 10;
+    if (item === this.resource) return Math.floor(base * 0.5); // Cheap if they produce it
+    return Math.floor(base * 1.5); // Expensive otherwise
+  @@Planet.getPrice.end
+
+  %% ---- Trader Logic ----
+  @Trader.buyResource{planet: Planet, item: string}: boolean
+  @@Trader.buyResource.code
+    const price = planet.getPrice(item);
+    if (this.credits < price) {
+      console.log(this.name + " cannot afford " + item + " (" + price + " credits)");
+      return false;
+    }
+    this.credits -= price;
+    this.ship.cargo.push(item);
+    console.log(this.name + " bought " + item + " for " + price + " credits.");
+    return true;
+  @@Trader.buyResource.end
+
+  @Trader.sellResource{planet: Planet, item: string}: boolean
+  @@Trader.sellResource.code
+    const index = this.ship.cargo.indexOf(item);
+    if (index === -1) {
+       console.log(this.name + " doesn't have any " + item + " to sell!");
+       return false;
+    }
+    const price = planet.getPrice(item) + 20; // Slight markup for selling
+    this.credits += price;
+    this.ship.cargo.splice(index, 1);
+    console.log(this.name + " sold " + item + " for " + price + " credits. Total credits: " + this.credits);
+    return true;
+  @@Trader.sellResource.end
+
+  %% ---- Main Simulation ----
+  @@main.code
+  async function runSpaceTradeSim() {
+    console.log("=== Galactic Trade Empire Simulation ===");
+
+    const earth = new Planet();
+    earth.name = "Earth";
+    earth.x = 0;
+    earth.y = 0;
+    earth.resource = "Water";
+
+    const mars = new Planet();
+    mars.name = "Mars";
+    mars.x = 10;
+    mars.y = 5;
+    mars.resource = "Iron";
+
+    const belarusP6 = new Planet();
+    belarusP6.name = "Belarus P6";
+    belarusP6.x = -15;
+    belarusP6.y = 20;
+    belarusP6.resource = "Crystals";
+
+    const ship = new Ship();
+    ship.name = "SS Antigravity";
+    ship.fuel = 100;
+    ship.location = earth;
+    ship.cargo = [];
+
+    const player = new Trader();
+    player.name = "Commander Fishy";
+    player.credits = 500;
+    player.ship = ship;
+
+    console.log("Welcome, " + player.name + "! Current Credits: " + player.credits);
+    console.log("Starting at Earth. Looking for Iron...");
+
+    // Trade Loop
+    if (player.buyResource(earth, "Water")) {
+      console.log("Heading to Mars to sell Water and buy Iron...");
+      if (ship.flyTo(mars)) {
+        player.sellResource(mars, "Water");
+        player.buyResource(mars, "Iron");
+        
+        console.log("Heading to Belarus P6 to sell Iron...");
+        if (ship.flyTo(belarusP6)) {
+          player.sellResource(belarusP6, "Iron");
+          player.buyResource(belarusP6, "Crystals");
+        }
+      }
+    }
+
+    console.log("\nSimulation Ended.");
+    console.log("Final Report for " + player.name + ":");
+    console.log("- Credits: " + player.credits);
+    console.log("- Cargo: " + (ship.cargo.length ? ship.cargo.join(", ") : "Empty"));
+    console.log("- Location: " + ship.location.name);
+  }
+
+  runSpaceTradeSim();
+  @@main.end

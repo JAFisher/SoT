@@ -28,9 +28,9 @@ function parseFlowchart(definition) {
         .filter((l) => l && !/^graph\b/.test(l) && !/^%%/.test(l));
 
     const nodePattern = /(\w+)\[([^\]{}]+?)(?:\.ts)?\s*(?:\{([^}]+)\})?\]/;
-    const methodPattern = /@(\w+)\.([^{]+)(?:\{([^}]+)\})?:\s*(.+)/;
-    const methodCodeStartPattern = /@{1,2}(\w+)\.([^.]+)\.code/;
-    const methodCodeEndPattern = /@{1,2}(\w+)\.([^.]+)\.end/;
+    const methodPattern = /(@async\s+)?@(\w+)\.([^{]+)(?:\{([^}]+)\})?:\s*(.+)/;
+    const methodCodeStartPattern = /(@async\s+)?@{1,2}([\w.]+)\.code/;
+    const methodCodeEndPattern = /@{1,2}([\w.]+)\.end/;
     const typePattern = /type->(\w+)\s*\{([^}]+)\}/;
     const interfacePattern = /interface->(\w+)\s*\{([^}]+)\}/;
     const mainCodeStartPattern = /@{1,2}main\.code/;
@@ -97,9 +97,10 @@ function parseFlowchart(definition) {
         // Method signatures
         const methodMatch = line.match(new RegExp(`^${methodPattern.source}`));
         if (methodMatch) {
-            const [, className, methodName, params, returnType] = methodMatch;
+            const [, asyncFlag, className, methodName, params, returnType] = methodMatch;
             if (!methods[className]) methods[className] = {};
             methods[className][methodName.trim()] = {
+                async: !!asyncFlag,
                 params: parseProps(params),
                 returnType: (returnType || "").trim(),
             };
@@ -121,7 +122,11 @@ function parseFlowchart(definition) {
         // Method code blocks — skip content but record
         const methodCodeStartMatch = line.match(new RegExp(`^${methodCodeStartPattern.source}$`));
         if (methodCodeStartMatch) {
-            const [, className, methodName] = methodCodeStartMatch;
+            const [, asyncFlag, targetFull] = methodCodeStartMatch;
+            const parts = targetFull.split('.');
+            const methodName = parts.pop();
+            const className = parts.join('.').replace(/^@+/, ""); // Strip leading @ if any remain
+
             let codeBlock = "";
             i++;
             while (i < lines.length && !lines[i].match(new RegExp(`^${methodCodeEndPattern.source}$`))) {
@@ -136,6 +141,7 @@ function parseFlowchart(definition) {
                     methods[className][methodName] = { params: [], returnType: "any" };
                 }
                 methods[className][methodName].code = codeBlock.trim();
+                if (asyncFlag) methods[className][methodName].async = true;
             }
             continue;
         }
@@ -197,7 +203,8 @@ function toMermaidDiagram(parsed) {
                 const md = classMethods[m];
                 const paramStr = (md.params || []).map(p => `${p.name}: ${p.type}`).join(", ");
                 const ret = md.returnType || "void";
-                sections.push(`${m}(${paramStr}): ${ret}`);
+                const prefix = md.async ? "⚡ " : "";
+                sections.push(`${prefix}${m}(${paramStr}): ${ret}`);
             }
         }
 
@@ -262,6 +269,7 @@ function collectMetadata(parsed) {
                 class: cls,
                 name,
                 signature: `${cls}.${name}(${params}): ${data.returnType || "void"}`,
+                async: !!data.async,
                 hasCode: !!data.code,
             });
         }

@@ -12,12 +12,14 @@
           "class": "Server",
           "name": "start",
           "signature": "Server.start(): any",
+          "async": false,
           "hasCode": true
         },
         {
           "class": "Client",
           "name": "fetchTasks",
           "signature": "Client.fetchTasks(): any",
+          "async": false,
           "hasCode": true
         }
       ],
@@ -50,24 +52,28 @@
           "class": "AuthService",
           "name": "register",
           "signature": "AuthService.register(req: LoginRequest): User",
+          "async": false,
           "hasCode": true
         },
         {
           "class": "AuthService",
           "name": "login",
           "signature": "AuthService.login(req: LoginRequest, user: User): AuthResult",
+          "async": false,
           "hasCode": true
         },
         {
           "class": "Session",
           "name": "validate",
           "signature": "Session.validate(): any",
+          "async": false,
           "hasCode": true
         },
         {
           "class": "Session",
           "name": "revoke",
           "signature": "Session.revoke(): any",
+          "async": false,
           "hasCode": true
         }
       ]
@@ -86,12 +92,14 @@
           "class": "Monitor",
           "name": "watch",
           "signature": "Monitor.watch(): any",
+          "async": false,
           "hasCode": true
         },
         {
           "class": "Alerter",
           "name": "send",
           "signature": "Alerter.send(msg: string): void",
+          "async": false,
           "hasCode": true
         }
       ],
@@ -102,27 +110,56 @@
       }
     }
   },
-  "docs": {
-    "diagram": "graph TD\n  DocServer[\"Server\n─────────────────\nport: number\"]",
+  "galaxy": {
+    "diagram": "graph TD\n  Ship[\"Ship\n─────────────────\nname: string\nfuel: number\nlocation: Planet\ncargo: string[]\n─────────────────\ncalculateDistance(target: Planet): number\nflyTo(target: Planet): boolean\"]\n  Planet[\"Planet\n─────────────────\nname: string\nx: number\ny: number\nresource: string\n─────────────────\ngetPrice(item: string): number\"]\n  Trader[\"Trader\n─────────────────\nname: string\ncredits: number\nship: Ship\n─────────────────\nbuyResource(planet: Planet, item: string): boolean\nsellResource(planet: Planet, item: string): boolean\"]\n  Ship --> Planet\n  Trader --> Ship\n\n  subgraph Types\n    direction TB\n    T_TradeResult[\"«type»\nTradeResult\n─────────────────\nsuccess: boolean\nmessage: string\"]\n  end",
     "metadata": {
-      "nodeCount": 1,
-      "compositionEdgeCount": 0,
+      "nodeCount": 3,
+      "compositionEdgeCount": 2,
       "inheritanceEdgeCount": 0,
-      "types": {},
+      "types": {
+        "TradeResult": [
+          "success: boolean",
+          "message: string"
+        ]
+      },
       "interfaces": {},
       "methods": [
         {
-          "class": "DocServer",
-          "name": "start",
-          "signature": "DocServer.start(): any",
+          "class": "Ship",
+          "name": "calculateDistance",
+          "signature": "Ship.calculateDistance(target: Planet): number",
+          "async": false,
+          "hasCode": true
+        },
+        {
+          "class": "Ship",
+          "name": "flyTo",
+          "signature": "Ship.flyTo(target: Planet): boolean",
+          "async": false,
+          "hasCode": true
+        },
+        {
+          "class": "Planet",
+          "name": "getPrice",
+          "signature": "Planet.getPrice(item: string): number",
+          "async": false,
+          "hasCode": true
+        },
+        {
+          "class": "Trader",
+          "name": "buyResource",
+          "signature": "Trader.buyResource(planet: Planet, item: string): boolean",
+          "async": false,
+          "hasCode": true
+        },
+        {
+          "class": "Trader",
+          "name": "sellResource",
+          "signature": "Trader.sellResource(planet: Planet, item: string): boolean",
+          "async": false,
           "hasCode": true
         }
-      ],
-      "externals": {
-        "http": "node:http",
-        "fs": "node:fs",
-        "path": "node:path"
-      }
+      ]
     }
   },
   "mfa": {
@@ -138,6 +175,7 @@
           "class": "MfaService",
           "name": "sendCode",
           "signature": "MfaService.sendCode(user: User): string",
+          "async": false,
           "hasCode": true
         }
       ]
@@ -168,30 +206,35 @@
           "class": "Order",
           "name": "addItem",
           "signature": "Order.addItem(item: LineItem): void",
+          "async": false,
           "hasCode": true
         },
         {
           "class": "Order",
           "name": "getTotal",
           "signature": "Order.getTotal(): any",
+          "async": false,
           "hasCode": true
         },
         {
           "class": "OrderService",
           "name": "placeOrder",
           "signature": "OrderService.placeOrder(order: Order): OrderSummary",
+          "async": false,
           "hasCode": true
         },
         {
           "class": "OrderService",
           "name": "refundOrder",
           "signature": "OrderService.refundOrder(orderId: string, order: Order): boolean",
+          "async": false,
           "hasCode": true
         },
         {
           "class": "PaymentProcessor",
           "name": "charge",
           "signature": "PaymentProcessor.charge(amount: number, customerId: string): PaymentResult",
+          "async": false,
           "hasCode": true
         }
       ]
@@ -210,24 +253,28 @@
           "class": "Deck",
           "name": "shuffle",
           "signature": "Deck.shuffle(): any",
+          "async": false,
           "hasCode": true
         },
         {
           "class": "Hand",
           "name": "getScore",
           "signature": "Hand.getScore(): any",
+          "async": false,
           "hasCode": true
         },
         {
           "class": "Game",
           "name": "dealerTurn",
           "signature": "Game.dealerTurn(): any",
+          "async": false,
           "hasCode": true
         },
         {
           "class": "Game",
           "name": "start",
           "signature": "Game.start(): any",
+          "async": false,
           "hasCode": true
         }
       ],
@@ -261,33 +308,66 @@
           "class": "Player",
           "name": "attack",
           "signature": "Player.attack(target: Enemy): number",
+          "async": false,
           "hasCode": true
         },
         {
           "class": "Player",
           "name": "gainExperience",
           "signature": "Player.gainExperience(amount: number): void",
+          "async": false,
           "hasCode": true
         },
         {
           "class": "Enemy",
           "name": "takeTurn",
           "signature": "Enemy.takeTurn(target: Player): void",
+          "async": false,
           "hasCode": true
         },
         {
           "class": "Enemy",
           "name": "dropLoot",
           "signature": "Enemy.dropLoot(): any",
+          "async": false,
           "hasCode": true
         },
         {
           "class": "Inventory",
           "name": "addItem",
           "signature": "Inventory.addItem(item: Item): boolean",
+          "async": false,
           "hasCode": true
         }
       ]
+    }
+  },
+  "weather": {
+    "diagram": "graph TD\n  WeatherService[\"WeatherService\n─────────────────\napiKey: string\nhistory: WeatherUpdate[]\n─────────────────\n⚡ getWeather(city: string): Promise<WeatherUpdate>\"]\n\n  subgraph Types\n    direction TB\n    T_WeatherUpdate[\"«type»\nWeatherUpdate\n─────────────────\ntemp: number\ncondition: string\ntimestamp: number\"]\n  end",
+    "metadata": {
+      "nodeCount": 1,
+      "compositionEdgeCount": 0,
+      "inheritanceEdgeCount": 0,
+      "types": {
+        "WeatherUpdate": [
+          "temp: number",
+          "condition: string",
+          "timestamp: number"
+        ]
+      },
+      "interfaces": {},
+      "methods": [
+        {
+          "class": "WeatherService",
+          "name": "getWeather",
+          "signature": "WeatherService.getWeather(city: string): Promise<WeatherUpdate>",
+          "async": true,
+          "hasCode": true
+        }
+      ],
+      "externals": {
+        "axios": "axios"
+      }
     }
   }
 }
