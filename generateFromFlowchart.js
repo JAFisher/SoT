@@ -262,11 +262,26 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
 
     // 1. Types
     for (const [typeName, { props, namespace }] of Object.entries(types)) {
+        const typeOrClassImports = new Set();
         const fields = props.map((p) => {
+            for (const ref of extractReferencedTypes(p.type)) {
+                if (types[ref] || interfaces[ref] || classNames.has(ref)) {
+                    if (ref !== typeName) typeOrClassImports.add(ref);
+                }
+            }
             const cleanType = p.type.includes("):") ? p.type.replace(/\):/g, ") =>") : p.type;
             return `  ${p.name}: ${cleanType};`;
         }).join("\n");
-        const content = `export type ${typeName} = {\n${fields}\n};`;
+
+        const importLines = Array.from(typeOrClassImports).map((name) => {
+            const target = types[name] || interfaces[name] || Object.values(nodes).find(n => toPascalCase(path.basename(n.file, ".ts")) === name);
+            const targetNamespace = target.namespace || "";
+            const targetFile = target.file || (name + ".ts");
+            const relPath = getRelativeImport(namespace, targetNamespace, targetFile);
+            return `import type { ${name} } from "${relPath}";`;
+        }).join("\n");
+
+        const content = `${importLines ? importLines + "\n\n" : ""}export type ${typeName} = {\n${fields}\n};`;
         const outPath = path.join(baseDir, namespace, `${typeName}.ts`);
         fs.mkdirSync(path.dirname(outPath), { recursive: true });
         fs.writeFileSync(outPath, content, "utf-8");
@@ -276,9 +291,11 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
     for (const [interfaceName, { props, namespace }] of Object.entries(interfaces)) {
         const typeOrClassImports = new Set();
         const fields = props.map((p) => {
-            const mGeneric = p.type.match(/Array<(\w+)>/);
-            const elem = mGeneric ? mGeneric[1] : p.type.replace(/\[\]$/, "");
-            if (types[elem] || interfaces[elem] || classNames.has(elem)) typeOrClassImports.add(elem);
+            for (const ref of extractReferencedTypes(p.type)) {
+                if (types[ref] || interfaces[ref] || classNames.has(ref)) {
+                    if (ref !== interfaceName) typeOrClassImports.add(ref);
+                }
+            }
 
             // Fix: convert "(): void" to "() => void" for interfaces
             const cleanType = p.type.includes("):") ? p.type.replace(/\):/g, ") =>") : p.type;
@@ -458,17 +475,11 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
 
 function extractReferencedTypes(typeStr) {
     if (!typeStr) return [];
-    // Match Array<Foo>, Foo[], Foo, etc.
-    const matches = [];
-    // Array<Foo>
-    const genericMatch = typeStr.match(/Array<(\w+)>/);
-    if (genericMatch) matches.push(genericMatch[1]);
-    // Foo[]
-    const arrayMatch = typeStr.match(/^(\w+)\[\]$/);
-    if (arrayMatch) matches.push(arrayMatch[1]);
-    // Single type
-    if (/^\w+$/.test(typeStr)) matches.push(typeStr);
-    return matches;
+    // Find all PascalCase words (potential types)
+    const matches = typeStr.match(/\b[A-Z]\w*\b/g) || [];
+    // Exclude built-in generics like Promise and Array
+    const builtIns = new Set(["Promise", "Array", "Record", "Partial", "Pick", "Omit"]);
+    return matches.filter(m => !builtIns.has(m));
 }
 
 export function generateFromFlowchart(definition, outDir = "./out") {
