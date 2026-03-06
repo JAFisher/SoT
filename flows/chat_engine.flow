@@ -1,11 +1,12 @@
 graph TD
     extern->socketio from "socket.io"
 
-    ChatManager[ChatManager.ts{io: any, users: Map<string, string>}]
-
+    ChatManager[ChatManager.ts{io: any, users: Map<string, string>, rooms: Set<string>}]
+    
     @ChatManager.constructor
     @@ChatManager.constructor.code
         this.users = new Map();
+        this.rooms = new Set(["General"]);
     @@ChatManager.constructor.end
 
     @ChatManager.attach{server: any}: void
@@ -17,28 +18,44 @@ graph TD
 
             socket.on("join", (username) => {
                 this.users.set(socket.id, username);
-                this.io.emit("message", {
+                socket.join("General");
+                this.io.to("General").emit("message", {
                     user: "System",
-                    text: `${username} joined the chat`
+                    text: `${username} joined General`
                 });
+                socket.emit("roomList", Array.from(this.rooms));
             });
 
-            socket.on("chatMessage", (text) => {
+            socket.on("createRoom", (roomName) => {
+                if (roomName && !this.rooms.has(roomName)) {
+                    this.rooms.add(roomName);
+                    this.io.emit("roomList", Array.from(this.rooms));
+                }
+            });
+
+            socket.on("joinRoom", (roomName) => {
                 const username = this.users.get(socket.id) || "Anonymous";
-                this.io.emit("message", {
+                if (this.rooms.has(roomName)) {
+                    // Leave previous rooms
+                    socket.rooms.forEach(r => { if(r !== socket.id) socket.leave(r); });
+                    socket.join(roomName);
+                    socket.emit("message", { user: "System", text: `You joined ${roomName}` });
+                    socket.to(roomName).emit("message", { user: "System", text: `${username} joined ${roomName}` });
+                }
+            });
+
+            socket.on("chatMessage", (data) => {
+                const username = this.users.get(socket.id) || "Anonymous";
+                const room = Array.from(socket.rooms).find(r => r !== socket.id) || "General"; // Get current room
+                this.io.to(room).emit("message", {
                     user: username,
-                    text: text
+                    text: data.text
                 });
             });
 
             socket.on("disconnect", () => {
                 const username = this.users.get(socket.id);
-                if (username) {
-                    this.io.emit("message", {
-                        user: "System",
-                        text: `${username} left the chat`
-                    });
-                }
+                // System message to all rooms they were in
                 this.users.delete(socket.id);
             });
         });
