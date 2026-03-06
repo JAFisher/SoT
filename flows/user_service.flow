@@ -1,0 +1,20 @@
+include->db.flow
+
+UserService[UserService.ts]
+
+UserService --> DB
+
+@UserService.getUser{id: number}: Promise<User>
+@@UserService.getUser.code
+  console.log("Fetching user...");
+  // Simulated access to Included DB class
+  const db = new Database();
+  db.connect();
+  return { id, username: "flow_user", email: "user@flow.com" };
+@@UserService.getUser.end
+
+@async @main.code
+  const us = new UserService();
+  const user = await us.getUser(1);
+  console.log("Modular Flow Result:", user);
+@main.end

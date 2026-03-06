@@ -9,6 +9,7 @@
     "run:auth": "npx tsx ./src/auth/main.ts",
     "run:orders": "npx tsx ./src/orders/main.ts",
     "run:poker": "npx tsx ./src/poker/main.ts",
+    "run:userservice": "npx tsx ./src/user_service/main.ts",
     "run:api": "npx tsx ./src/apiwithclient/main.ts",
     "chart:build": "node flowToMermaid.js",
     "chart": "node flowToMermaid.js && npx -y serve viewer"

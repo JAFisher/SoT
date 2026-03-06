@@ -110,6 +110,35 @@
       }
     }
   },
+  "db": {
+    "diagram": "graph TD\n  DB[\"Database\n─────────────────\nconnect(): void\"]\n\n  subgraph Types\n    direction TB\n    T_User[\"«type»\nUser\n─────────────────\nid: number\nusername: string\nemail: string\"]\n    T_QueryOptions[\"«type»\nQueryOptions\n─────────────────\nlimit: number\noffset: number\"]\n  end",
+    "metadata": {
+      "nodeCount": 1,
+      "compositionEdgeCount": 0,
+      "inheritanceEdgeCount": 0,
+      "types": {
+        "User": [
+          "id: number",
+          "username: string",
+          "email: string"
+        ],
+        "QueryOptions": [
+          "limit: number",
+          "offset: number"
+        ]
+      },
+      "interfaces": {},
+      "methods": [
+        {
+          "class": "Database",
+          "name": "connect",
+          "signature": "Database.connect(): void",
+          "async": false,
+          "hasCode": true
+        }
+      ]
+    }
+  },
   "galaxy": {
     "diagram": "graph TD\n  Ship[\"Ship\n─────────────────\nname: string\nfuel: number\nlocation: Planet\ncargo: string[]\n─────────────────\ncalculateDistance(target: Planet): number\nflyTo(target: Planet): boolean\"]\n  Planet[\"Planet\n─────────────────\nname: string\nx: number\ny: number\nresource: string\n─────────────────\ngetPrice(item: string): number\"]\n  Trader[\"Trader\n─────────────────\nname: string\ncredits: number\nship: Ship\n─────────────────\nbuyResource(planet: Planet, item: string): boolean\nsellResource(planet: Planet, item: string): boolean\"]\n  Ship --> Planet\n  Trader --> Ship\n\n  subgraph Types\n    direction TB\n    T_TradeResult[\"«type»\nTradeResult\n─────────────────\nsuccess: boolean\nmessage: string\"]\n  end",
     "metadata": {
@@ -337,6 +366,49 @@
           "name": "addItem",
           "signature": "Inventory.addItem(item: Item): boolean",
           "async": false,
+          "hasCode": true
+        }
+      ]
+    }
+  },
+  "user_service": {
+    "diagram": "graph TD\n  DB[\"DB\"]\n  UserService[\"UserService\n─────────────────\ngetUser(id: number): Promise<User>\"]\n  UserService --> DB\n\n  subgraph Types\n    direction TB\n    T_User[\"«type»\nUser\n─────────────────\nid: number\nusername: string\nemail: string\"]\n    T_QueryOptions[\"«type»\nQueryOptions\n─────────────────\nlimit: number\noffset: number\"]\n  end",
+    "metadata": {
+      "nodeCount": 2,
+      "compositionEdgeCount": 1,
+      "inheritanceEdgeCount": 0,
+      "types": {
+        "User": [
+          "id: number",
+          "username: string",
+          "email: string"
+        ],
+        "QueryOptions": [
+          "limit: number",
+          "offset: number"
+        ]
+      },
+      "interfaces": {},
+      "methods": [
+        {
+          "class": "Database",
+          "name": "connect",
+          "signature": "Database.connect(): void",
+          "async": false,
+          "hasCode": true
+        },
+        {
+          "class": "UserService",
+          "name": "getUser",
+          "signature": "UserService.getUser(id: number): Promise<User>",
+          "async": false,
+          "hasCode": true
+        },
+        {
+          "class": "",
+          "name": "main",
+          "signature": ".main(): any",
+          "async": true,
           "hasCode": true
         }
       ]

@@ -12,7 +12,7 @@ function parseProps(propStr) {
     });
 }
 
-function parseFlowchart(definition) {
+async function parseFlowchart(definition) {
     const compositionEdges = [];
     const extendsEdges = [];
     const nodes = {};
@@ -21,11 +21,7 @@ function parseFlowchart(definition) {
     const interfaces = {};
     const mainBlocks = [];
     const externals = {};
-
-    const lines = definition
-        .split("\n")
-        .map((l) => l.trim())
-        .filter((l) => l && !/^graph\b/.test(l) && !/^%%/.test(l));
+    const processedFiles = new Set();
 
     const nodePattern = /(\w+)\[([^\]{}]+?)(?:\.ts)?\s*(?:\{([^}]+)\})?\]/;
     const methodPattern = /(@async\s+)?@(\w+)\.([^{]+)(?:\{([^}]+)\})?:\s*(.+)/;
@@ -38,6 +34,7 @@ function parseFlowchart(definition) {
     const externPattern = /extern->(\w+)\s*from\s*['"]([^'"]+)['"]/;
     const webStartPattern = /web->(.+)\.code/;
     const webEndPattern = /web->(.+)\.end/;
+    const includePattern = /include->([^ \n]+)/;
 
     function addNode(id, rawFile, props) {
         const file = rawFile ? rawFile.trim().replace(/\.ts$/, "") : id;
@@ -49,128 +46,150 @@ function parseFlowchart(definition) {
         }
     }
 
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
+    async function parseWorker(lines, currentDir) {
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
 
-        // Skip externals
-        if (externPattern.test(line)) {
-            const m = line.match(externPattern);
-            externals[m[1]] = m[2];
-            continue;
-        }
+            // 0. Handle Includes
+            const includeMatch = line.match(includePattern);
+            if (includeMatch) {
+                const includeFile = includeMatch[1];
+                const fullPath = path.resolve(currentDir, includeFile);
+                if (processedFiles.has(fullPath)) continue;
+                processedFiles.add(fullPath);
 
-        // Skip web blocks
-        if (webStartPattern.test(line)) {
-            i++;
-            while (i < lines.length && !webEndPattern.test(lines[i])) i++;
-            continue;
-        }
-
-        // Types
-        const typeMatch = line.match(typePattern);
-        if (typeMatch) {
-            types[typeMatch[1]] = parseProps(typeMatch[2]);
-            continue;
-        }
-
-        // Interfaces
-        const interfaceMatch = line.match(interfacePattern);
-        if (interfaceMatch) {
-            interfaces[interfaceMatch[1]] = parseProps(interfaceMatch[2]);
-            continue;
-        }
-
-        // Inheritance: ChildID[...] ---|> ParentID[...]
-        const fullNodePat = /(\w+)\[([^\]{}]+?)(?:\.ts)?\s*(?:\{([^}]+)\})?\]/;
-        const extendsRegex = new RegExp(
-            `^${fullNodePat.source}\\s*---\\|>\\s*${fullNodePat.source}\\s*;?$`
-        );
-        const extendsMatch = line.match(extendsRegex);
-        if (extendsMatch) {
-            const [, childId, childFile, childProps, parentId, parentFile, parentProps] = extendsMatch;
-            addNode(childId, childFile, childProps);
-            addNode(parentId, parentFile, parentProps);
-            extendsEdges.push({ childId, parentId });
-            continue;
-        }
-
-        // Method signatures
-        const methodMatch = line.match(new RegExp(`^${methodPattern.source}`));
-        if (methodMatch) {
-            const [, asyncFlag, className, methodName, params, returnType] = methodMatch;
-            if (!methods[className]) methods[className] = {};
-            methods[className][methodName.trim()] = {
-                async: !!asyncFlag,
-                params: parseProps(params),
-                returnType: (returnType || "").trim(),
-            };
-            continue;
-        }
-
-        // Main code blocks — skip content
-        if (line.match(new RegExp(`^${mainCodeStartPattern.source}$`))) {
-            let codeBlock = "";
-            i++;
-            while (i < lines.length && !lines[i].match(new RegExp(`^${mainCodeEndPattern.source}$`))) {
-                codeBlock += lines[i] + "\n";
-                i++;
-            }
-            mainBlocks.push(codeBlock.trim());
-            continue;
-        }
-
-        // Method code blocks — skip content but record
-        const methodCodeStartMatch = line.match(new RegExp(`^${methodCodeStartPattern.source}$`));
-        if (methodCodeStartMatch) {
-            const [, asyncFlag, targetFull] = methodCodeStartMatch;
-            const parts = targetFull.split('.');
-            const methodName = parts.pop();
-            const className = parts.join('.').replace(/^@+/, ""); // Strip leading @ if any remain
-
-            let codeBlock = "";
-            i++;
-            while (i < lines.length && !lines[i].match(new RegExp(`^${methodCodeEndPattern.source}$`))) {
-                codeBlock += lines[i] + "\n";
-                i++;
-            }
-            if (!methods[className]) methods[className] = {};
-            if (methodName === "constructor") {
-                methods[className].constructor = { code: codeBlock.trim() };
-            } else {
-                if (!methods[className][methodName]) {
-                    methods[className][methodName] = { params: [], returnType: "any" };
+                if (existsSync(fullPath)) {
+                    const content = await readFile(fullPath, "utf-8");
+                    const subLines = content.split("\n").map(l => l.trim()).filter(l => l && !/^graph\b/.test(l) && !/^%%/.test(l));
+                    await parseWorker(subLines, path.dirname(fullPath));
                 }
-                methods[className][methodName].code = codeBlock.trim();
-                if (asyncFlag) methods[className][methodName].async = true;
+                continue;
             }
-            continue;
-        }
 
-        // Composition: simple form  A --> B  (no brackets)
-        const simpleCompMatch = line.match(/^(\w+)\s*-->\s*(\w+)\s*;?\s*$/);
-        if (simpleCompMatch && !line.includes("[")) {
-            const [, fromId, toId] = simpleCompMatch;
-            addNode(fromId, null, null);
-            addNode(toId, null, null);
-            compositionEdges.push([fromId, toId]);
-            continue;
-        }
+            // Skip externals
+            if (externPattern.test(line)) {
+                const m = line.match(externPattern);
+                externals[m[1]] = m[2];
+                continue;
+            }
 
-        // Composition with node defs
-        const compRegex = new RegExp(
-            `^${fullNodePat.source}(?:\\s*-->\\s*${fullNodePat.source})?\\s*;?$`
-        );
-        const compositionMatch = line.match(compRegex);
-        if (compositionMatch) {
-            const [, fromId, fromFile, fromProps, toId, toFile, toProps] = compositionMatch;
-            addNode(fromId, fromFile, fromProps);
-            if (toId && toFile) {
-                addNode(toId, toFile, toProps);
+            // Skip web blocks
+            if (webStartPattern.test(line)) {
+                i++;
+                while (i < lines.length && !webEndPattern.test(lines[i])) i++;
+                continue;
+            }
+
+            // Types
+            const typeMatch = line.match(typePattern);
+            if (typeMatch) {
+                types[typeMatch[1]] = parseProps(typeMatch[2]);
+                continue;
+            }
+
+            // Interfaces
+            const interfaceMatch = line.match(interfacePattern);
+            if (interfaceMatch) {
+                interfaces[interfaceMatch[1]] = parseProps(interfaceMatch[2]);
+                continue;
+            }
+
+            // Inheritance: ChildID[...] ---|> ParentID[...]
+            const fullNodePat = /(\w+)\[([^\]{}]+?)(?:\.ts)?\s*(?:\{([^}]+)\})?\]/;
+            const extendsRegex = new RegExp(
+                `^${fullNodePat.source}\\s*---\\|>\\s*${fullNodePat.source}\\s*;?$`
+            );
+            const extendsMatch = line.match(extendsRegex);
+            if (extendsMatch) {
+                const [, childId, childFile, childProps, parentId, parentFile, parentProps] = extendsMatch;
+                addNode(childId, childFile, childProps);
+                addNode(parentId, parentFile, parentProps);
+                extendsEdges.push({ childId, parentId });
+                continue;
+            }
+
+            // Method signatures
+            const methodMatch = line.match(new RegExp(`^${methodPattern.source}`));
+            if (methodMatch) {
+                const [, asyncFlag, className, methodName, params, returnType] = methodMatch;
+                if (!methods[className]) methods[className] = {};
+                methods[className][methodName.trim()] = {
+                    async: !!asyncFlag,
+                    params: parseProps(params),
+                    returnType: (returnType || "").trim(),
+                };
+                continue;
+            }
+
+            // Main code blocks — skip content
+            if (line.match(new RegExp(`^${mainCodeStartPattern.source}$`))) {
+                let codeBlock = "";
+                i++;
+                while (i < lines.length && !lines[i].match(new RegExp(`^${mainCodeEndPattern.source}$`))) {
+                    codeBlock += lines[i] + "\n";
+                    i++;
+                }
+                mainBlocks.push(codeBlock.trim());
+                continue;
+            }
+
+            // Method code blocks — skip content but record
+            const methodCodeStartMatch = line.match(new RegExp(`^${methodCodeStartPattern.source}$`));
+            if (methodCodeStartMatch) {
+                const [, asyncFlag, targetFull] = methodCodeStartMatch;
+                const parts = targetFull.split('.');
+                const methodName = parts.pop();
+                const className = parts.join('.').replace(/^@+/, ""); // Strip leading @ if any remain
+
+                let codeBlock = "";
+                i++;
+                while (i < lines.length && !lines[i].match(new RegExp(`^${methodCodeEndPattern.source}$`))) {
+                    codeBlock += lines[i] + "\n";
+                    i++;
+                }
+                if (!methods[className]) methods[className] = {};
+                if (methodName === "constructor") {
+                    methods[className].constructor = { code: codeBlock.trim() };
+                } else {
+                    if (!methods[className][methodName]) {
+                        methods[className][methodName] = { params: [], returnType: "any" };
+                    }
+                    methods[className][methodName].code = codeBlock.trim();
+                    if (asyncFlag) methods[className][methodName].async = true;
+                }
+                continue;
+            }
+
+            // Composition: simple form  A --> B  (no brackets)
+            const simpleCompMatch = line.match(/^(\w+)\s*-->\s*(\w+)\s*;?\s*$/);
+            if (simpleCompMatch && !line.includes("[")) {
+                const [, fromId, toId] = simpleCompMatch;
+                addNode(fromId, null, null);
+                addNode(toId, null, null);
                 compositionEdges.push([fromId, toId]);
+                continue;
             }
-            continue;
+
+            // Composition with node defs
+            const compRegex = new RegExp(
+                `^${fullNodePat.source}(?:\\s*-->\\s*${fullNodePat.source})?\\s*;?$`
+            );
+            const compositionMatch = line.match(compRegex);
+            if (compositionMatch) {
+                const [, fromId, fromFile, fromProps, toId, toFile, toProps] = compositionMatch;
+                addNode(fromId, fromFile, fromProps);
+                if (toId && toFile) {
+                    addNode(toId, toFile, toProps);
+                    compositionEdges.push([fromId, toId]);
+                }
+                continue;
+            }
         }
     }
+
+    processedFiles.add("ROOT");
+    const rootLines = definition.split("\n").map(l => l.trim()).filter(l => l && !/^graph\b/.test(l) && !/^%%/.test(l));
+    await parseWorker(rootLines, "./flows");
 
     return { nodes, compositionEdges, extendsEdges, methods, types, interfaces, mainBlocks, externals };
 }
@@ -317,7 +336,7 @@ async function main() {
 
         console.log(`  📦  ${name}`);
 
-        const parsed = parseFlowchart(content);
+        const parsed = await parseFlowchart(content);
         const diagram = toMermaidDiagram(parsed);
         const metadata = collectMetadata(parsed);
 
