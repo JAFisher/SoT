@@ -111,7 +111,7 @@
     }
   },
   "db": {
-    "diagram": "graph TD\n  DB[\"Database\n─────────────────\nconnect(): void\"]\n\n  subgraph Types\n    direction TB\n    T_User[\"«type»\nUser\n─────────────────\nid: number\nusername: string\nemail: string\"]\n    T_QueryOptions[\"«type»\nQueryOptions\n─────────────────\nlimit: number\noffset: number\"]\n  end\n\n  subgraph Interfaces\n    direction TB\n    I_IRepository[\"«interface»\nIRepository\n─────────────────\nfindMany(options: QueryOptions)\"]\n  end",
+    "diagram": "graph TD\n  DB[\"Database\n─────────────────\nconnect(): void\"]\n\n  subgraph Types\n    direction TB\n    T_User[\"«type»\nUser\n─────────────────\nid: number\nusername: string\nemail: string\"]\n    T_QueryOptions[\"«type»\nQueryOptions\n─────────────────\nlimit: number\noffset: number\"]\n  end\n\n  subgraph Interfaces\n    direction TB\n    I_IRepository[\"«interface»\nIRepository\n─────────────────\nfindMany: (options: QueryOptions): Promise<Array<User>> findOne:(id: number): Promise<User>\"]\n  end",
     "metadata": {
       "nodeCount": 1,
       "compositionEdgeCount": 0,
@@ -129,7 +129,7 @@
       },
       "interfaces": {
         "IRepository": [
-          "findMany(options: QueryOptions)"
+          "findMany: (options: QueryOptions): Promise<Array<User>> findOne:(id: number): Promise<User>"
         ]
       },
       "methods": [
@@ -144,7 +144,7 @@
     }
   },
   "db_types": {
-    "diagram": "graph TD\n\n  subgraph Types\n    direction TB\n    T_UserRecord[\"«type»\nUserRecord\n─────────────────\nid: number\nname: string\nemail: string\"]\n  end\n\n  subgraph Interfaces\n    direction TB\n    I_IDatabase[\"«interface»\nIDatabase\n─────────────────\ninit: ()\naddUser: (name\nemail: string)\ngetUsers: ()\"]\n  end",
+    "diagram": "graph TD\n\n  subgraph Types\n    direction TB\n    T_UserRecord[\"«type»\nUserRecord\n─────────────────\nid: number\nname: string\nemail: string\"]\n  end\n\n  subgraph Interfaces\n    direction TB\n    I_IDatabase[\"«interface»\nIDatabase\n─────────────────\ninit: (): Promise<void>\naddUser: (name: string, email: string): Promise<void>\ngetUsers: (): Promise<Array<UserRecord>>\"]\n  end",
     "metadata": {
       "nodeCount": 0,
       "compositionEdgeCount": 0,
@@ -158,10 +158,9 @@
       },
       "interfaces": {
         "IDatabase": [
-          "init: ()",
-          "addUser: (name",
-          "email: string)",
-          "getUsers: ()"
+          "init: (): Promise<void>",
+          "addUser: (name: string, email: string): Promise<void>",
+          "getUsers: (): Promise<Array<UserRecord>>"
         ]
       },
       "methods": []
@@ -400,7 +399,7 @@
     }
   },
   "sqlite_service": {
-    "diagram": "graph TD\n  DB[\"SqliteDatabase\n─────────────────\n⚡ init(): Promise<void>\n⚡ addUser(name: string, email: string): Promise<void>\n⚡ getUsers(): Promise<Array<UserRecord>>\"]\n\n  subgraph Types\n    direction TB\n    T_UserRecord[\"«type»\nUserRecord\n─────────────────\nid: number\nname: string\nemail: string\"]\n  end\n\n  subgraph Interfaces\n    direction TB\n    I_IDatabase[\"«interface»\nIDatabase\n─────────────────\ninit: ()\naddUser: (name\nemail: string)\ngetUsers: ()\"]\n  end",
+    "diagram": "graph TD\n  DB[\"SqliteDatabase\n─────────────────\n⚡ init(): Promise<void>\n⚡ addUser(name: string, email: string): Promise<void>\n⚡ getUsers(): Promise<Array<UserRecord>>\"]\n\n  subgraph Types\n    direction TB\n    T_UserRecord[\"«type»\nUserRecord\n─────────────────\nid: number\nname: string\nemail: string\"]\n  end\n\n  subgraph Interfaces\n    direction TB\n    I_IDatabase[\"«interface»\nIDatabase\n─────────────────\ninit: (): Promise<void>\naddUser: (name: string, email: string): Promise<void>\ngetUsers: (): Promise<Array<UserRecord>>\"]\n  end",
     "metadata": {
       "nodeCount": 1,
       "compositionEdgeCount": 0,
@@ -414,10 +413,9 @@
       },
       "interfaces": {
         "IDatabase": [
-          "init: ()",
-          "addUser: (name",
-          "email: string)",
-          "getUsers: ()"
+          "init: (): Promise<void>",
+          "addUser: (name: string, email: string): Promise<void>",
+          "getUsers: (): Promise<Array<UserRecord>>"
         ]
       },
       "methods": [
@@ -456,7 +454,7 @@
     }
   },
   "user_service": {
-    "diagram": "graph TD\n  DB[\"DB\"]\n  UserService[\"UserService\n─────────────────\ngetUser(id: number): Promise<User>\"]\n  UserService --> DB\n\n  subgraph Types\n    direction TB\n    T_User[\"«type»\nUser\n─────────────────\nid: number\nusername: string\nemail: string\"]\n    T_QueryOptions[\"«type»\nQueryOptions\n─────────────────\nlimit: number\noffset: number\"]\n  end\n\n  subgraph Interfaces\n    direction TB\n    I_IRepository[\"«interface»\nIRepository\n─────────────────\nfindMany(options: QueryOptions)\"]\n  end",
+    "diagram": "graph TD\n  DB[\"DB\"]\n  UserService[\"UserService\n─────────────────\ngetUser(id: number): Promise<User>\"]\n  UserService --> DB\n\n  subgraph Types\n    direction TB\n    T_User[\"«type»\nUser\n─────────────────\nid: number\nusername: string\nemail: string\"]\n    T_QueryOptions[\"«type»\nQueryOptions\n─────────────────\nlimit: number\noffset: number\"]\n  end\n\n  subgraph Interfaces\n    direction TB\n    I_IRepository[\"«interface»\nIRepository\n─────────────────\nfindMany: (options: QueryOptions): Promise<Array<User>> findOne:(id: number): Promise<User>\"]\n  end",
     "metadata": {
       "nodeCount": 2,
       "compositionEdgeCount": 1,
@@ -474,7 +472,7 @@
       },
       "interfaces": {
         "IRepository": [
-          "findMany(options: QueryOptions)"
+          "findMany: (options: QueryOptions): Promise<Array<User>> findOne:(id: number): Promise<User>"
         ]
       },
       "methods": [

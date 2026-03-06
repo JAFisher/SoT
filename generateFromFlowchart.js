@@ -200,10 +200,39 @@ function parseFlowchart(definition) {
 }
 
 /** Helper functions: parseProps, indent, stripTs, toPascalCase (identical to your original) **/
+function smartSplit(str, separator, limit = -1) {
+    const result = [];
+    let current = "";
+    let depth = 0;
+    const pairs = { '(': ')', '[': ']', '{': '}', '<': '>' };
+    const closeToOpen = Object.fromEntries(Object.entries(pairs).map(([k, v]) => [v, k]));
+
+    for (let i = 0; i < str.length; i++) {
+        const char = str[i];
+        if (pairs[char]) depth++;
+        else if (closeToOpen[char]) depth--;
+
+        if (depth === 0 && char === separator && (limit === -1 || result.length < limit)) {
+            result.push(current.trim());
+            current = "";
+        } else {
+            current += char;
+        }
+    }
+    result.push(current.trim());
+    return result.filter(s => s.length > 0);
+}
+
 function parseProps(propStr) {
     if (!propStr) return [];
-    return propStr.split(",").map((p) => p.trim()).filter(Boolean).map((p) => {
-        const [name, type] = p.split(":").map((s) => s.trim());
+    // Split by top-level commas only
+    const parts = smartSplit(propStr, ",");
+    return parts.map((p) => {
+        // Split by the first colon only (to support return types like (): void)
+        const colonIdx = p.indexOf(":");
+        if (colonIdx === -1) return { name: p.trim(), type: "any" };
+        const name = p.substring(0, colonIdx).trim();
+        const type = p.substring(colonIdx + 1).trim();
         return { name, type: type || "any" };
     });
 }
@@ -233,7 +262,10 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
 
     // 1. Types
     for (const [typeName, { props, namespace }] of Object.entries(types)) {
-        const fields = props.map((p) => `  ${p.name}: ${p.type};`).join("\n");
+        const fields = props.map((p) => {
+            const cleanType = p.type.includes("):") ? p.type.replace(/\):/g, ") =>") : p.type;
+            return `  ${p.name}: ${cleanType};`;
+        }).join("\n");
         const content = `export type ${typeName} = {\n${fields}\n};`;
         const outPath = path.join(baseDir, namespace, `${typeName}.ts`);
         fs.mkdirSync(path.dirname(outPath), { recursive: true });
@@ -247,7 +279,10 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
             const mGeneric = p.type.match(/Array<(\w+)>/);
             const elem = mGeneric ? mGeneric[1] : p.type.replace(/\[\]$/, "");
             if (types[elem] || interfaces[elem] || classNames.has(elem)) typeOrClassImports.add(elem);
-            return `  ${p.name}: ${p.type};`;
+
+            // Fix: convert "(): void" to "() => void" for interfaces
+            const cleanType = p.type.includes("):") ? p.type.replace(/\):/g, ") =>") : p.type;
+            return `  ${p.name}: ${cleanType};`;
         }).join("\n");
 
         const importLines = Array.from(typeOrClassImports).map((name) => {

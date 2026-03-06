@@ -4,10 +4,37 @@ import path from "path";
 
 // ── Inline parser (extracted from generateFromFlowchart.js, file-writing removed) ──
 
+function smartSplit(str, separator, limit = -1) {
+    const result = [];
+    let current = "";
+    let depth = 0;
+    const pairs = { '(': ')', '[': ']', '{': '}', '<': '>' };
+    const closeToOpen = Object.fromEntries(Object.entries(pairs).map(([k, v]) => [v, k]));
+
+    for (let i = 0; i < str.length; i++) {
+        const char = str[i];
+        if (pairs[char]) depth++;
+        else if (closeToOpen[char]) depth--;
+
+        if (depth === 0 && char === separator && (limit === -1 || result.length < limit)) {
+            result.push(current.trim());
+            current = "";
+        } else {
+            current += char;
+        }
+    }
+    result.push(current.trim());
+    return result.filter(s => s.length > 0);
+}
+
 function parseProps(propStr) {
     if (!propStr) return [];
-    return propStr.split(",").map((p) => p.trim()).filter(Boolean).map((p) => {
-        const [name, type] = p.split(":").map((s) => s.trim());
+    const parts = smartSplit(propStr, ",");
+    return parts.map((p) => {
+        const colonIdx = p.indexOf(":");
+        if (colonIdx === -1) return { name: p.trim(), type: "any" };
+        const name = p.substring(0, colonIdx).trim();
+        const type = p.substring(colonIdx + 1).trim();
         return { name, type: type || "any" };
     });
 }
