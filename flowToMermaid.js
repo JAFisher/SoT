@@ -81,16 +81,40 @@ async function parseFlowchart(definition) {
             }
 
             // Types
-            const typeMatch = line.match(typePattern);
-            if (typeMatch) {
-                types[typeMatch[1]] = parseProps(typeMatch[2]);
+            const typeStartMatch = line.match(/type->(\w+)\s*\{/);
+            if (typeStartMatch) {
+                const typeName = typeStartMatch[1];
+                let content = line.substring(line.indexOf('{') + 1);
+                if (!content.includes('}')) {
+                    i++;
+                    while (i < lines.length && !lines[i].includes('}')) {
+                        content += lines[i] + " ";
+                        i++;
+                    }
+                    if (i < lines.length) content += lines[i].substring(0, lines[i].indexOf('}'));
+                } else {
+                    content = content.substring(0, content.indexOf('}'));
+                }
+                types[typeName] = parseProps(content);
                 continue;
             }
 
             // Interfaces
-            const interfaceMatch = line.match(interfacePattern);
-            if (interfaceMatch) {
-                interfaces[interfaceMatch[1]] = parseProps(interfaceMatch[2]);
+            const interfaceStartMatch = line.match(/interface->(\w+)\s*\{/);
+            if (interfaceStartMatch) {
+                const interfaceName = interfaceStartMatch[1];
+                let content = line.substring(line.indexOf('{') + 1);
+                if (!content.includes('}')) {
+                    i++;
+                    while (i < lines.length && !lines[i].includes('}')) {
+                        content += lines[i] + " ";
+                        i++;
+                    }
+                    if (i < lines.length) content += lines[i].substring(0, lines[i].indexOf('}'));
+                } else {
+                    content = content.substring(0, content.indexOf('}'));
+                }
+                interfaces[interfaceName] = parseProps(content);
                 continue;
             }
 

@@ -1,5 +1,5 @@
 graph TD
-    include->shared/db_types.flow
+    include->db_types.flow
     extern->sqlite3 from "sqlite3"
 
     DB[SqliteDatabase.ts]
