@@ -1,0 +1,33 @@
+graph TD
+    extern->chalk from "chalk"
+
+    Alerter[Alerter.ts{}]
+
+    @Alerter.send{message: string, type: "info" | "warn" | "error"}: void
+    @@Alerter.send.code
+        const timestamp = new Date().toLocaleTimeString();
+        let formatted = `[${timestamp}] ${message}`;
+        
+        if (type === "warn") {
+            console.warn(chalk.yellow(`⚠️  WARN: ${formatted}`));
+        } else if (type === "error") {
+            console.error(chalk.red(`🚨 ERROR: ${formatted}`));
+        } else {
+            console.log(chalk.blue(`ℹ️  INFO: ${formatted}`));
+        }
+    @@Alerter.send.end
+
+    Monitor[Monitor.ts{alerter: Alerter}]
+    @Monitor.constructor
+    @@Monitor.constructor.code
+        this.alerter = new Alerter();
+    @@Monitor.constructor.end
+
+    @Monitor.logAction{action: string, success: boolean}: void
+    @@Monitor.logAction.code
+        if (success) {
+            this.alerter.send(`Action successful: ${action}`, "info");
+        } else {
+            this.alerter.send(`Action failed: ${action}`, "error");
+        }
+    @@Monitor.logAction.end

@@ -1,13 +1,19 @@
 include->db.flow
+include->notification_service.flow
 
-UserService[UserService.ts]
+UserService[UserService.ts{monitor: Monitor}]
 
 UserService --> DB
+UserService --> Monitor
+
+@UserService.constructor
+@@UserService.constructor.code
+  this.monitor = new Monitor();
+@@UserService.constructor.end
 
 @UserService.getUser{id: number}: Promise<User>
 @@UserService.getUser.code
-  console.log("Fetching user...");
-  // Simulated access to Included DB class
+  this.monitor.logAction(`Fetching user ${id}`, true);
   const db = new Database();
   db.connect();
   return { id, username: "flow_user", email: "user@flow.com" };
