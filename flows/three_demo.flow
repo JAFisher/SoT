@@ -1,0 +1,117 @@
+extern->three from "three"
+cliscripts->start_server npx -y http-server -p 3000
+
+// --- Base Entity ---
+BaseEntity[BaseEntity.ts{mesh: any}]
+@BaseEntity.update{deltaTime: number}: void
+@@BaseEntity.update.code
+@@BaseEntity.update.end
+
+// --- Cube Entity ---
+CubeEntity[CubeEntity.ts{}] ---|> BaseEntity
+@CubeEntity.constructor{}
+@@CubeEntity.constructor.code
+  super();
+  const geometry = new three.BoxGeometry();
+  const material = new three.MeshPhongMaterial({ color: 0x44aa88 });
+  this.mesh = new three.Mesh(geometry, material);
+@@CubeEntity.constructor.end
+
+@CubeEntity.update{deltaTime: number}: void
+@@CubeEntity.update.code
+  this.mesh.rotation.x += 1 * deltaTime;
+  this.mesh.rotation.y += 1 * deltaTime;
+@@CubeEntity.update.end
+
+// --- Lighting ---
+Lighting[Lighting.ts{light: any}]
+@Lighting.constructor{}
+@@Lighting.constructor.code
+  this.light = new three.DirectionalLight(0xffffff, 3);
+  this.light.position.set(-1, 2, 4);
+@@Lighting.constructor.end
+
+// --- Main App ---
+ThreeApp[ThreeApp.ts{scene: any, camera: any, renderer: any, entities: any[]}]
+ThreeApp --> CubeEntity
+ThreeApp --> Lighting
+
+@ThreeApp.constructor{}
+@@ThreeApp.constructor.code
+  this.scene = new three.Scene();
+  this.scene.background = new three.Color(0x0b0e14);
+
+  this.camera = new three.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  this.camera.position.z = 4;
+
+  this.renderer = new three.WebGLRenderer({ antialias: true });
+  this.renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(this.renderer.domElement);
+  
+  this.entities = [];
+  
+  // Add a modular cube
+  const cube = new CubeEntity();
+  this.scene.add(cube.mesh);
+  this.entities.push(cube);
+  
+  // Add modular lighting
+  const lighting = new Lighting();
+  this.scene.add(lighting.light);
+  this.scene.add(new three.AmbientLight(0x404040, 2));
+
+  // Handle resize
+  window.addEventListener('resize', () => {
+    this.camera.aspect = window.innerWidth / window.innerHeight;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+@@ThreeApp.constructor.end
+
+@ThreeApp.animate{}: void
+@@ThreeApp.animate.code
+  requestAnimationFrame(() => this.animate());
+  
+  const delta = 0.016; // rough 60fps delta
+  for(const entity of this.entities) {
+    if(entity.update) entity.update(delta);
+  }
+  
+  this.renderer.render(this.scene, this.camera);
+@@ThreeApp.animate.end
+
+// --- Rollup Configuration ---
+Rollup->{BaseEntity.ts, CubeEntity.ts, Lighting.ts, ThreeApp.ts}
+
+// --- Web UI ---
+web->index.html.code
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoT Three.js Built</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #0b0e14; color: white; font-family: 'Inter', sans-serif; }
+        #overlay { position: absolute; top: 20px; left: 20px; pointer-events: none; }
+        .accent { color: #3773f5; }
+        .card { background: rgba(21, 25, 33, 0.8); padding: 15px 25px; border-radius: 8px; border: 1px solid #2a2e39; backdrop-filter: blur(10px); }
+    </style>
+</head>
+<body>
+    <div id="overlay" class="card">
+        <h2><span class="accent">SoT</span> Three.js Modular Rollup</h2>
+        <p>This 3D scene is built from 4 distinct .flow classes bundled via esbuild!</p>
+    </div>
+
+    <!-- Import our compiled Javascript bundle from Rollup! -->
+    <script type="module">
+        import { ThreeApp } from './compiled.js';
+        
+        // Boot our application
+        const app = new ThreeApp();
+        app.animate();
+    </script>
+</body>
+</html>
+web->index.html.end
