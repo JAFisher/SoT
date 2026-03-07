@@ -1,0 +1,35 @@
+graph TD
+    PhysicsService[PhysicsService.ts{ ball: any, paddles: any, bounds: any }]
+
+    @PhysicsService.constructor{ width: number, height: number }
+    @@PhysicsService.constructor.code
+        this.bounds = { width, height };
+        this.ball = { x: width/2, y: height/2, vx: 5, vy: 5, radius: 8 };
+        this.paddles = { p1: height/2, p2: height/2, size: 80 };
+    @@PhysicsService.constructor.end
+
+    @PhysicsService.update: any
+    @@PhysicsService.update.code
+        // 1. Apply Velocity
+        this.ball.x += this.ball.vx;
+        this.ball.y += this.ball.vy;
+
+        // 2. Wall Bounces (Top/Bottom)
+        if (this.ball.y <= 0 || this.ball.y >= this.bounds.height) this.ball.vy *= -1;
+
+        // 3. Paddle Collision Logic
+        const hitP1 = this.ball.x <= 20 && Math.abs(this.ball.y - this.paddles.p1) < this.paddles.size/2;
+        const hitP2 = this.ball.x >= this.bounds.width - 20 && Math.abs(this.ball.y - this.paddles.p2) < this.paddles.size/2;
+
+        if (hitP1 || hitP2) {
+            this.ball.vx *= -1.1; // Speed up slightly on hit
+        }
+
+        // 4. Reset on Out of Bounds
+        if (this.ball.x < 0 || this.ball.x > this.bounds.width) {
+            this.ball.x = this.bounds.width / 2;
+            this.ball.vx = 5 * (this.ball.vx > 0 ? -1 : 1);
+        }
+
+        return { ball: this.ball, paddles: this.paddles };
+    @@PhysicsService.update.end

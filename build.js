@@ -59,4 +59,6 @@ async function build() {
     }
 }
 
-build();
+console.time("build");
+await build();
+console.timeEnd("build");

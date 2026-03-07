@@ -1,6 +1,16 @@
-# Flowchart Code Generator
+# SoT Engine (Single Oriented Transformation)
 
-A powerful utility that transforms a custom Mermaid-inspired flowchart syntax into structured TypeScript classes, interfaces, and types. This tool allows you to design your system architecture visually (in text) and generate the boilerplate code instantly.
+Design systems as blueprints. Deploy them as code.
+The SoT Engine is a powerful system architect tool that transforms a custom, Mermaid-inspired flowchart syntax into a fully-functional, structured TypeScript ecosystem. Define your architecture, relationships, and logic in a single text file, and watch SoT generate the boilerplate, folder structure, and package.json instantly.
+
+🚀 Why SoT?
+Visual-First Development: Design your system architecture in text, and let the engine handle the file system.
+
+Boilerplate Zero: Generates classes, recursive imports, type-safe constructors, and package configurations automatically.
+
+Modular Microservices: Scale from a single script to a complex microservice architecture using include-> namespaces.
+
+Tool Agnostic: Use tsx, bun, deno, or ts-node by overriding the CLI execution layer.
 
 ## Features
 
