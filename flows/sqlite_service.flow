@@ -7,6 +7,7 @@ graph TD
 
     @SqliteDatabase.constructor
     @@SqliteDatabase.constructor.code
+        super();
         this.db = new sqlite3.Database(":memory:");
     @@SqliteDatabase.constructor.end
 

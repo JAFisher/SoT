@@ -1,0 +1,173 @@
+graph TD
+  Calculator[Calculator.ts { displayValue: string, firstOperand: number | null, operator: string | null, waitingForSecondOperand: boolean }]
+
+  extern->nodegui from "@nodegui/nodegui"
+  extern->qode from "@nodegui/qode"
+  cliscripts->start npx qode dist/main.js
+
+  @@Calculator.constructor.code
+    this.displayValue = "0";
+    this.firstOperand = null;
+    this.operator = null;
+    this.waitingForSecondOperand = false;
+  @@Calculator.constructor.end
+
+  @Calculator.inputDigit{digit: string}: void
+  @@Calculator.inputDigit.code
+    if (this.waitingForSecondOperand) {
+      this.displayValue = digit;
+      this.waitingForSecondOperand = false;
+    } else {
+      this.displayValue = this.displayValue === '0' ? digit : this.displayValue + digit;
+    }
+  @@Calculator.inputDigit.end
+
+  @Calculator.inputOperator{nextOperator: string}: void
+  @@Calculator.inputOperator.code
+    const inputValue = parseFloat(this.displayValue);
+
+    if (this.operator && this.waitingForSecondOperand) {
+      this.operator = nextOperator;
+      return;
+    }
+
+    if (this.firstOperand === null && !isNaN(inputValue)) {
+      this.firstOperand = inputValue;
+    } else if (this.operator) {
+      const result = this.performCalculation(this.operator, this.firstOperand!, inputValue);
+      this.displayValue = String(result);
+      this.firstOperand = result;
+    }
+
+    this.waitingForSecondOperand = true;
+    this.operator = nextOperator;
+  @@Calculator.inputOperator.end
+
+  @Calculator.performCalculation{op: string, first: number, second: number}: number
+  @@Calculator.performCalculation.code
+    if (op === '+') return first + second;
+    if (op === '-') return first - second;
+    if (op === '*') return first * second;
+    if (op === '/') return first / second;
+    return second;
+  @@Calculator.performCalculation.end
+
+  @Calculator.clear{}: void
+  @@Calculator.clear.code
+    this.displayValue = '0';
+    this.firstOperand = null;
+    this.operator = null;
+    this.waitingForSecondOperand = false;
+  @@Calculator.clear.end
+
+  %% ---- UI Logic using NodeGui ----
+  @Calculator.run{}: void
+  @@Calculator.run.code
+    const { QMainWindow, QWidget, QLabel, QPushButton, FlexLayout } = nodegui;
+
+    const win = new QMainWindow();
+    win.setWindowTitle("SoT Calculator");
+    win.resize(300, 450);
+
+    const centralWidget = new QWidget();
+    centralWidget.setObjectName("myroot");
+    const rootLayout = new FlexLayout();
+    centralWidget.setLayout(rootLayout);
+
+    const label = new QLabel();
+    label.setObjectName("display");
+    label.setText(this.displayValue);
+    
+    const updateDisplay = () => {
+        label.setText(this.displayValue);
+    };
+
+    const createButton = (text: string, onClick: () => void) => {
+        const btn = new QPushButton();
+        btn.setText(text);
+        btn.addEventListener('clicked', () => {
+            onClick();
+            updateDisplay();
+        });
+        return btn;
+    };
+
+    // Layout rows
+    const row1 = new QWidget();
+    const row1Layout = new FlexLayout();
+    row1.setLayout(row1Layout);
+    row1Layout.addWidget(createButton("7", () => this.inputDigit("7")));
+    row1Layout.addWidget(createButton("8", () => this.inputDigit("8")));
+    row1Layout.addWidget(createButton("9", () => this.inputDigit("9")));
+    row1Layout.addWidget(createButton("/", () => this.inputOperator("/")));
+
+    const row2 = new QWidget();
+    const row2Layout = new FlexLayout();
+    row2.setLayout(row2Layout);
+    row2Layout.addWidget(createButton("4", () => this.inputDigit("4")));
+    row2Layout.addWidget(createButton("5", () => this.inputDigit("5")));
+    row2Layout.addWidget(createButton("6", () => this.inputDigit("6")));
+    row2Layout.addWidget(createButton("*", () => this.inputOperator("*")));
+
+    const row3 = new QWidget();
+    const row3Layout = new FlexLayout();
+    row3.setLayout(row3Layout);
+    row3Layout.addWidget(createButton("1", () => this.inputDigit("1")));
+    row3Layout.addWidget(createButton("2", () => this.inputDigit("2")));
+    row3Layout.addWidget(createButton("3", () => this.inputDigit("3")));
+    row3Layout.addWidget(createButton("-", () => this.inputOperator("-")));
+
+    const row4 = new QWidget();
+    const row4Layout = new FlexLayout();
+    row4.setLayout(row4Layout);
+    row4Layout.addWidget(createButton("0", () => this.inputDigit("0")));
+    row4Layout.addWidget(createButton("C", () => this.clear()));
+    row4Layout.addWidget(createButton("=", () => this.inputOperator("=")));
+    row4Layout.addWidget(createButton("+", () => this.inputOperator("+")));
+
+    rootLayout.addWidget(label);
+    rootLayout.addWidget(row1);
+    rootLayout.addWidget(row2);
+    rootLayout.addWidget(row3);
+    rootLayout.addWidget(row4);
+
+    centralWidget.setStyleSheet(`
+      #myroot {
+        background-color: #1a1a2e;
+        height: '100%';
+        flex-direction: 'column';
+      }
+      #display {
+        font-size: 50px;
+        color: #e94560;
+        padding: 30px;
+        width: '100%';
+        qproperty-alignment: 'AlignRight';
+        background-color: #0f3460;
+      }
+      QWidget {
+        flex-direction: 'row';
+        flex: 1;
+      }
+      QPushButton {
+        background-color: #16213e;
+        color: white;
+        border: 1px solid #e94560;
+        flex: 1;
+        font-size: 24px;
+      }
+      QPushButton:pressed {
+        background-color: #e94560;
+      }
+    `);
+
+    win.setCentralWidget(centralWidget);
+    win.show();
+    (global as any).win = win; 
+  @@Calculator.run.end
+
+  %% ---- Main Entry Point ----
+  @@main.code
+    const calc = new Calculator();
+    calc.run();
+  @@main.end

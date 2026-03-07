@@ -22,6 +22,7 @@ function parseFlowchart(definition) {
     const mainBlocks = [];
     const webBlocks = [];
     const externals = {};
+    const cliScripts = {};
     const processedFiles = new Set();
 
     const nodePattern = /(\w+)(?:\[([^\]{]+)(?:\{([^}]*)\})?\])?/;
@@ -36,6 +37,7 @@ function parseFlowchart(definition) {
     const mainCodeEndPattern = /@{1,2}main\.end/;
     const externPattern = /extern->(\w+)\s*from\s*['"]([^'"]+)['"]/;
     const includePattern = /include->([^ \n]+)/;
+    const cliScriptPattern = /cliscripts->(\w+)\s+(.+)/;
 
     function addNode(id, file, props, namespace) {
         if (!nodes[id]) {
@@ -208,13 +210,21 @@ function parseFlowchart(definition) {
                 }
                 continue;
             }
+
+            // 10. CLI Scripts (package.json scripts)
+            const cliScriptMatch = line.match(cliScriptPattern);
+            if (cliScriptMatch) {
+                const [, scriptName, scriptCommand] = cliScriptMatch;
+                cliScripts[scriptName] = scriptCommand;
+                continue;
+            }
         }
     }
 
     const rootLines = definition.split("\n").map(l => l.trim()).filter(l => l && !/^graph\b/.test(l));
     parseWorker(rootLines, "./flows", "");
 
-    return { nodes, compositionEdges, extendsEdges, methods, types, interfaces, mainBlocks, webBlocks, externals };
+    return { nodes, compositionEdges, extendsEdges, methods, types, interfaces, mainBlocks, webBlocks, externals, cliScripts };
 }
 
 /** Helper functions: parseProps, indent, stripTs, toPascalCase (identical to your original) **/
@@ -265,7 +275,7 @@ function toPascalCase(str) { return str.replace(/[-_](.)/g, (_, c) => c.toUpperC
 /**
  * GENERATE FILES
  */
-function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods, types, interfaces, mainBlocks, webBlocks, externals }) {
+function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods, types, interfaces, mainBlocks, webBlocks, externals, cliScripts }) {
     // === Pre-calculate all component names (for cross-namespace imports) ===
     const allClassNames = new Set(Object.entries(nodes).map(([id, n]) => toPascalCase(path.basename(n.file || id, ".ts"))));
     const allInterfaceNames = new Set(Object.keys(interfaces));
@@ -411,7 +421,7 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
                 }
                 for (const [libName, libPath] of Object.entries(externals)) {
                     if (new RegExp(`\\b${libName}\\b`).test(methodData.code)) {
-                        externalImportLines.add(`import ${libName} from "${libPath}";`);
+                        externalImportLines.add(`import * as ${libName} from "${libPath}";`);
                     }
                 }
             }
@@ -467,7 +477,11 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
         name: "sot-generated-project",
         version: "1.0.0",
         main: "main.ts",
-        scripts: { "build": "tsc main.ts --outDir dist", "start": "node dist/main.js" },
+        scripts: {
+            "build": "tsc main.ts --outDir dist",
+            "start": "node dist/main.js",
+            ...cliScripts
+        },
         dependencies: dependencies,
         devDependencies: { "ts-node": "^10.9.1", "typescript": "^5.0.0", "@types/node": "^20.0.0" }
     };
@@ -502,7 +516,7 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
         }
         for (const [libName, libPath] of Object.entries(externals)) {
             if (new RegExp(`\\b${libName}\\b`).test(fullMainCode)) {
-                mainImports.add(`import ${libName} from "${libPath}";`);
+                mainImports.add(`import * as ${libName} from "${libPath}";`);
             }
         }
         const finalMainContent = `${Array.from(mainImports).sort().join("\n")}\n\n${mainContent}\n`;
