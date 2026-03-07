@@ -1,39 +1,189 @@
 extern->three from "three"
 cliscripts->start_server npx -y http-server -p 3000
 
-// --- Base Entity ---
-BaseEntity[BaseEntity.ts{mesh: any}]
-@BaseEntity.update{deltaTime: number}: void
-@@BaseEntity.update.code
-@@BaseEntity.update.end
+// --- Defines ---
+type->Block = { x: number, y: number, z: number, color: number, mesh: any }
 
-// --- Cube Entity ---
-CubeEntity[CubeEntity.ts{}] ---|> BaseEntity
-@CubeEntity.constructor{}
-@@CubeEntity.constructor.code
-  super();
-  const geometry = new three.BoxGeometry();
-  const material = new three.MeshPhongMaterial({ color: 0x44aa88 });
-  this.mesh = new three.Mesh(geometry, material);
-@@CubeEntity.constructor.end
+// --- Board ---
+Board[Board.ts{width: number, height: number, grid: any[], blocks: any[], group: any}]
+@Board.constructor{}
+@@Board.constructor.code
+  this.width = 10;
+  this.height = 20;
+  this.grid = new Array(this.width * this.height).fill(null);
+  this.blocks = [];
+  this.group = new three.Group();
+  
+  // Add some borders
+  const edgeGeo = new three.BoxGeometry(0.5, this.height, 0.5);
+  const edgeMat = new three.MeshPhongMaterial({ color: 0x333333 });
+  const leftEdge = new three.Mesh(edgeGeo, edgeMat);
+  leftEdge.position.set(-0.75, this.height/2 - 0.5, 0);
+  const rightEdge = new three.Mesh(edgeGeo, edgeMat);
+  rightEdge.position.set(this.width - 0.25, this.height/2 - 0.5, 0);
+  
+  const bottomGeo = new three.BoxGeometry(this.width + 1.0, 0.5, 0.5);
+  const bottomEdge = new three.Mesh(bottomGeo, edgeMat);
+  bottomEdge.position.set(this.width/2 - 0.5, -0.75, 0);
+  
+  this.group.add(leftEdge);
+  this.group.add(rightEdge);
+  this.group.add(bottomEdge);
+@@Board.constructor.end
 
-@CubeEntity.update{deltaTime: number}: void
-@@CubeEntity.update.code
-  this.mesh.rotation.x += 1 * deltaTime;
-  this.mesh.rotation.y += 1 * deltaTime;
-@@CubeEntity.update.end
+@Board.isOccupied{x: number, y: number}: boolean
+@@Board.isOccupied.code
+  if (x < 0 || x >= this.width || y < 0) return true;
+  if (y >= this.height) return false;
+  return this.grid[y * this.width + x] !== null;
+@@Board.isOccupied.end
+
+@Board.addBlocks{blocks: any[]}: void
+@@Board.addBlocks.code
+  for (const b of blocks) {
+    if (b.y >= 0 && b.y < this.height) {
+      this.grid[b.y * this.width + b.x] = b;
+      this.blocks.push(b);
+      this.group.add(b.mesh);
+    }
+  }
+@@Board.addBlocks.end
+
+@Board.clearLines{}: number
+@@Board.clearLines.code
+  let linesCleared = 0;
+  for (let y = 0; y < this.height; y++) {
+    let full = true;
+    for (let x = 0; x < this.width; x++) {
+      if (this.grid[y * this.width + x] === null) {
+        full = false;
+        break;
+      }
+    }
+    if (full) {
+      linesCleared++;
+      // Remove blocks in this line from scene and array
+      for (let x = 0; x < this.width; x++) {
+        const b = this.grid[y * this.width + x];
+        this.group.remove(b.mesh);
+        this.blocks = this.blocks.filter(block => block !== b);
+      }
+      // Move everything above down
+      for (let yy = y; yy < this.height - 1; yy++) {
+        for (let x = 0; x < this.width; x++) {
+          const above = this.grid[(yy + 1) * this.width + x];
+          this.grid[yy * this.width + x] = above;
+          if (above) {
+            above.y--;
+            above.mesh.position.y = above.y;
+          }
+        }
+      }
+      for (let x = 0; x < this.width; x++) {
+        this.grid[(this.height - 1) * this.width + x] = null;
+      }
+      y--; 
+    }
+  }
+  return linesCleared;
+@@Board.clearLines.end
+
+// --- Tetromino ---
+Tetromino[Tetromino.ts{x: number, y: number, shape: number[][], color: number, blocks: any[], group: any}]
+@Tetromino.constructor{type: number}
+@@Tetromino.constructor.code
+  this.x = 4;
+  this.y = 19;
+  this.group = new three.Group();
+  this.blocks = [];
+  
+  const shapes = [
+    { color: 0x00ffff, matrix: [[1,1,1,1]] }, // I
+    { color: 0xffff00, matrix: [[1,1],[1,1]] }, // O
+    { color: 0xaa00ff, matrix: [[0,1,0],[1,1,1]] }, // T
+    { color: 0x00ff00, matrix: [[0,1,1],[1,1,0]] }, // S
+    { color: 0xff0000, matrix: [[1,1,0],[0,1,1]] }, // Z
+    { color: 0x0000ff, matrix: [[1,0,0],[1,1,1]] }, // J
+    { color: 0xffa500, matrix: [[0,0,1],[1,1,1]] }  // L
+  ];
+  
+  const t = typeof type === 'number' ? type : Math.floor(Math.random() * shapes.length);
+  this.shape = shapes[t].matrix;
+  this.color = shapes[t].color;
+  
+  this.createMeshes();
+  this.updatePosition();
+@@Tetromino.constructor.end
+
+@Tetromino.createMeshes{}: void
+@@Tetromino.createMeshes.code
+  for (const b of this.blocks) {
+    this.group.remove(b.mesh);
+  }
+  this.blocks = [];
+  
+  const geo = new three.BoxGeometry(0.96, 0.96, 0.96);
+  const mat = new three.MeshPhongMaterial({ color: this.color, shininess: 100 });
+  
+  for (let r = 0; r < this.shape.length; r++) {
+    for (let c = 0; c < this.shape[r].length; c++) {
+      if (this.shape[r][c]) {
+        const mesh = new three.Mesh(geo, mat);
+        // Add a bevel outline
+        const edges = new three.EdgesGeometry(geo);
+        const line = new three.LineSegments(edges, new three.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 }));
+        mesh.add(line);
+        
+        mesh.position.set(c, -r, 0); 
+        this.group.add(mesh);
+        this.blocks.push({ localX: c, localY: -r, mesh });
+      }
+    }
+  }
+@@Tetromino.createMeshes.end
+
+@Tetromino.updatePosition{}: void
+@@Tetromino.updatePosition.code
+  this.group.position.set(this.x, this.y, 0);
+@@Tetromino.updatePosition.end
+
+@Tetromino.getGlobalBlocks{}: any[]
+@@Tetromino.getGlobalBlocks.code
+  return this.blocks.map(b => ({
+    x: this.x + b.localX,
+    y: this.y + b.localY,
+    color: this.color,
+    mesh: b.mesh
+  }));
+@@Tetromino.getGlobalBlocks.end
+
+@Tetromino.rotate{}: void
+@@Tetromino.rotate.code
+  const newShape = [];
+  const rows = this.shape.length;
+  const cols = this.shape[0].length;
+  for (let c = 0; c < cols; c++) {
+    newShape[c] = [];
+    for (let r = 0; r < rows; r++) {
+      newShape[c][rows - 1 - r] = this.shape[r][c];
+    }
+  }
+  this.shape = newShape;
+  this.createMeshes();
+@@Tetromino.rotate.end
 
 // --- Lighting ---
 Lighting[Lighting.ts{light: any}]
 @Lighting.constructor{}
 @@Lighting.constructor.code
-  this.light = new three.DirectionalLight(0xffffff, 3);
-  this.light.position.set(-1, 2, 4);
+  this.light = new three.DirectionalLight(0xffffff, 2);
+  this.light.position.set(5, 10, 15);
 @@Lighting.constructor.end
 
 // --- Main App ---
-ThreeApp[ThreeApp.ts{scene: any, camera: any, renderer: any, entities: any[]}]
-ThreeApp --> CubeEntity
+ThreeApp[ThreeApp.ts{scene: any, camera: any, renderer: any, board: any, currentpiece: any, dropTimer: number, gameOver: boolean, score: number}]
+ThreeApp --> Board
+ThreeApp --> Tetromino
 ThreeApp --> Lighting
 
 @ThreeApp.constructor{}
@@ -41,47 +191,132 @@ ThreeApp --> Lighting
   this.scene = new three.Scene();
   this.scene.background = new three.Color(0x0b0e14);
 
-  this.camera = new three.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-  this.camera.position.z = 4;
+  this.camera = new three.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+  this.camera.position.set(4.5, 10, 24);
 
   this.renderer = new three.WebGLRenderer({ antialias: true });
   this.renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(this.renderer.domElement);
   
-  this.entities = [];
+  this.board = new Board();
+  this.scene.add(this.board.group);
   
-  // Add a modular cube
-  const cube = new CubeEntity();
-  this.scene.add(cube.mesh);
-  this.entities.push(cube);
+  this.currentpiece = new Tetromino();
+  this.scene.add(this.currentpiece.group);
   
-  // Add modular lighting
   const lighting = new Lighting();
   this.scene.add(lighting.light);
-  this.scene.add(new three.AmbientLight(0x404040, 2));
+  this.scene.add(new three.AmbientLight(0x404040, 1.5));
 
-  // Handle resize
+  this.dropTimer = 0;
+  this.gameOver = false;
+  this.score = 0;
+
   window.addEventListener('resize', () => {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
   });
+  
+  window.addEventListener('keydown', (e) => this.handleInput(e));
 @@ThreeApp.constructor.end
+
+@ThreeApp.handleInput{e: any}: void
+@@ThreeApp.handleInput.code
+  if (this.gameOver) return;
+  
+  let dx = 0;
+  let movePiece = false;
+  if (e.key === 'ArrowLeft') { dx = -1; movePiece = true; }
+  if (e.key === 'ArrowRight') { dx = 1; movePiece = true; }
+  
+  if (movePiece) {
+    let canMove = true;
+    for (const b of this.currentpiece.getGlobalBlocks()) {
+      if (this.board.isOccupied(b.x + dx, b.y)) canMove = false;
+    }
+    if (canMove) {
+      this.currentpiece.x += dx;
+      this.currentpiece.updatePosition();
+    }
+  }
+  
+  if (e.key === 'ArrowUp') {
+    const oldShape = this.currentpiece.shape;
+    this.currentpiece.rotate();
+    let canRotate = true;
+    for (const b of this.currentpiece.getGlobalBlocks()) {
+      if (this.board.isOccupied(b.x, b.y)) canRotate = false;
+    }
+    if (!canRotate) {
+      this.currentpiece.shape = oldShape;
+      this.currentpiece.createMeshes();
+    }
+  }
+  
+  if (e.key === 'ArrowDown') {
+    this.dropTimer += 1000;
+  }
+@@ThreeApp.handleInput.end
+
+@ThreeApp.updateScore{lines: number}: void
+@@ThreeApp.updateScore.code
+  if (lines > 0) {
+    this.score += lines * 100;
+    const scoreEl = document.getElementById('score');
+    if (scoreEl) scoreEl.innerText = this.score;
+  }
+@@ThreeApp.updateScore.end
 
 @ThreeApp.animate{}: void
 @@ThreeApp.animate.code
   requestAnimationFrame(() => this.animate());
   
-  const delta = 0.016; // rough 60fps delta
-  for(const entity of this.entities) {
-    if(entity.update) entity.update(delta);
+  if (!this.gameOver) {
+    const delta = 0.016;
+    this.dropTimer += delta * 1.5; 
+    
+    if (this.dropTimer > 1) {
+      this.dropTimer = 0;
+      
+      let canDrop = true;
+      for (const b of this.currentpiece.getGlobalBlocks()) {
+        if (this.board.isOccupied(b.x, b.y - 1)) canDrop = false;
+      }
+      
+      if (canDrop) {
+        this.currentpiece.y -= 1;
+        this.currentpiece.updatePosition();
+      } else {
+        const globalBlocks = this.currentpiece.getGlobalBlocks();
+        this.scene.remove(this.currentpiece.group);
+        for(const gb of globalBlocks) {
+           gb.mesh.position.set(gb.x, gb.y, 0); 
+        }
+        this.board.addBlocks(globalBlocks);
+        
+        const lines = this.board.clearLines();
+        this.updateScore(lines);
+        
+        this.currentpiece = new Tetromino();
+        this.scene.add(this.currentpiece.group);
+        
+        for (const b of this.currentpiece.getGlobalBlocks()) {
+          if (this.board.isOccupied(b.x, b.y)) {
+            this.gameOver = true;
+            const el = document.getElementById('overlay-title');
+            if (el) el.innerText = "GAME OVER";
+          }
+        }
+      }
+    }
   }
   
   this.renderer.render(this.scene, this.camera);
 @@ThreeApp.animate.end
 
 // --- Rollup Configuration ---
-Rollup->{BaseEntity.ts, CubeEntity.ts, Lighting.ts, ThreeApp.ts}
+Rollup->{Board.ts, Tetromino.ts, Lighting.ts, ThreeApp.ts}
 
 // --- Web UI ---
 web->index.html.code
@@ -90,7 +325,7 @@ web->index.html.code
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SoT Three.js Built</title>
+    <title>SoT 3D Tetris</title>
     <style>
         body { margin: 0; overflow: hidden; background: #0b0e14; color: white; font-family: 'Inter', sans-serif; }
         #overlay { position: absolute; top: 20px; left: 20px; pointer-events: none; }
@@ -100,8 +335,9 @@ web->index.html.code
 </head>
 <body>
     <div id="overlay" class="card">
-        <h2><span class="accent">SoT</span> Three.js Modular Rollup</h2>
-        <p>This 3D scene is built from 4 distinct .flow classes bundled via esbuild!</p>
+        <h2 id="overlay-title"><span class="accent">SoT</span> 3D Tetris</h2>
+        <p>Score: <span id="score" class="accent">0</span></p>
+        <p style="font-size: 12px; color: #888;">Arrows to move/rotate</p>
     </div>
 
     <!-- Import our compiled Javascript bundle from Rollup! -->
