@@ -1,12 +1,6 @@
 import fs from "fs";
 import path from "path";
 
-
-
-/**
- * Parses a flowchart definition string to extract nodes, composition edges,
- * inheritance edges, methods, types, interfaces, main blocks, and EXTERNALS.
- */
 /**
  * Parses a flowchart definition string to extract nodes, composition edges,
  * inheritance edges, methods, types, interfaces, main blocks, and EXTERNALS.
