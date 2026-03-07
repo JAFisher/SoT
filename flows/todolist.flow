@@ -1,0 +1,227 @@
+graph TD
+  TodoManager[TodoManager.ts { tasks: any[] }]
+  
+  extern->electron from "electron"
+  extern->path from "path"
+
+  pkg->main dist/main.js
+  cliscripts->start npx electron .
+
+  @@TodoManager.constructor.code
+    this.tasks = [];
+  @@TodoManager.constructor.end
+
+  @TodoManager.addTask{title: string}: void
+  @@TodoManager.addTask.code
+    this.tasks.push({ id: Date.now(), title, completed: false });
+  @@TodoManager.addTask.end
+
+  @TodoManager.toggleTask{id: number}: void
+  @@TodoManager.toggleTask.code
+    const task = this.tasks.find(t => t.id === id);
+    if (task) task.completed = !task.completed;
+  @@TodoManager.toggleTask.end
+
+  @TodoManager.deleteTask{id: number}: void
+  @@TodoManager.deleteTask.code
+    this.tasks = this.tasks.filter(t => t.id !== id);
+  @@TodoManager.deleteTask.end
+
+  %% ---- Electron Main Process ----
+  @@main.code
+    const { app, BrowserWindow, ipcMain } = electron;
+
+    const todoManager = new TodoManager();
+
+    function createWindow() {
+      const win = new BrowserWindow({
+        width: 800,
+        height: 600,
+        backgroundColor: '#0f172a',
+        webPreferences: {
+          nodeIntegration: true,
+          contextIsolation: false
+        }
+      });
+
+      win.loadFile('index.html');
+      // win.webContents.openDevTools();
+    }
+
+    app.whenReady().then(() => {
+      createWindow();
+
+      app.on('activate', () => {
+        if (BrowserWindow.getAllWindows().length === 0) createWindow();
+      });
+    });
+
+    app.on('window-all-closed', () => {
+      if (process.platform !== 'darwin') app.quit();
+    });
+
+    // IPC Handlers
+    ipcMain.handle('get-tasks', () => todoManager.tasks);
+    ipcMain.handle('add-task', (event, title) => {
+      todoManager.addTask(title);
+      return todoManager.tasks;
+    });
+    ipcMain.handle('toggle-task', (event, id) => {
+      todoManager.toggleTask(id);
+      return todoManager.tasks;
+    });
+    ipcMain.handle('delete-task', (event, id) => {
+      todoManager.deleteTask(id);
+      return todoManager.tasks;
+    });
+  @@main.end
+
+  %% ---- UI Logic (web block) ----
+  web->index.html.code
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <title>SoT Electron Todo</title>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --card: #1e293b;
+        --text: #f1f5f9;
+        --accent: #38bdf8;
+        --danger: #ef4444;
+        --success: #22c55e;
+      }
+      body {
+        font-family: 'Inter', system-ui, sans-serif;
+        background-color: var(--bg);
+        color: var(--text);
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        padding: 40px;
+      }
+      .container {
+        width: 100%;
+        max-width: 500px;
+        background: var(--card);
+        padding: 24px;
+        border-radius: 12px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        border: 1px solid #334155;
+      }
+      h1 { font-size: 24px; margin-bottom: 24px; text-align: center; color: var(--accent); }
+      .input-group { display: flex; gap: 8px; margin-bottom: 24px; }
+      input {
+        flex: 1;
+        background: #0f172a;
+        border: 1px solid #334155;
+        padding: 12px;
+        border-radius: 6px;
+        color: white;
+        outline: none;
+      }
+      input:focus { border-color: var(--accent); }
+      button.add-btn {
+        background: var(--accent);
+        color: #0f172a;
+        border: none;
+        padding: 0 20px;
+        border-radius: 6px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      ul { list-style: none; padding: 0; }
+      li {
+        display: flex;
+        align-items: center;
+        padding: 12px;
+        background: #0f172a;
+        margin-bottom: 8px;
+        border-radius: 6px;
+        border: 1px solid #334155;
+        transition: 0.2s;
+      }
+      li:hover { border-color: #475569; }
+      .task-title { flex: 1; margin-left: 12px; cursor: pointer; }
+      .completed { text-decoration: line-through; color: #64748b; }
+      .delete-btn {
+        background: transparent;
+        color: #64748b;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+      }
+      .delete-btn:hover { color: var(--danger); }
+      .checkbox {
+        width: 18px;
+        height: 18px;
+        border: 2px solid var(--accent);
+        border-radius: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .checkbox.checked { background: var(--accent); }
+      .checkbox.checked::after { content: '✓'; color: #0f172a; font-size: 14px; font-weight: bold; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>SoT Tasks</h1>
+      <div class="input-group">
+        <input type="text" id="taskInput" placeholder="What needs to be done?">
+        <button class="add-btn" onclick="addTask()">Add</button>
+      </div>
+      <ul id="taskList"></ul>
+    </div>
+
+    <script>
+      const { ipcRenderer } = require('electron');
+
+      const input = document.getElementById('taskInput');
+      const list = document.getElementById('taskList');
+
+      async function refreshTasks() {
+        const tasks = await ipcRenderer.invoke('get-tasks');
+        renderTasks(tasks);
+      }
+
+      function renderTasks(tasks) {
+        list.innerHTML = '';
+        tasks.forEach(task => {
+          const li = document.createElement('li');
+          li.innerHTML = `
+            <div class="checkbox ${task.completed ? 'checked' : ''}" onclick="toggleTask(${task.id})"></div>
+            <span class="task-title ${task.completed ? 'completed' : ''}" onclick="toggleTask(${task.id})">${task.title}</span>
+            <button class="delete-btn" onclick="deleteTask(${task.id})">×</button>
+          `;
+          list.appendChild(li);
+        });
+      }
+
+      async function addTask() {
+        const title = input.value.trim();
+        if (title) {
+          const tasks = await ipcRenderer.invoke('add-task', title);
+          input.value = '';
+          renderTasks(tasks);
+        }
+      }
+
+      async function toggleTask(id) {
+        const tasks = await ipcRenderer.invoke('toggle-task', id);
+        renderTasks(tasks);
+      }
+
+      async function deleteTask(id) {
+        const tasks = await ipcRenderer.invoke('delete-task', id);
+        renderTasks(tasks);
+      }
+
+      input.addEventListener('keypress', (e) => { if (e.key === 'Enter') addTask(); });
+      refreshTasks();
+    </script>
+  </body>
+  </html>
+  web->index.html.end

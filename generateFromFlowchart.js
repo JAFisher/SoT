@@ -23,6 +23,7 @@ function parseFlowchart(definition) {
     const webBlocks = [];
     const externals = {};
     const cliScripts = {};
+    const pkgOverrides = {};
     const processedFiles = new Set();
 
     const nodePattern = /(\w+)(?:\[([^\]{]+)(?:\{([^}]*)\})?\])?/;
@@ -38,6 +39,7 @@ function parseFlowchart(definition) {
     const externPattern = /extern->(\w+)\s*from\s*['"]([^'"]+)['"]/;
     const includePattern = /include->([^ \n]+)/;
     const cliScriptPattern = /cliscripts->(\w+)\s+(.+)/;
+    const pkgOverridePattern = /pkg->(\w+)\s+(.+)/;
 
     function addNode(id, file, props, namespace) {
         if (!nodes[id]) {
@@ -218,13 +220,21 @@ function parseFlowchart(definition) {
                 cliScripts[scriptName] = scriptCommand;
                 continue;
             }
+
+            // 11. Package Overrides (package.json top-level fields)
+            const pkgOverrideMatch = line.match(pkgOverridePattern);
+            if (pkgOverrideMatch) {
+                const [, fieldName, fieldValue] = pkgOverrideMatch;
+                pkgOverrides[fieldName] = fieldValue;
+                continue;
+            }
         }
     }
 
     const rootLines = definition.split("\n").map(l => l.trim()).filter(l => l && !/^graph\b/.test(l));
     parseWorker(rootLines, "./flows", "");
 
-    return { nodes, compositionEdges, extendsEdges, methods, types, interfaces, mainBlocks, webBlocks, externals, cliScripts };
+    return { nodes, compositionEdges, extendsEdges, methods, types, interfaces, mainBlocks, webBlocks, externals, cliScripts, pkgOverrides };
 }
 
 /** Helper functions: parseProps, indent, stripTs, toPascalCase (identical to your original) **/
@@ -275,7 +285,7 @@ function toPascalCase(str) { return str.replace(/[-_](.)/g, (_, c) => c.toUpperC
 /**
  * GENERATE FILES
  */
-function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods, types, interfaces, mainBlocks, webBlocks, externals, cliScripts }) {
+function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods, types, interfaces, mainBlocks, webBlocks, externals, cliScripts, pkgOverrides }) {
     // === Pre-calculate all component names (for cross-namespace imports) ===
     const allClassNames = new Set(Object.entries(nodes).map(([id, n]) => toPascalCase(path.basename(n.file || id, ".ts"))));
     const allInterfaceNames = new Set(Object.keys(interfaces));
@@ -482,6 +492,7 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
             "start": "node dist/main.js",
             ...cliScripts
         },
+        ...pkgOverrides,
         dependencies: dependencies,
         devDependencies: { "ts-node": "^10.9.1", "typescript": "^5.0.0", "@types/node": "^20.0.0" }
     };
