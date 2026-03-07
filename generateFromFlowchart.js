@@ -54,7 +54,19 @@ function parseFlowchart(definition) {
 
     function parseWorker(lines, currentDir, namespace) {
         for (let i = 0; i < lines.length; i++) {
-            const line = lines[i];
+            let line = lines[i];
+
+            // Helper to check bracket balance
+            const count = (str, char) => (str.match(new RegExp("\\" + char, "g")) || []).length;
+
+            // Detect multiline node/composition/inheritance starts
+            // If it has '[' but no matching ']', or '---' / '-->' at the end
+            if (line.includes('[') && count(line, '[') > count(line, ']')) {
+                while (i + 1 < lines.length && count(line, '[') > count(line, ']')) {
+                    i++;
+                    line += " " + lines[i];
+                }
+            }
 
             // 1. Includes
             const includeMatch = line.match(includePattern);
@@ -85,6 +97,13 @@ function parseFlowchart(definition) {
             }
 
             // 3. Types
+            const typeAliasMatch = line.match(/type->(\w+)\s*=\s*(.+)/);
+            if (typeAliasMatch) {
+                const [, typeName, typeDef] = typeAliasMatch;
+                types[typeName] = { alias: typeDef.trim(), namespace };
+                continue;
+            }
+
             const typeStartMatch = line.match(/type->(\w+)\s*\{/);
             if (typeStartMatch) {
                 const typeName = typeStartMatch[1];
@@ -308,27 +327,47 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
     }
 
     // 1. Types
-    for (const [typeName, { props, namespace }] of Object.entries(types)) {
+    for (const [typeName, data] of Object.entries(types)) {
+        const { props, alias, namespace } = data;
         const typeOrClassImports = new Set();
-        const fields = props.map((p) => {
-            for (const ref of extractReferencedTypes(p.type)) {
+        let content = "";
+
+        if (alias) {
+            for (const ref of extractReferencedTypes(alias)) {
                 if (types[ref] || interfaces[ref] || allClassNames.has(ref)) {
                     if (ref !== typeName) typeOrClassImports.add(ref);
                 }
             }
-            const cleanType = p.type.includes("):") ? p.type.replace(/\):/g, ") =>") : p.type;
-            return `  ${p.name}: ${cleanType};`;
-        }).join("\n");
+            const importLines = Array.from(typeOrClassImports).map((name) => {
+                const target = types[name] || interfaces[name] || Object.values(nodes).find(n => toPascalCase(path.basename(n.file, ".ts")) === name);
+                const targetNamespace = target.namespace || "";
+                const targetFile = target.file || (name + ".ts");
+                const relPath = getRelativeImport(namespace, targetNamespace, targetFile);
+                return `import type { ${name} } from "${relPath}";`;
+            }).join("\n");
+            content = `${importLines ? importLines + "\n\n" : ""}export type ${typeName} = ${alias};`;
+        } else {
+            const fields = props.map((p) => {
+                for (const ref of extractReferencedTypes(p.type)) {
+                    if (types[ref] || interfaces[ref] || allClassNames.has(ref)) {
+                        if (ref !== typeName) typeOrClassImports.add(ref);
+                    }
+                }
+                const cleanType = p.type.includes("):") ? p.type.replace(/\):/g, ") =>") : p.type;
+                return `  ${p.name}: ${cleanType};`;
+            }).join("\n");
 
-        const importLines = Array.from(typeOrClassImports).map((name) => {
-            const target = types[name] || interfaces[name] || Object.values(nodes).find(n => toPascalCase(path.basename(n.file, ".ts")) === name);
-            const targetNamespace = target.namespace || "";
-            const targetFile = target.file || (name + ".ts");
-            const relPath = getRelativeImport(namespace, targetNamespace, targetFile);
-            return `import type { ${name} } from "${relPath}";`;
-        }).join("\n");
+            const importLines = Array.from(typeOrClassImports).map((name) => {
+                const target = types[name] || interfaces[name] || Object.values(nodes).find(n => toPascalCase(path.basename(n.file, ".ts")) === name);
+                const targetNamespace = target.namespace || "";
+                const targetFile = target.file || (name + ".ts");
+                const relPath = getRelativeImport(namespace, targetNamespace, targetFile);
+                return `import type { ${name} } from "${relPath}";`;
+            }).join("\n");
 
-        const content = `${importLines ? importLines + "\n\n" : ""}export type ${typeName} = {\n${fields}\n};`;
+            content = `${importLines ? importLines + "\n\n" : ""}export type ${typeName} = {\n${fields}\n};`;
+        }
+
         const outPath = path.join(baseDir, namespace, `${typeName}.ts`);
         fs.mkdirSync(path.dirname(outPath), { recursive: true });
         fs.writeFileSync(outPath, content, "utf-8");

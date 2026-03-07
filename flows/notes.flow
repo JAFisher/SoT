@@ -6,7 +6,19 @@ graph TD
     pkg->main dist/main.js
     cliscripts->start npx electron .
 
-    App[App.ts { timerInterval: any, tray: any, notes: string[], window: any, isWorkPhase: boolean, timeLeft: number, onTick: ((timeLeft: number, isWork: boolean) => void) | null;  onComplete: ((wasWork: boolean) => void) | null}]
+    type->TickHandler = (timeLeft: number, isWork: boolean) => void
+    type->CompleteHandler = (wasWork: boolean) => void
+
+    App[App.ts { 
+      timerInterval: any, 
+      tray: any, 
+      notes: string[], 
+      window: any, 
+      isWorkPhase: boolean, 
+      timeLeft: number, 
+      onTick: TickHandler | null,  
+      onComplete: CompleteHandler | null
+    }]
     
     @App.constructor
     @@App.constructor.code
