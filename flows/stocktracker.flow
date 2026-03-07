@@ -1,0 +1,258 @@
+graph TD
+  StockService[StockService.ts { stocks: any }]
+
+  extern->electron from "electron"
+  extern->path from "path"
+
+  pkg->main dist/main.js
+  cliscripts->start npx electron .
+
+  @@StockService.constructor.code
+    this.stocks = {
+      'AAPL': { price: 150.00, change: 0, history: [] },
+      'GOOGL': { price: 2800.00, change: 0, history: [] },
+      'AMZN': { price: 3300.00, change: 0, history: [] },
+      'TSLA': { price: 700.00, change: 0, history: [] },
+      'BTC': { price: 45000.00, change: 0, history: [] }
+    };
+  @@StockService.constructor.end
+
+  @StockService.updateStocks{}: any
+  @@StockService.updateStocks.code
+    for (const symbol in this.stocks) {
+      const stock = this.stocks[symbol];
+      const volatility = 0.002; // 0.2% max change per tick
+      const change = stock.price * (Math.random() * volatility * 2 - volatility);
+      stock.price += change;
+      stock.change = change;
+      stock.history.push({ time: Date.now(), price: stock.price });
+      if (stock.history.length > 50) stock.history.shift();
+    }
+    return this.stocks;
+  @@StockService.updateStocks.end
+
+  %% ---- Electron Main Process ----
+  @@main.code
+    const { app, BrowserWindow, ipcMain } = electron;
+    const stockService = new StockService();
+
+    function createWindow() {
+      const win = new BrowserWindow({
+        width: 1000,
+        height: 700,
+        backgroundColor: '#0b0e14',
+        webPreferences: {
+          nodeIntegration: true,
+          contextIsolation: false
+        },
+        titleBarStyle: 'hiddenInset'
+      });
+
+      win.loadFile('index.html');
+    }
+
+    app.whenReady().then(() => {
+      createWindow();
+
+      // Real-time update loop
+      setInterval(() => {
+        const updates = stockService.updateStocks();
+        BrowserWindow.getAllWindows().forEach(win => {
+          win.webContents.send('stock-update', updates);
+        });
+      }, 1000);
+    });
+
+    ipcMain.handle('get-initial-stocks', () => stockService.stocks);
+
+    app.on('window-all-closed', () => {
+      if (process.platform !== 'darwin') app.quit();
+    });
+  @@main.end
+
+  %% ---- Premium UI (web block) ----
+  web->index.html.code
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <title>SoT Real-Time Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      :root {
+        --bg: #0b0e14;
+        --card: #151921;
+        --text: #ffffff;
+        --accent: #3773f5;
+        --up: #26a69a;
+        --down: #ef5350;
+        --border: #2a2e39;
+      }
+      body {
+        font-family: 'Inter', -apple-system, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        margin: 0;
+        padding: 20px;
+        -webkit-app-region: drag;
+      }
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-top: 20px;
+      }
+      .logo { font-size: 24px; font-weight: 800; color: var(--accent); }
+      
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        transition: transform 0.2s, border-color 0.2s;
+        -webkit-app-region: no-drag;
+      }
+      .card:hover { border-color: var(--accent); transform: translateY(-2px); }
+      
+      .stock-header { display: flex; justify-content: space-between; margin-bottom: 15px; }
+      .symbol { font-size: 20px; font-weight: 700; }
+      .price { font-size: 20px; font-family: 'Roboto Mono', monospace; }
+      .change { font-size: 14px; margin-top: 4px; }
+      .up { color: var(--up); }
+      .down { color: var(--down); }
+      
+      canvas { width: 100% !important; height: 120px !important; margin-top: 15px; }
+      
+      .ticker-container {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: var(--card);
+        border-top: 1px solid var(--border);
+        padding: 10px 0;
+        overflow: hidden;
+        white-space: nowrap;
+      }
+      .ticker {
+        display: inline-block;
+        animation: ticker 30s linear infinite;
+      }
+      .ticker-item {
+        display: inline-block;
+        margin-right: 50px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      @keyframes ticker {
+        0% { transform: translateX(100%); }
+        100% { transform: translateX(-100%); }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div class="logo">SoT QUANT</div>
+      <div id="status" style="font-size: 12px; opacity: 0.5;">LIVE CONNECTION</div>
+    </div>
+
+    <div class="grid" id="stockGrid"></div>
+
+    <div class="ticker-container">
+      <div class="ticker" id="ticker"></div>
+    </div>
+
+    <script>
+      const { ipcRenderer } = require('electron');
+      const charts = {};
+
+      function createCard(symbol, data) {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.id = `card-${symbol}`;
+        div.innerHTML = `
+          <div class="stock-header">
+            <div>
+              <div class="symbol">${symbol}</div>
+              <div class="change" id="change-${symbol}">--</div>
+            </div>
+            <div class="price" id="price-${symbol}">$--</div>
+          </div>
+          <canvas id="chart-${symbol}"></canvas>
+        `;
+        document.getElementById('stockGrid').appendChild(div);
+
+        const ctx = document.getElementById(`chart-${symbol}`).getContext('2d');
+        charts[symbol] = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: data.history.map((h, i) => i),
+            datasets: [{
+              data: data.history.map(h => h.price),
+              borderColor: '#3773f5',
+              borderWidth: 2,
+              pointRadius: 0,
+              fill: true,
+              backgroundColor: 'rgba(55, 115, 245, 0.1)',
+              tension: 0.4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { x: { display: false }, y: { display: false } },
+            animation: { duration: 0 }
+          }
+        });
+      }
+
+      function updateUI(updates) {
+        const ticker = document.getElementById('ticker');
+        ticker.innerHTML = '';
+        
+        for (const symbol in updates) {
+          const stock = updates[symbol];
+          const priceEl = document.getElementById(`price-${symbol}`);
+          const changeEl = document.getElementById(`change-${symbol}`);
+          
+          if (!priceEl) {
+            createCard(symbol, stock);
+          } else {
+            const isUp = stock.change >= 0;
+            priceEl.innerText = `$${stock.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            changeEl.innerText = `${isUp ? '▲' : '▼'} ${Math.abs(stock.change).toFixed(2)} (${((stock.change / stock.price) * 100).toFixed(2)}%)`;
+            changeEl.className = `change ${isUp ? 'up' : 'down'}`;
+            
+            // Update Chart
+            const chart = charts[symbol];
+            chart.data.labels = stock.history.map((h, i) => i);
+            chart.data.datasets[0].data = stock.history.map(h => h.price);
+            chart.data.datasets[0].borderColor = isUp ? '#26a69a' : '#ef5350';
+            chart.data.datasets[0].backgroundColor = isUp ? 'rgba(38, 166, 154, 0.1)' : 'rgba(239, 83, 80, 0.1)';
+            chart.update();
+          }
+
+          const tickerItem = document.createElement('span');
+          tickerItem.className = 'ticker-item';
+          const isUp = stock.change >= 0;
+          tickerItem.innerHTML = `${symbol}: ${stock.price.toFixed(2)} <span class="${isUp ? 'up' : 'down'}">${isUp ? '▲' : '▼'}${Math.abs(stock.change).toFixed(2)}</span>`;
+          ticker.appendChild(tickerItem);
+        }
+      }
+
+      ipcRenderer.on('stock-update', (event, updates) => {
+        updateUI(updates);
+      });
+
+      // Get initial data
+      ipcRenderer.invoke('get-initial-stocks').then(updateUI);
+    </script>
+  </body>
+  </html>
+  web->index.html.end

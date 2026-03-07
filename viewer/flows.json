@@ -626,6 +626,29 @@
       }
     }
   },
+  "stocktracker": {
+    "diagram": "graph TD\n  StockService[\"StockService\n─────────────────\nstocks: any\n─────────────────\nupdateStocks(): any\"]",
+    "metadata": {
+      "nodeCount": 1,
+      "compositionEdgeCount": 0,
+      "inheritanceEdgeCount": 0,
+      "types": {},
+      "interfaces": {},
+      "methods": [
+        {
+          "class": "StockService",
+          "name": "updateStocks",
+          "signature": "StockService.updateStocks(): any",
+          "async": false,
+          "hasCode": true
+        }
+      ],
+      "externals": {
+        "electron": "electron",
+        "path": "path"
+      }
+    }
+  },
   "todolist": {
     "diagram": "graph TD\n  TodoManager[\"TodoManager\n─────────────────\ntasks: any[]\n─────────────────\naddTask(title: string): void\ntoggleTask(id: number): void\ndeleteTask(id: number): void\"]",
     "metadata": {

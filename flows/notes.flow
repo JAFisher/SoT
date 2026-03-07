@@ -1,0 +1,344 @@
+graph TD
+    extern->electron from "electron"
+    extern->path from "path"
+    extern->fs from "fs"
+
+    pkg->main dist/main.js
+    cliscripts->start npx electron .
+
+    App[App.ts { timerInterval: any, tray: any, notes: string[], window: any, isWorkPhase: boolean, timeLeft: number, onTick: ((timeLeft: number, isWork: boolean) => void) | null;  onComplete: ((wasWork: boolean) => void) | null}]
+    
+    @App.constructor
+    @@App.constructor.code
+      this.notes = [];
+      this.isWorkPhase = true;
+      this.timeLeft = 25 * 60; // 25 minutes in seconds
+      this.timerInterval = null;
+      this.onTick = null;
+      this.onComplete = null;
+    @@App.constructor.end
+
+    @App.init{}: void
+    @@App.init.code
+      this.notes = this.loadNotes();
+    @@App.init.end
+
+    @App.loadNotes{}: string[]
+    @@App.loadNotes.code
+      try {
+        const data = fs.readFileSync(path.join(electron.app.getPath('userData'), 'focus-notes.json'), 'utf8');
+        return JSON.parse(data);
+      } catch (e) {
+        return [];
+      }
+    @@App.loadNotes.end
+
+    @App.saveNotes{}: void
+    @@App.saveNotes.code
+      fs.writeFileSync(
+        path.join(electron.app.getPath('userData'), 'focus-notes.json'),
+        JSON.stringify(this.notes, null, 2)
+      );
+    @@App.saveNotes.end
+
+    @App.addNote{text: string}: void
+    @@App.addNote.code
+      if (text.trim()) {
+        this.notes.push(text.trim());
+        this.saveNotes();
+        if (this.window) {
+          this.window.webContents.send('notes-updated', this.notes);
+        }
+      }
+    @@App.addNote.end
+
+    @App.start{}: void
+    @@App.start.code
+      if (this.timerInterval) return;
+      this.timerInterval = setInterval(() => {
+        this.timeLeft--;
+        if (this.onTick) this.onTick(this.timeLeft, this.isWorkPhase);
+        if (this.timeLeft <= 0) {
+          clearInterval(this.timerInterval);
+          this.timerInterval = null;
+          if (this.onComplete) this.onComplete(this.isWorkPhase);
+          // Switch phase
+          this.isWorkPhase = !this.isWorkPhase;
+          this.timeLeft = this.isWorkPhase ? 25 * 60 : 5 * 60;
+        }
+      }, 1000);
+    @@App.start.end
+
+    @App.pause{}: void
+    @@App.pause.code
+      if (this.timerInterval) {
+        clearInterval(this.timerInterval);
+        this.timerInterval = null;
+      }
+    @@App.pause.end
+
+    @App.reset{}: void
+    @@App.reset.code
+      if (this.timerInterval) {
+        clearInterval(this.timerInterval);
+        this.timerInterval = null;
+      }
+      this.isWorkPhase = true;
+      this.timeLeft = 25 * 60;
+      if (this.onTick) this.onTick(this.timeLeft, this.isWorkPhase);
+    @@App.reset.end
+
+    %% ---- Electron Main Process ----
+    @@main.code
+      const { app, BrowserWindow, ipcMain, Tray, Menu } = electron;
+
+      let mainWindow;
+      let tray;
+      let appInstance;
+
+      function createWindow() {
+        mainWindow = new BrowserWindow({
+          width: 420,
+          height: 680,
+          resizable: false,
+          backgroundColor: '#111827',
+          webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false
+          },
+          titleBarStyle: 'hidden',
+          frame: false,
+          show: false
+        });
+
+        mainWindow.loadFile('index.html');
+
+        mainWindow.once('ready-to-show', () => {
+          mainWindow.show();
+          if (appInstance) appInstance.window = mainWindow;
+        });
+
+        mainWindow.on('closed', () => {
+          mainWindow = null;
+          if (appInstance) appInstance.window = null;
+        });
+      }
+
+      app.whenReady().then(() => {
+        appInstance = new App();
+        appInstance.init();
+        createWindow();
+
+        // Optional tray setup (check if icon exists)
+        const iconPath = path.join(process.cwd(), 'icon.png');
+        if (fs.existsSync(iconPath)) {
+          tray = new Tray(iconPath);
+          const contextMenu = Menu.buildFromTemplate([
+            { label: 'Show', click: () => { if (mainWindow) mainWindow.show(); } },
+            { label: 'Start Timer', click: () => appInstance.start() },
+            { label: 'Pause Timer', click: () => appInstance.pause() },
+            { label: 'Reset Timer', click: () => appInstance.reset() },
+            { type: 'separator' },
+            { label: 'Quit', click: () => app.quit() }
+          ]);
+          tray.setToolTip('Daily Focus');
+          tray.setContextMenu(contextMenu);
+          tray.on('click', () => { if (mainWindow) mainWindow.show(); });
+        }
+
+        // IPC handlers
+        ipcMain.handle('get-notes', () => appInstance.notes);
+        ipcMain.handle('add-note', (_, text) => {
+          appInstance.addNote(text);
+          return appInstance.notes;
+        });
+
+        ipcMain.on('timer-start', () => appInstance.start());
+        ipcMain.on('timer-pause', () => appInstance.pause());
+        ipcMain.on('timer-reset', () => appInstance.reset());
+
+        // Forward timer events
+        appInstance.onTick = (timeLeft, isWork) => {
+          if (mainWindow) mainWindow.webContents.send('timer-tick', { timeLeft, isWork });
+        };
+        appInstance.onComplete = (wasWork) => {
+          if (mainWindow) {
+            mainWindow.webContents.send('timer-complete', wasWork);
+            mainWindow.webContents.executeJavaScript(
+              `new Audio('https://assets.mixkit.co/sfx/preview/mixkit-alarm-digital-clock-buzzer-989.mp3').play();`
+            ).catch(() => {}); // Ignore audio errors
+          }
+        };
+      });
+
+      app.on('window-all-closed', () => {
+        if (process.platform !== 'darwin') app.quit();
+      });
+    @@main.end
+
+    %% ---- Renderer UI ----
+    web->index.html.code
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Daily Focus</title>
+      <style>
+        :root {
+          --bg: #111827;
+          --card: #1f2937;
+          --accent: #6366f1;
+          --text: #f3f4f6;
+          --green: #10b981;
+          --red: #ef4444;
+        }
+        body {
+          font-family: system-ui, sans-serif;
+          background: var(--bg);
+          color: var(--text);
+          margin: 0;
+          padding: 20px;
+          height: 100vh;
+          display: flex;
+          flex-direction: column;
+          -webkit-app-region: drag;
+        }
+        header {
+          text-align: center;
+          margin-bottom: 24px;
+        }
+        h1 { margin: 0; font-size: 1.8rem; color: var(--accent); }
+        #timer {
+          font-size: 4.5rem;
+          font-weight: bold;
+          text-align: center;
+          margin: 20px 0;
+          font-variant-numeric: tabular-nums;
+        }
+        #phase { font-size: 1.2rem; opacity: 0.8; }
+        .controls {
+          display: flex;
+          justify-content: center;
+          gap: 16px;
+          margin: 20px 0;
+          -webkit-app-region: no-drag;
+        }
+        button {
+          padding: 12px 24px;
+          font-size: 1rem;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+        }
+        #start { background: var(--green); color: white; }
+        #pause { background: #6b7280; color: white; }
+        #reset { background: var(--red); color: white; }
+        #notes-area {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          background: var(--card);
+          border-radius: 12px;
+          padding: 16px;
+          margin-top: 16px;
+          -webkit-app-region: no-drag;
+        }
+        #note-input {
+          padding: 12px;
+          background: #374151;
+          border: none;
+          border-radius: 8px;
+          color: white;
+          font-size: 1rem;
+          margin-bottom: 12px;
+        }
+        #note-list {
+          flex: 1;
+          overflow-y: auto;
+          list-style: none;
+          padding: 0;
+          margin: 0;
+        }
+        #note-list li {
+          padding: 10px;
+          background: #4b5563;
+          margin-bottom: 8px;
+          border-radius: 6px;
+        }
+      </style>
+    </head>
+    <body>
+      <header>
+        <h1>Daily Focus</h1>
+        <div id="phase">Work Time</div>
+      </header>
+
+      <div id="timer">25:00</div>
+
+      <div class="controls">
+        <button id="start">Start</button>
+        <button id="pause">Pause</button>
+        <button id="reset">Reset</button>
+      </div>
+
+      <div id="notes-area">
+        <input id="note-input" placeholder="Quick note... (Enter to save)" type="text">
+        <ul id="note-list"></ul>
+      </div>
+
+      <script>
+        const { ipcRenderer } = require('electron');
+
+        const timerEl = document.getElementById('timer');
+        const phaseEl = document.getElementById('phase');
+        const noteList = document.getElementById('note-list');
+        const noteInput = document.getElementById('note-input');
+
+        function formatTime(seconds) {
+          const m = Math.floor(seconds / 60);
+          const s = seconds % 60;
+          return `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+        }
+
+        ipcRenderer.on('timer-tick', (_, { timeLeft, isWork }) => {
+          timerEl.textContent = formatTime(timeLeft);
+          phaseEl.textContent = isWork ? 'Work Time' : 'Break Time';
+          phaseEl.style.color = isWork ? '#10b981' : '#f59e0b';
+        });
+
+        ipcRenderer.on('timer-complete', (_, wasWork) => {
+          phaseEl.textContent = wasWork ? 'Break Time!' : 'Back to Work!';
+        });
+
+        function renderNotes(notes) {
+          noteList.innerHTML = '';
+          notes.forEach(note => {
+            const li = document.createElement('li');
+            li.textContent = note;
+            noteList.appendChild(li);
+          });
+          noteList.scrollTop = noteList.scrollHeight;
+        }
+
+        ipcRenderer.invoke('get-notes').then(renderNotes);
+
+        ipcRenderer.on('notes-updated', (_, notes) => {
+          renderNotes(notes);
+        });
+
+        noteInput.addEventListener('keydown', e => {
+          if (e.key === 'Enter') {
+            const text = noteInput.value.trim();
+            if (text) {
+              ipcRenderer.invoke('add-note', text).then(renderNotes);
+              noteInput.value = '';
+            }
+          }
+        });
+
+        document.getElementById('start').onclick = () => ipcRenderer.send('timer-start');
+        document.getElementById('pause').onclick = () => ipcRenderer.send('timer-pause');
+        document.getElementById('reset').onclick = () => ipcRenderer.send('timer-reset');
+      </script>
+    </body>
+    </html>
+    web->index.html.end

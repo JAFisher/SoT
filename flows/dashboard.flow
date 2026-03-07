@@ -1,0 +1,228 @@
+graph TD
+  include->web_core.flow
+
+  DashboardData[DashboardData.ts { metrics: any }]
+
+  @@DashboardData.constructor.code
+    this.metrics = {
+      revenue: [4000, 4500, 5200, 4800, 6100, 5900, 7200],
+      users: [120, 150, 180, 220, 210, 250, 300],
+      conversions: [15, 22, 18, 25, 30, 28, 35]
+    };
+  @@DashboardData.constructor.end
+
+  @DashboardData.getLatest{}: any
+  @@DashboardData.getLatest.code
+    return this.metrics;
+  @@DashboardData.getLatest.end
+
+  @@main.code
+    const web = new WebServer();
+    const data = new DashboardData();
+
+    // API Route for performance data
+    web.get("/api/metrics", (req: any, res: any) => {
+      res.json(data.getLatest());
+    });
+
+    // Serve Dashboard UI
+    web.get("/", (req: any, res: any) => {
+      res.sendFile(path.join(process.cwd(), "index.html"));
+    });
+
+    web.start();
+  @@main.end
+
+  web->index.html.code
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <title>SoT Premium Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --bg: #0f172a;
+        --card: #1e293b;
+        --text: #f1f5f9;
+        --accent: #38bdf8;
+        --secondary: #818cf8;
+        --success: #10b981;
+        --border: #334155;
+      }
+      body {
+        font-family: 'Inter', sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        margin: 0;
+        display: flex;
+        min-height: 100vh;
+      }
+      #sidebar {
+        width: 240px;
+        background: var(--card);
+        border-right: 1px solid var(--border);
+        padding: 30px 20px;
+      }
+      .logo { font-size: 22px; font-weight: 800; color: var(--accent); margin-bottom: 40px; }
+      #main { flex: 1; padding: 40px; }
+      
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        margin-bottom: 30px;
+      }
+      .kpi-card {
+        background: var(--card);
+        padding: 24px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+      }
+      .kpi-label { font-size: 14px; opacity: 0.6; margin-bottom: 8px; }
+      .kpi-value { font-size: 28px; font-weight: 600; }
+      
+      .chart-container {
+        background: var(--card);
+        padding: 30px;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        margin-bottom: 20px;
+      }
+      h2 { font-size: 18px; margin-bottom: 20px; opacity: 0.8; }
+      canvas { height: 300px !important; }
+    </style>
+  </head>
+  <body>
+    <div id="sidebar">
+      <div class="logo">SoT ANALYTICS</div>
+      <div style="opacity: 0.5; font-size: 13px;">DASHBOARD V1.0</div>
+    </div>
+    
+    <div id="main">
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">REVENUE</div>
+          <div class="kpi-value" id="val-revenue">$0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">ACTIVE USERS</div>
+          <div class="kpi-value" id="val-users">0</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">CONVERSIONS</div>
+          <div class="kpi-value" id="val-conversions">0</div>
+        </div>
+      </div>
+      
+      <div class="chart-container">
+        <h2>REVENUE GROWTH (7D)</h2>
+        <canvas id="revenueChart"></canvas>
+      </div>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div class="chart-container">
+          <h2>USER ACTIVITY</h2>
+          <canvas id="userChart"></canvas>
+        </div>
+        <div class="chart-container">
+          <h2>CONVERSION RATE</h2>
+          <canvas id="convChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      async function fetchData() {
+        const res = await fetch('/api/metrics');
+        const data = await res.json();
+        
+        // Update KPIs
+        document.getElementById('val-revenue').innerText = `$${data.revenue[6].toLocaleString()}`;
+        document.getElementById('val-users').innerText = data.users[6].toLocaleString();
+        document.getElementById('val-conversions').innerText = data.conversions[6].toLocaleString();
+        
+        initCharts(data);
+      }
+
+      function initCharts(data) {
+        const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        
+        // Revenue Chart
+        new Chart(document.getElementById('revenueChart'), {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Revenue',
+              data: data.revenue,
+              borderColor: '#38bdf8',
+              backgroundColor: 'rgba(56, 189, 248, 0.1)',
+              fill: true,
+              tension: 0.4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { grid: { color: '#334155' }, ticks: { color: '#64748b' } },
+              y: { grid: { color: '#334155' }, ticks: { color: '#64748b' } }
+            }
+          }
+        });
+
+        // User Chart
+        new Chart(document.getElementById('userChart'), {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [{
+              data: data.users,
+              backgroundColor: '#818cf8',
+              borderRadius: 6
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { display: false },
+              y: { display: false }
+            }
+          }
+        });
+
+        // Conversion Chart
+        new Chart(document.getElementById('convChart'), {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              data: data.conversions,
+              borderColor: '#10b981',
+              borderWidth: 3,
+              pointRadius: 4,
+              pointBackgroundColor: '#10b981',
+              tension: 0
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { display: false },
+              y: { display: false }
+            }
+          }
+        });
+      }
+
+      fetchData();
+    </script>
+  </body>
+  </html>
+  web->index.html.end
