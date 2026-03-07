@@ -29,7 +29,7 @@ function parseFlowchart(definition) {
     const nodePattern = /(\w+)(?:\[([^\]{]+)(?:\{([^}]*)\})?\])?/;
     const webStartPattern = /web->(.+)\.code/;
     const webEndPattern = /web->(.+)\.end/;
-    const methodPattern = /(@async\s+)?@(\w+)\.([^\{]+)(?:\{([^}]*)\})?:\s*(.+)/;
+    const methodPattern = /(@async\s+)?@(\w+)\.([^\{:]+)(?:\{([^}]*)\})?(?:\s*:\s*(.+))?/;
     const methodCodeStartPattern = /(@async\s+)?@{1,2}([\w.]+)\.code/;
     const methodCodeEndPattern = /@{1,2}([\w.]+)\.end/;
     const typePattern = /type->(\w+)\s*\{([^}]*)\}/;
@@ -159,7 +159,7 @@ function parseFlowchart(definition) {
                 methods[className][methodName] = {
                     async: !!asyncFlag,
                     params: parseProps(params),
-                    returnType: (returnType || "").trim(),
+                    returnType: (returnType || "void").trim(),
                 };
                 continue;
             }
@@ -195,7 +195,10 @@ function parseFlowchart(definition) {
                 if (!methods[className]) methods[className] = {};
                 const trimmed = codeBlock.trim();
                 if (methodName === "constructor") {
-                    methods[className].constructor = { code: trimmed };
+                    if (!methods[className].constructor) {
+                        methods[className].constructor = { params: [], returnType: "void" };
+                    }
+                    methods[className].constructor.code = trimmed;
                 } else {
                     if (!methods[className][methodName]) {
                         methods[className][methodName] = { params: [], returnType: "void" };
@@ -493,9 +496,10 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
 
         const fields = props.map((p) => `  ${p.name}: ${p.type};`).join("\n");
         let ctorContent = "";
-        const hasCustomCtor = methods[className] && methods[className].constructor;
+        const hasCustomCtor = methods[className] && methods[className].constructor && methods[className].constructor.code;
         if (hasCustomCtor) {
-            ctorContent = `\n  constructor() {\n${indent(methods[className].constructor.code, 4)}\n  }\n`;
+            const paramsStr = (methods[className].constructor.params || []).map(p => `${p.name}: ${p.type}`).join(', ');
+            ctorContent = `\n  constructor(${paramsStr}) {\n${indent(methods[className].constructor.code, 4)}\n  }\n`;
         } else if (props.length > 0) {
             ctorContent = `\n  constructor(${props.map(p => `${p.name}: ${p.type}`).join(', ')}) {\n${indent(parentRelationship ? 'super();\n' : '', 4)}${indent(props.map(p => `this.${p.name} = ${p.name};`).join('\n'), 4)}\n  }\n`;
         }

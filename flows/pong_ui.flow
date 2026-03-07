@@ -2,9 +2,24 @@ graph TD
     include->physics_core.flow
     extern->electron from 'electron'
 
+    pkg->main dist/main.js
+    cliscripts->start npx electron .
+
     @@main.code
         const { app, BrowserWindow, ipcMain } = electron;
         const physics = new PhysicsService(800, 500);
+
+        app.whenReady().then(() => {
+            const win = new BrowserWindow({
+                width: 800,
+                height: 500,
+                webPreferences: {
+                    nodeIntegration: true,
+                    contextIsolation: false
+                }
+            });
+            win.loadFile('index.html');
+        });
 
         // 60FPS Game Loop
         setInterval(() => {
