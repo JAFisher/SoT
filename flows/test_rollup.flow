@@ -1,0 +1,40 @@
+RollupTestClass[RollupTestClass.ts{message: string}]
+
+interface->RollupTestInterface{id: number, name: string}
+
+@RollupTestClass.sayHello{}: void
+@@RollupTestClass.sayHello.code
+console.log(this.message);
+@@RollupTestClass.sayHello.end
+
+Rollup->{RollupTestClass.ts, RollupTestInterface.ts}
+
+web->index.html.code
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rollup Test</title>
+    <style>
+        body { font-family: Inter, sans-serif; background: #0b0e14; color: white; padding: 40px; }
+        .card { background: #151921; padding: 20px; border-radius: 8px; border: 1px solid #2a2e39; }
+        .accent { color: #3773f5; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1><span class="accent">SoT</span> Rollup Test</h1>
+        <p>Check your browser console to see the output from compiled.js!</p>
+    </div>
+
+    <script type="module">
+        // Import our bundled typescript class!
+        import { RollupTestClass } from './compiled.js';
+        
+        const instance = new RollupTestClass("Hello from the bundled RollupTestClass!");
+        instance.sayHello();
+    </script>
+</body>
+</html>
+web->index.html.end
