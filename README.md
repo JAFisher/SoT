@@ -227,11 +227,11 @@ include->db.flow
 App[App.ts]
 App --> DB
 
-@async @main.code
+@async @@main.code
   const db = new Database();
   db.connect();
   console.log("App started");
-@main.end
+@@main.end
 ```
 
 ## Compiling for the Web in mind
