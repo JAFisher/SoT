@@ -1,0 +1,264 @@
+extern->three from "three"
+extern->SimplexNoise from "simplex-noise"
+cliscripts->start npx -y http-server -p 8080
+
+// --- Types ---
+type->ChunkKey = string
+
+// --- Chunk Class ---
+Chunk[Chunk.ts{mesh: any, x: number, z: number, matrix: any, instanceCount: number, voxels: Set}]
+@Chunk.constructor{x: number, z: number, noise2D: any, texture: any}
+@@Chunk.constructor.code
+  this.x = x;
+  this.z = z;
+  this.matrix = new three.Matrix4();
+  this.voxels = new Set(); // Collision lookup
+  
+  const size = 16;
+  const heightLimit = 20; 
+  const geometry = new three.BoxGeometry(1, 1, 1);
+  const material = new three.MeshStandardMaterial({ map: texture, roughness: 0.8 });
+  
+  const maxInstances = size * size * heightLimit;
+  this.mesh = new three.InstancedMesh(geometry, material, maxInstances);
+  this.mesh.instanceMatrix.setUsage(three.DynamicDrawUsage);
+  
+  let i = 0;
+  for (let lx = 0; lx < size; lx++) {
+    for (let lz = 0; lz < size; lz++) {
+      const gx = this.x * size + lx;
+      const gz = this.z * size + lz;
+      const h = Math.floor(noise2D(gx / 32, gz / 32) * 6 + 4);
+      for (let ly = 0; ly < h; ly++) {
+        this.matrix.setPosition(lx, ly, lz);
+        this.mesh.setMatrixAt(i++, this.matrix);
+        this.voxels.add(`${lx},${ly},${lz}`);
+      }
+    }
+  }
+  this.mesh.count = i;
+  this.mesh.instanceMatrix.needsUpdate = true;
+  this.mesh.position.set(this.x * size, 0, this.z * size);
+@@Chunk.constructor.end
+
+// --- World Manager ---
+World[World.ts{scene: any, chunks: Map, noise2D: any, renderDistance: number, texture: any}]
+World --> Chunk
+
+@World.constructor{scene: any}
+@@World.constructor.code
+  this.scene = scene;
+  this.chunks = new Map();
+  this.noise2D = SimplexNoise.createNoise2D();
+  this.renderDistance = 2;
+
+  const loader = new three.TextureLoader();
+  this.texture = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
+  this.texture.magFilter = three.NearestFilter;
+  this.texture.wrapS = this.texture.wrapT = three.RepeatWrapping;
+@@World.constructor.end
+
+@World.isSolid{x: number, y: number, z: number}: boolean
+@@World.isSolid.code
+  const cx = Math.floor(x / 16);
+  const cz = Math.floor(z / 16);
+  const chunk = this.chunks.get(`${cx},${cz}`);
+  if (!chunk) return false;
+  
+  const lx = Math.floor(x) - (cx * 16);
+  const ly = Math.floor(y);
+  const lz = Math.floor(z) - (cz * 16);
+  return chunk.voxels.has(`${lx},${ly},${lz}`);
+@@World.isSolid.end
+
+@World.update{playerPos: any}: void
+@@World.update.code
+  const size = 16;
+  const pX = Math.floor(playerPos.x / size);
+  const pZ = Math.floor(playerPos.z / size);
+
+  for (let x = pX - this.renderDistance; x <= pX + this.renderDistance; x++) {
+    for (let z = pZ - this.renderDistance; z <= pZ + this.renderDistance; z++) {
+      const key = `${x},${z}`;
+      if (!this.chunks.has(key)) {
+        const chunk = new Chunk(x, z, this.noise2D, this.texture);
+        this.chunks.set(key, chunk);
+        this.scene.add(chunk.mesh);
+      }
+    }
+  }
+@@World.update.end
+
+// --- Player Controller ---
+Player[Player.ts{camera: any, keys: any, velocity: any, height: number, radius: number}]
+@Player.constructor{camera: any}
+@@Player.constructor.code
+  this.camera = camera;
+  this.keys = {};
+  this.velocity = new three.Vector3(0, 0, 0);
+  this.height = 1.7; 
+  this.radius = 0.3; 
+  this.raycaster = new three.Raycaster();
+  this.raycaster.far = 10;
+  
+  window.addEventListener('keydown', (e) => this.keys[e.code] = true);
+  window.addEventListener('keyup', (e) => this.keys[e.code] = false);
+  window.addEventListener('mousemove', (e) => {
+    if (document.pointerLockElement) {
+      this.camera.rotation.y -= e.movementX * 0.002;
+      this.camera.rotation.x -= e.movementY * 0.002;
+      this.camera.rotation.x = Math.max(-1.5, Math.min(1.5, this.camera.rotation.x));
+    }
+  });
+@@Player.constructor.end
+
+@Player.update{delta: number, world: any}: void
+@@Player.update.code
+  const moveSpeed = (this.keys['ShiftLeft'] ? 15 : 8) * delta;
+  const gravity = 28 * delta;
+  
+  // 1. Vertical Physics
+  this.velocity.y -= gravity;
+  let nextY = this.camera.position.y + this.velocity.y * delta;
+  
+  if (world.isSolid(this.camera.position.x, nextY - this.height, this.camera.position.z)) {
+    this.velocity.y = 0;
+    nextY = Math.ceil(nextY - this.height) + this.height;
+    if (this.keys['Space']) this.velocity.y = 10;
+  }
+  this.camera.position.y = nextY;
+
+  // 2. Horizontal Movement + Collision
+  const moveDir = new three.Vector3();
+  if (this.keys['KeyW']) moveDir.z -= 1;
+  if (this.keys['KeyS']) moveDir.z += 1;
+  if (this.keys['KeyA']) moveDir.x -= 1;
+  if (this.keys['KeyD']) moveDir.x += 1;
+  
+  moveDir.normalize().applyQuaternion(this.camera.quaternion);
+  moveDir.y = 0; 
+  moveDir.multiplyScalar(moveSpeed);
+
+  // X Collision
+  if (!world.isSolid(this.camera.position.x + moveDir.x + (Math.sign(moveDir.x) * this.radius), this.camera.position.y - 1.0, this.camera.position.z)) {
+    this.camera.position.x += moveDir.x;
+  }
+  // Z Collision
+  if (!world.isSolid(this.camera.position.x, this.camera.position.y - 1.0, this.camera.position.z + moveDir.z + (Math.sign(moveDir.z) * this.radius))) {
+    this.camera.position.z += moveDir.z;
+  }
+@@Player.update.end
+
+// --- Main App ---
+MinecraftApp[MinecraftApp.ts{scene: any, camera: any, renderer: any, world: any, player: any, sun: any, time: number, selector: any}]
+MinecraftApp --> World
+MinecraftApp --> Player
+
+@MinecraftApp.constructor{}
+@@MinecraftApp.constructor.code
+  this.scene = new three.Scene();
+  this.time = 0;
+  this.camera = new three.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  this.camera.position.set(8, 15, 8);
+  this.camera.rotation.order = 'YXZ';
+
+  this.renderer = new three.WebGLRenderer({ antialias: false });
+  this.renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(this.renderer.domElement);
+
+  this.world = new World(this.scene);
+  this.player = new Player(this.camera);
+
+  this.selector = new three.Mesh(new three.BoxGeometry(1.02, 1.02, 1.02), new three.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.5 }));
+  this.scene.add(this.selector);
+  this.sun = new three.DirectionalLight(0xffffff, 1.2);
+  this.scene.add(this.sun, new three.AmbientLight(0xffffff, 0.4));
+
+  window.addEventListener('mousedown', (e) => {
+    if (document.pointerLockElement) this.handleInteraction(e.button === 0);
+  });
+  document.body.oncontextmenu = (e) => e.preventDefault();
+  document.body.addEventListener('click', () => document.body.requestPointerLock());
+@@MinecraftApp.constructor.end
+
+@MinecraftApp.handleInteraction{isBreaking: boolean}: void
+@@MinecraftApp.handleInteraction.code
+  this.player.raycaster.setFromCamera({x: 0, y: 0}, this.camera);
+  const meshes = Array.from(this.world.chunks.values()).map(c => c.mesh);
+  const intersects = this.player.raycaster.intersectObjects(meshes);
+  
+  if (intersects.length > 0) {
+    const hit = intersects[0];
+    const mesh = hit.object;
+    const chunkX = Math.floor(mesh.position.x / 16);
+    const chunkZ = Math.floor(mesh.position.z / 16);
+    const chunk = this.world.chunks.get(`${chunkX},${chunkZ}`);
+    
+    const m = new three.Matrix4();
+    mesh.getMatrixAt(hit.instanceId, m);
+    const pos = new three.Vector3().setFromMatrixPosition(m);
+
+    if (isBreaking) {
+      mesh.setMatrixAt(hit.instanceId, new three.Matrix4().makeScale(0, 0, 0));
+      chunk.voxels.delete(`${pos.x},${pos.y},${pos.z}`);
+    } else {
+      pos.add(hit.face.normal);
+      m.setPosition(pos);
+      mesh.setMatrixAt(mesh.count++, m);
+      chunk.voxels.add(`${pos.x},${pos.y},${pos.z}`);
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+  }
+@@MinecraftApp.handleInteraction.end
+
+@MinecraftApp.animate{}: void
+@@MinecraftApp.animate.code
+  requestAnimationFrame(() => this.animate());
+  const delta = 0.016;
+  this.player.update(delta, this.world);
+  this.world.update(this.camera.position);
+  
+  // Selector Logic
+  this.player.raycaster.setFromCamera({x: 0, y: 0}, this.camera);
+  const meshes = Array.from(this.world.chunks.values()).map(c => c.mesh);
+  const intersects = this.player.raycaster.intersectObjects(meshes);
+  if (intersects.length > 0) {
+    const m = new three.Matrix4();
+    intersects[0].object.getMatrixAt(intersects[0].instanceId, m);
+    this.selector.position.setFromMatrixPosition(m).add(intersects[0].object.position);
+    this.selector.visible = true;
+  } else { this.selector.visible = false; }
+
+  // Sky Logic
+  this.time += delta * 0.05;
+  this.sun.position.set(Math.cos(this.time) * 100, Math.sin(this.time) * 100, 0);
+  const skyColor = new three.Color(0x87ceeb);
+  this.scene.background = skyColor;
+  this.renderer.render(this.scene, this.camera);
+@@MinecraftApp.animate.end
+
+// --- Build Config ---
+Rollup->{Chunk.ts, World.ts, Player.ts, MinecraftApp.ts}
+
+// --- Web UI ---
+web->index.html.code
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Minecraft Shell - Collision Build</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
+        #ui { position: absolute; top: 20px; left: 20px; color: white; pointer-events: none; }
+        .dot { position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; border: 1px solid white; border-radius: 50%; transform: translate(-50%, -50%); }
+    </style>
+</head>
+<body>
+    <div id="ui"><h1>SOLID WORLD</h1><p>Space: Jump | Left Click: Break | Right Click: Place</p></div>
+    <div class="dot"></div>
+    <script type="module">
+        import { MinecraftApp } from './compiled.js';
+        new MinecraftApp().animate();
+    </script>
+</body>
+</html>
+web->index.html.end
