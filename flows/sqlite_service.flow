@@ -2,12 +2,10 @@ graph TD
     include->db_types.flow
     extern->sqlite3 from "sqlite3"
 
-    DB[SqliteDatabase.ts]
-    DB ---|> IDatabase
+    DB[SqliteDatabase.ts{db: any}]
 
     @SqliteDatabase.constructor
     @@SqliteDatabase.constructor.code
-        super();
         this.db = new sqlite3.Database(":memory:");
     @@SqliteDatabase.constructor.end
 
@@ -41,7 +39,7 @@ graph TD
         });
     @@SqliteDatabase.getUsers.end
 
-    @async @main.code
+    @async @@main.code
         const db = new SqliteDatabase();
         
         console.log("🚀 Initializing SQLite DB...");
@@ -54,4 +52,4 @@ graph TD
         console.log("🔍 Querying users...");
         const users = await db.getUsers();
         console.log("✅ Users in DB:", users);
-    @main.end
+    @@main.end

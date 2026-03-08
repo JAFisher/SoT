@@ -542,6 +542,25 @@
       ]
     }
   },
+  "physics_core": {
+    "diagram": "graph TD\n  PhysicsService[\"PhysicsService\n─────────────────\nball: any\npaddles: any\nbounds: any\n─────────────────\nupdate(): any\"]",
+    "metadata": {
+      "nodeCount": 1,
+      "compositionEdgeCount": 0,
+      "inheritanceEdgeCount": 0,
+      "types": {},
+      "interfaces": {},
+      "methods": [
+        {
+          "class": "PhysicsService",
+          "name": "update",
+          "signature": "PhysicsService.update(): any",
+          "async": false,
+          "hasCode": true
+        }
+      ]
+    }
+  },
   "poker": {
     "diagram": "graph TD\n  Deck[\"Deck\n─────────────────\ncards: string[]\n─────────────────\nshuffle(): void\"]\n  Hand[\"Hand\n─────────────────\ncards: string[]\nisDealer: boolean\n─────────────────\ngetScore(): number\"]\n  Game[\"Game\n─────────────────\ndeck: Deck\nplayerHand: Hand\ndealerHand: Hand\n─────────────────\ndealerTurn(): void\nstart(): void\"]\n  Game --> Deck\n  Game --> Hand",
     "metadata": {
@@ -582,6 +601,28 @@
       ],
       "externals": {
         "commander": "commander"
+      }
+    }
+  },
+  "pong_ui": {
+    "diagram": "graph TD\n  PhysicsService[\"PhysicsService\n─────────────────\nball: any\npaddles: any\nbounds: any\n─────────────────\nupdate(): any\"]",
+    "metadata": {
+      "nodeCount": 1,
+      "compositionEdgeCount": 0,
+      "inheritanceEdgeCount": 0,
+      "types": {},
+      "interfaces": {},
+      "methods": [
+        {
+          "class": "PhysicsService",
+          "name": "update",
+          "signature": "PhysicsService.update(): any",
+          "async": false,
+          "hasCode": true
+        }
+      ],
+      "externals": {
+        "electron": "electron"
       }
     }
   },
@@ -750,6 +791,115 @@
       "externals": {
         "electron": "electron",
         "path": "path"
+      }
+    }
+  },
+  "test_rollup": {
+    "diagram": "graph TD\n  RollupTestClass[\"RollupTestClass\n─────────────────\nmessage: string\n─────────────────\nsayHello(): void\"]\n\n  subgraph Interfaces\n    direction TB\n    I_RollupTestInterface[\"«interface»\nRollupTestInterface\n─────────────────\nid: number\nname: string\"]\n  end",
+    "metadata": {
+      "nodeCount": 1,
+      "compositionEdgeCount": 0,
+      "inheritanceEdgeCount": 0,
+      "types": {},
+      "interfaces": {
+        "RollupTestInterface": [
+          "id: number",
+          "name: string"
+        ]
+      },
+      "methods": [
+        {
+          "class": "RollupTestClass",
+          "name": "sayHello",
+          "signature": "RollupTestClass.sayHello(): void",
+          "async": false,
+          "hasCode": true
+        }
+      ]
+    }
+  },
+  "three_demo": {
+    "diagram": "graph TD\n  Board[\"Board\n─────────────────\nwidth: number\nheight: number\ngrid: any[]\nblocks: any[]\ngroup: any\n─────────────────\nisOccupied(x: number, y: number): boolean\naddBlocks(blocks: any[]): void\nclearLines(): number\"]\n  Tetromino[\"Tetromino\n─────────────────\nx: number\ny: number\nshape: number[][]\ncolor: number\nblocks: any[]\ngroup: any\n─────────────────\ncreateMeshes(): void\nupdatePosition(): void\ngetGlobalBlocks(): any[]\nrotate(): void\"]\n  Lighting[\"Lighting\n─────────────────\nlight: any\"]\n  ThreeApp[\"ThreeApp\n─────────────────\nscene: any\ncamera: any\nrenderer: any\nboard: any\ncurrentpiece: any\ndropTimer: number\ngameOver: boolean\nscore: number\n─────────────────\nhandleInput(e: any): void\nupdateScore(lines: number): void\nanimate(): void\"]\n  ThreeApp --> Board\n  ThreeApp --> Tetromino\n  ThreeApp --> Lighting",
+    "metadata": {
+      "nodeCount": 4,
+      "compositionEdgeCount": 3,
+      "inheritanceEdgeCount": 0,
+      "types": {},
+      "interfaces": {},
+      "methods": [
+        {
+          "class": "Board",
+          "name": "isOccupied",
+          "signature": "Board.isOccupied(x: number, y: number): boolean",
+          "async": false,
+          "hasCode": true
+        },
+        {
+          "class": "Board",
+          "name": "addBlocks",
+          "signature": "Board.addBlocks(blocks: any[]): void",
+          "async": false,
+          "hasCode": true
+        },
+        {
+          "class": "Board",
+          "name": "clearLines",
+          "signature": "Board.clearLines(): number",
+          "async": false,
+          "hasCode": true
+        },
+        {
+          "class": "Tetromino",
+          "name": "createMeshes",
+          "signature": "Tetromino.createMeshes(): void",
+          "async": false,
+          "hasCode": true
+        },
+        {
+          "class": "Tetromino",
+          "name": "updatePosition",
+          "signature": "Tetromino.updatePosition(): void",
+          "async": false,
+          "hasCode": true
+        },
+        {
+          "class": "Tetromino",
+          "name": "getGlobalBlocks",
+          "signature": "Tetromino.getGlobalBlocks(): any[]",
+          "async": false,
+          "hasCode": true
+        },
+        {
+          "class": "Tetromino",
+          "name": "rotate",
+          "signature": "Tetromino.rotate(): void",
+          "async": false,
+          "hasCode": true
+        },
+        {
+          "class": "ThreeApp",
+          "name": "handleInput",
+          "signature": "ThreeApp.handleInput(e: any): void",
+          "async": false,
+          "hasCode": true
+        },
+        {
+          "class": "ThreeApp",
+          "name": "updateScore",
+          "signature": "ThreeApp.updateScore(lines: number): void",
+          "async": false,
+          "hasCode": true
+        },
+        {
+          "class": "ThreeApp",
+          "name": "animate",
+          "signature": "ThreeApp.animate(): void",
+          "async": false,
+          "hasCode": true
+        }
+      ],
+      "externals": {
+        "three": "three"
       }
     }
   },
