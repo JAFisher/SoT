@@ -18,19 +18,23 @@ Chunk[Chunk.ts{mesh: any, x: number, z: number, matrix: any, maxInstances: numbe
   const size = 16;
   const heightLimit = 20; 
   const geometry = new three.BoxGeometry(1, 1, 1);
-  const material = new three.MeshStandardMaterial({ map: texture, roughness: 0.8, vertexColors: true });
+  const material = new three.MeshLambertMaterial({ 
+    map: texture,
+    color: 0xffffff
+  });
   
   this.maxInstances = size * size * heightLimit;
   this.mesh = new three.InstancedMesh(geometry, material, this.maxInstances);
   this.mesh.instanceMatrix.setUsage(three.DynamicDrawUsage);
   
-  // Per-instance colors for height-based block types
+  // Initialize instanceColor for all instances so setColorAt works
   const colorAttr = new three.InstancedBufferAttribute(new Float32Array(this.maxInstances * 3), 3);
   this.mesh.instanceColor = colorAttr;
+  for (let c = 0; c < this.maxInstances; c++) {
+      this.mesh.setColorAt(c, new three.Color(0xffffff));
+  }
   
-  const grassColor = new three.Color(0x4a8c3f);
-  const dirtColor = new three.Color(0x7c5e3c);
-  const stoneColor = new three.Color(0x808080);
+  const colors = [0x4a8c3f, 0x7c5e3c, 0x808080, 0x4c3314, 0xadd8e6];
   
   let i = 0;
   for (let lx = 0; lx < size; lx++) {
@@ -42,10 +46,11 @@ Chunk[Chunk.ts{mesh: any, x: number, z: number, matrix: any, maxInstances: numbe
         this.matrix.setPosition(lx, ly, lz);
         this.mesh.setMatrixAt(i, this.matrix);
         // Top layer = grass, next 2 = dirt, rest = stone
-        let blockColor = stoneColor;
-        if (ly === h - 1) blockColor = grassColor;
-        else if (ly >= h - 3) blockColor = dirtColor;
-        colorAttr.setXYZ(i, blockColor.r, blockColor.g, blockColor.b);
+        let colIndex = 2; // Stone
+        if (ly === h - 1) colIndex = 0; // Grass
+        else if (ly >= h - 3) colIndex = 1; // Dirt
+        
+        this.mesh.setColorAt(i, new three.Color(colors[colIndex]));
         i++;
         this.voxels.add(lx + "," + ly + "," + lz);
       }
@@ -61,17 +66,13 @@ Chunk[Chunk.ts{mesh: any, x: number, z: number, matrix: any, maxInstances: numbe
 World[World.ts{scene: any, chunks: Map, noise2D: any, renderDistance: number, texture: any}]
 World --> Chunk
 
-@World.constructor{scene: any}
+@World.constructor{scene: any, texture: any}
 @@World.constructor.code
   this.scene = scene;
   this.chunks = new Map();
   this.noise2D = SimplexNoise.createNoise2D();
   this.renderDistance = 2;
-
-  const loader = new three.TextureLoader();
-  this.texture = loader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg');
-  this.texture.magFilter = three.NearestFilter;
-  this.texture.wrapS = this.texture.wrapT = three.RepeatWrapping;
+  this.texture = texture;
 @@World.constructor.end
 
 @World.isSolid{x: number, y: number, z: number}: boolean
@@ -119,7 +120,7 @@ World --> Chunk
 @@World.update.end
 
 // --- Player Controller ---
-Player[Player.ts{camera: any, keys: any, velocity: any, height: number, radius: number, raycaster: any, torch: any}]
+Player[Player.ts{camera: any, keys: any, velocity: any, height: number, radius: number, raycaster: any, torch: any, selectedBlock: number}]
 @Player.constructor{camera: any, scene: any}
 @@Player.constructor.code
   this.camera = camera;
@@ -129,12 +130,25 @@ Player[Player.ts{camera: any, keys: any, velocity: any, height: number, radius: 
   this.radius = 0.3; 
   this.raycaster = new three.Raycaster();
   this.raycaster.far = 10;
+  this.selectedBlock = 0;
   
   // Dynamic torch light
   this.torch = new three.PointLight(0xfff0dd, 1, 15);
   scene.add(this.torch);
   
-  window.addEventListener('keydown', (e) => this.keys[e.code] = true);
+  window.addEventListener('keydown', (e) => {
+    this.keys[e.code] = true;
+    if (e.code.startsWith('Digit')) {
+      const num = parseInt(e.code.replace('Digit', ''));
+      if (num >= 1 && num <= 5) {
+        this.selectedBlock = num - 1;
+        // Update UI highlight
+        document.querySelectorAll('.slot').forEach((s, i) => {
+          s.classList.toggle('active', i === this.selectedBlock);
+        });
+      }
+    }
+  });
   window.addEventListener('keyup', (e) => this.keys[e.code] = false);
   window.addEventListener('mousemove', (e) => {
     if (document.pointerLockElement) {
@@ -218,16 +232,37 @@ MinecraftApp --> Player
   this.renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(this.renderer.domElement);
 
+  // Procedural block texture (White with a dark well-defined border)
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 32;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, 32, 32);
+  // Drawing multiple layers for a better "bezel" look
+  ctx.strokeStyle = '#222222'; // Darker border
+  ctx.lineWidth = 4;
+  ctx.strokeRect(2, 2, 28, 28);
+  ctx.strokeStyle = '#999999'; // Inner soft border
+  ctx.lineWidth = 1;
+  ctx.strokeRect(5, 5, 22, 22);
+  
+  const texture = new three.CanvasTexture(canvas);
+  texture.magFilter = three.NearestFilter;
+  texture.wrapS = texture.wrapT = three.RepeatWrapping;
+  texture.needsUpdate = true;
+
   // Fog to hide chunk pop-in
   this.scene.fog = new three.Fog(0x87ceeb, 20, 60);
 
-  this.world = new World(this.scene);
+  this.world = new World(this.scene, texture);
   this.player = new Player(this.camera, this.scene);
 
   this.selector = new three.Mesh(new three.BoxGeometry(1.02, 1.02, 1.02), new three.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.5 }));
   this.scene.add(this.selector);
-  this.sun = new three.DirectionalLight(0xffffff, 1.5);
-  this.scene.add(this.sun, new three.AmbientLight(0xffffff, 0.6));
+  
+  // Lower light intensity to see colors
+  this.sun = new three.DirectionalLight(0xffffff, 1.0);
+  this.scene.add(this.sun, new three.AmbientLight(0xffffff, 0.4));
 
   window.addEventListener('mousedown', (e) => {
     if (document.pointerLockElement) this.handleInteraction(e.button === 0);
@@ -269,7 +304,14 @@ MinecraftApp --> Player
       if (mesh.count >= chunk.maxInstances) return;
       pos.add(hit.face.normal);
       m.setPosition(pos);
-      mesh.setMatrixAt(mesh.count++, m);
+      mesh.setMatrixAt(mesh.count, m);
+      
+      // Set color using setColorAt
+      const colors = [0x4a8c3f, 0x7c5e3c, 0x808080, 0x4c3314, 0xadd8e6];
+      mesh.setColorAt(mesh.count, new three.Color(colors[this.player.selectedBlock]));
+      mesh.instanceColor.needsUpdate = true;
+      
+      mesh.count++;
       chunk.voxels.add(pos.x + "," + pos.y + "," + pos.z);
     }
     mesh.instanceMatrix.needsUpdate = true;
@@ -337,18 +379,34 @@ web->index.html.code
         .crosshair::before, .crosshair::after { content: ''; position: absolute; background: rgba(255,255,255,0.7); }
         .crosshair::before { width: 2px; height: 16px; left: -1px; top: -8px; }
         .crosshair::after { width: 16px; height: 2px; left: -8px; top: -1px; }
+        
+        #hotbar { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; pointer-events: none; }
+        .slot { width: 48px; height: 48px; background: rgba(0,0,0,0.6); border: 2px solid #444; border-radius: 4px; display: flex; align-items: center; justify-content: center; position: relative; }
+        .slot.active { border-color: #fff; background: rgba(255,255,255,0.2); transform: scale(1.1); }
+        .slot::after { content: attr(data-key); position: absolute; top: 2px; left: 4px; font-size: 10px; color: #fff; }
+        .preview { width: 24px; height: 24px; border-radius: 2px; }
     </style>
 </head>
 <body>
     <div id="ui">
         <h2>SoT Voxel World</h2>
-        <p>WASD: Move | Space: Jump | Shift: Sprint</p>
+        <p>1-5: Select Block | WASD: Move</p>
         <p>Left Click: Break | Right Click: Place</p>
     </div>
     <div class="crosshair"></div>
+    
+    <div id="hotbar">
+        <div class="slot active" data-key="1"><div class="preview" style="background: #4a8c3f;"></div></div>
+        <div class="slot" data-key="2"><div class="preview" style="background: #7c5e3c;"></div></div>
+        <div class="slot" data-key="3"><div class="preview" style="background: #808080;"></div></div>
+        <div class="slot" data-key="4"><div class="preview" style="background: #4c3314;"></div></div>
+        <div class="slot" data-key="5"><div class="preview" style="background: #add8e6; opacity: 0.7;"></div></div>
+    </div>
+
     <script type="module">
         import { MinecraftApp } from './compiled.js';
-        new MinecraftApp().animate();
+        const app = new MinecraftApp();
+        app.animate();
     </script>
 </body>
 </html>
