@@ -254,8 +254,20 @@ ThreeApp --> Lighting
     }
   }
   
-  if (e.key === 'ArrowDown') {
-    this.dropTimer += 1000;
+  if (e.key === 'ArrowDown' || e.key === ' ') {
+    // Hard drop: move piece down until it can't move anymore
+    let canDrop = true;
+    while (canDrop) {
+      for (const b of this.currentpiece.getGlobalBlocks()) {
+        if (this.board.isOccupied(b.x, b.y - 1)) { canDrop = false; break; }
+      }
+      if (canDrop) {
+        this.currentpiece.y -= 1;
+      }
+    }
+    this.currentpiece.updatePosition();
+    // Force immediate lock by setting dropTimer high
+    this.dropTimer = 1000;
   }
 @@ThreeApp.handleInput.end
 
@@ -337,7 +349,7 @@ web->index.html.code
     <div id="overlay" class="card">
         <h2 id="overlay-title"><span class="accent">SoT</span> 3D Tetris</h2>
         <p>Score: <span id="score" class="accent">0</span></p>
-        <p style="font-size: 12px; color: #888;">Arrows to move/rotate</p>
+        <p style="font-size: 12px; color: #888;">← → Move | ↑ Rotate | ↓/Space Hard Drop</p>
     </div>
 
     <!-- Import our compiled Javascript bundle from Rollup! -->
