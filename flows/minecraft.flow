@@ -1,27 +1,36 @@
 extern->three from "three"
 extern->SimplexNoise from "simplex-noise"
 cliscripts->start npx -y http-server -p 8080
+cliscripts->build tsc main.ts --outDir dist --skipLibCheck
 
 // --- Types ---
 type->ChunkKey = string
 
 // --- Chunk Class ---
-Chunk[Chunk.ts{mesh: any, x: number, z: number, matrix: any, instanceCount: number, voxels: Set}]
+Chunk[Chunk.ts{mesh: any, x: number, z: number, matrix: any, maxInstances: number, voxels: Set}]
 @Chunk.constructor{x: number, z: number, noise2D: any, texture: any}
 @@Chunk.constructor.code
   this.x = x;
   this.z = z;
   this.matrix = new three.Matrix4();
-  this.voxels = new Set(); // Collision lookup
+  this.voxels = new Set();
   
   const size = 16;
   const heightLimit = 20; 
   const geometry = new three.BoxGeometry(1, 1, 1);
-  const material = new three.MeshStandardMaterial({ map: texture, roughness: 0.8 });
+  const material = new three.MeshStandardMaterial({ map: texture, roughness: 0.8, vertexColors: true });
   
-  const maxInstances = size * size * heightLimit;
-  this.mesh = new three.InstancedMesh(geometry, material, maxInstances);
+  this.maxInstances = size * size * heightLimit;
+  this.mesh = new three.InstancedMesh(geometry, material, this.maxInstances);
   this.mesh.instanceMatrix.setUsage(three.DynamicDrawUsage);
+  
+  // Per-instance colors for height-based block types
+  const colorAttr = new three.InstancedBufferAttribute(new Float32Array(this.maxInstances * 3), 3);
+  this.mesh.instanceColor = colorAttr;
+  
+  const grassColor = new three.Color(0x4a8c3f);
+  const dirtColor = new three.Color(0x7c5e3c);
+  const stoneColor = new three.Color(0x808080);
   
   let i = 0;
   for (let lx = 0; lx < size; lx++) {
@@ -31,13 +40,20 @@ Chunk[Chunk.ts{mesh: any, x: number, z: number, matrix: any, instanceCount: numb
       const h = Math.floor(noise2D(gx / 32, gz / 32) * 6 + 4);
       for (let ly = 0; ly < h; ly++) {
         this.matrix.setPosition(lx, ly, lz);
-        this.mesh.setMatrixAt(i++, this.matrix);
-        this.voxels.add(`${lx},${ly},${lz}`);
+        this.mesh.setMatrixAt(i, this.matrix);
+        // Top layer = grass, next 2 = dirt, rest = stone
+        let blockColor = stoneColor;
+        if (ly === h - 1) blockColor = grassColor;
+        else if (ly >= h - 3) blockColor = dirtColor;
+        colorAttr.setXYZ(i, blockColor.r, blockColor.g, blockColor.b);
+        i++;
+        this.voxels.add(lx + "," + ly + "," + lz);
       }
     }
   }
   this.mesh.count = i;
   this.mesh.instanceMatrix.needsUpdate = true;
+  this.mesh.instanceColor.needsUpdate = true;
   this.mesh.position.set(this.x * size, 0, this.z * size);
 @@Chunk.constructor.end
 
@@ -77,9 +93,10 @@ World --> Chunk
   const pX = Math.floor(playerPos.x / size);
   const pZ = Math.floor(playerPos.z / size);
 
+  // Load chunks within render distance
   for (let x = pX - this.renderDistance; x <= pX + this.renderDistance; x++) {
     for (let z = pZ - this.renderDistance; z <= pZ + this.renderDistance; z++) {
-      const key = `${x},${z}`;
+      const key = x + "," + z;
       if (!this.chunks.has(key)) {
         const chunk = new Chunk(x, z, this.noise2D, this.texture);
         this.chunks.set(key, chunk);
@@ -87,11 +104,23 @@ World --> Chunk
       }
     }
   }
+  
+  // Unload chunks beyond render distance + 1 buffer
+  const unloadDist = this.renderDistance + 1;
+  for (const [key, chunk] of this.chunks) {
+    const dx = chunk.x - pX;
+    const dz = chunk.z - pZ;
+    if (Math.abs(dx) > unloadDist || Math.abs(dz) > unloadDist) {
+      this.scene.remove(chunk.mesh);
+      chunk.mesh.dispose();
+      this.chunks.delete(key);
+    }
+  }
 @@World.update.end
 
 // --- Player Controller ---
-Player[Player.ts{camera: any, keys: any, velocity: any, height: number, radius: number}]
-@Player.constructor{camera: any}
+Player[Player.ts{camera: any, keys: any, velocity: any, height: number, radius: number, raycaster: any, torch: any}]
+@Player.constructor{camera: any, scene: any}
 @@Player.constructor.code
   this.camera = camera;
   this.keys = {};
@@ -100,6 +129,10 @@ Player[Player.ts{camera: any, keys: any, velocity: any, height: number, radius: 
   this.radius = 0.3; 
   this.raycaster = new three.Raycaster();
   this.raycaster.far = 10;
+  
+  // Dynamic torch light
+  this.torch = new three.PointLight(0xfff0dd, 1, 15);
+  scene.add(this.torch);
   
   window.addEventListener('keydown', (e) => this.keys[e.code] = true);
   window.addEventListener('keyup', (e) => this.keys[e.code] = false);
@@ -117,9 +150,17 @@ Player[Player.ts{camera: any, keys: any, velocity: any, height: number, radius: 
   const moveSpeed = (this.keys['ShiftLeft'] ? 15 : 8) * delta;
   const gravity = 28 * delta;
   
+  this.torch.position.copy(this.camera.position);
+
   // 1. Vertical Physics
+
   this.velocity.y -= gravity;
   let nextY = this.camera.position.y + this.velocity.y * delta;
+  
+  // Head collision (ceiling check)
+  if (world.isSolid(this.camera.position.x, nextY + 0.1, this.camera.position.z) && this.velocity.y > 0) {
+    this.velocity.y = 0;
+  }
   
   if (world.isSolid(this.camera.position.x, nextY - this.height, this.camera.position.z)) {
     this.velocity.y = 0;
@@ -127,6 +168,12 @@ Player[Player.ts{camera: any, keys: any, velocity: any, height: number, radius: 
     if (this.keys['Space']) this.velocity.y = 10;
   }
   this.camera.position.y = nextY;
+  
+  // Fall respawn
+  if (this.camera.position.y < -50) {
+    this.camera.position.set(8, 20, 8);
+    this.velocity.set(0, 0, 0);
+  }
 
   // 2. Horizontal Movement + Collision
   const moveDir = new three.Vector3();
@@ -139,18 +186,22 @@ Player[Player.ts{camera: any, keys: any, velocity: any, height: number, radius: 
   moveDir.y = 0; 
   moveDir.multiplyScalar(moveSpeed);
 
-  // X Collision
-  if (!world.isSolid(this.camera.position.x + moveDir.x + (Math.sign(moveDir.x) * this.radius), this.camera.position.y - 1.0, this.camera.position.z)) {
+  // X Collision (check feet and head level)
+  const xNext = this.camera.position.x + moveDir.x + (Math.sign(moveDir.x) * this.radius);
+  if (!world.isSolid(xNext, this.camera.position.y - 1.0, this.camera.position.z) &&
+      !world.isSolid(xNext, this.camera.position.y - 0.3, this.camera.position.z)) {
     this.camera.position.x += moveDir.x;
   }
-  // Z Collision
-  if (!world.isSolid(this.camera.position.x, this.camera.position.y - 1.0, this.camera.position.z + moveDir.z + (Math.sign(moveDir.z) * this.radius))) {
+  // Z Collision (check feet and head level)
+  const zNext = this.camera.position.z + moveDir.z + (Math.sign(moveDir.z) * this.radius);
+  if (!world.isSolid(this.camera.position.x, this.camera.position.y - 1.0, zNext) &&
+      !world.isSolid(this.camera.position.x, this.camera.position.y - 0.3, zNext)) {
     this.camera.position.z += moveDir.z;
   }
 @@Player.update.end
 
 // --- Main App ---
-MinecraftApp[MinecraftApp.ts{scene: any, camera: any, renderer: any, world: any, player: any, sun: any, time: number, selector: any}]
+MinecraftApp[MinecraftApp.ts{scene: any, camera: any, renderer: any, world: any, player: any, sun: any, time: number, selector: any, clock: any}]
 MinecraftApp --> World
 MinecraftApp --> Player
 
@@ -158,6 +209,7 @@ MinecraftApp --> Player
 @@MinecraftApp.constructor.code
   this.scene = new three.Scene();
   this.time = 0;
+  this.clock = new three.Clock();
   this.camera = new three.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
   this.camera.position.set(8, 15, 8);
   this.camera.rotation.order = 'YXZ';
@@ -166,19 +218,29 @@ MinecraftApp --> Player
   this.renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(this.renderer.domElement);
 
+  // Fog to hide chunk pop-in
+  this.scene.fog = new three.Fog(0x87ceeb, 20, 60);
+
   this.world = new World(this.scene);
-  this.player = new Player(this.camera);
+  this.player = new Player(this.camera, this.scene);
 
   this.selector = new three.Mesh(new three.BoxGeometry(1.02, 1.02, 1.02), new three.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.5 }));
   this.scene.add(this.selector);
-  this.sun = new three.DirectionalLight(0xffffff, 1.2);
-  this.scene.add(this.sun, new three.AmbientLight(0xffffff, 0.4));
+  this.sun = new three.DirectionalLight(0xffffff, 1.5);
+  this.scene.add(this.sun, new three.AmbientLight(0xffffff, 0.6));
 
   window.addEventListener('mousedown', (e) => {
     if (document.pointerLockElement) this.handleInteraction(e.button === 0);
   });
   document.body.oncontextmenu = (e) => e.preventDefault();
   document.body.addEventListener('click', () => document.body.requestPointerLock());
+  
+  // Handle window resize
+  window.addEventListener('resize', () => {
+    this.camera.aspect = window.innerWidth / window.innerHeight;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
+  });
 @@MinecraftApp.constructor.end
 
 @MinecraftApp.handleInteraction{isBreaking: boolean}: void
@@ -192,7 +254,8 @@ MinecraftApp --> Player
     const mesh = hit.object;
     const chunkX = Math.floor(mesh.position.x / 16);
     const chunkZ = Math.floor(mesh.position.z / 16);
-    const chunk = this.world.chunks.get(`${chunkX},${chunkZ}`);
+    const chunk = this.world.chunks.get(chunkX + "," + chunkZ);
+    if (!chunk) return;
     
     const m = new three.Matrix4();
     mesh.getMatrixAt(hit.instanceId, m);
@@ -200,12 +263,14 @@ MinecraftApp --> Player
 
     if (isBreaking) {
       mesh.setMatrixAt(hit.instanceId, new three.Matrix4().makeScale(0, 0, 0));
-      chunk.voxels.delete(`${pos.x},${pos.y},${pos.z}`);
+      chunk.voxels.delete(pos.x + "," + pos.y + "," + pos.z);
     } else {
+      // Guard against overflow
+      if (mesh.count >= chunk.maxInstances) return;
       pos.add(hit.face.normal);
       m.setPosition(pos);
       mesh.setMatrixAt(mesh.count++, m);
-      chunk.voxels.add(`${pos.x},${pos.y},${pos.z}`);
+      chunk.voxels.add(pos.x + "," + pos.y + "," + pos.z);
     }
     mesh.instanceMatrix.needsUpdate = true;
   }
@@ -214,7 +279,7 @@ MinecraftApp --> Player
 @MinecraftApp.animate{}: void
 @@MinecraftApp.animate.code
   requestAnimationFrame(() => this.animate());
-  const delta = 0.016;
+  const delta = Math.min(this.clock.getDelta(), 0.1); // Real delta, capped to prevent spiral
   this.player.update(delta, this.world);
   this.world.update(this.camera.position);
   
@@ -229,11 +294,26 @@ MinecraftApp --> Player
     this.selector.visible = true;
   } else { this.selector.visible = false; }
 
-  // Sky Logic
+  // Day/night sky cycle
   this.time += delta * 0.05;
   this.sun.position.set(Math.cos(this.time) * 100, Math.sin(this.time) * 100, 0);
-  const skyColor = new three.Color(0x87ceeb);
+  const sunHeight = Math.sin(this.time);
+  const dayColor = new three.Color(0x87ceeb);
+  const duskColor = new three.Color(0xff7733);
+  const nightColor = new three.Color(0x0a0a2e);
+  let skyColor;
+  if (sunHeight > 0.2) {
+    skyColor = dayColor;
+  } else if (sunHeight > -0.1) {
+    const t = (sunHeight + 0.1) / 0.3;
+    skyColor = nightColor.clone().lerp(duskColor, t < 0.5 ? t * 2 : 1).lerp(dayColor, t > 0.5 ? (t - 0.5) * 2 : 0);
+  } else {
+    skyColor = nightColor;
+  }
   this.scene.background = skyColor;
+  this.scene.fog.color.copy(skyColor);
+  // Adjust ambient light with time of day
+  this.sun.intensity = Math.max(0.1, sunHeight) * 1.5;
   this.renderer.render(this.scene, this.camera);
 @@MinecraftApp.animate.end
 
@@ -245,16 +325,27 @@ web->index.html.code
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Minecraft Shell - Collision Build</title>
+    <title>SoT Voxel World</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
-        #ui { position: absolute; top: 20px; left: 20px; color: white; pointer-events: none; }
-        .dot { position: absolute; top: 50%; left: 50%; width: 6px; height: 6px; border: 1px solid white; border-radius: 50%; transform: translate(-50%, -50%); }
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Inter', sans-serif; }
+        #ui { position: absolute; top: 20px; left: 20px; color: white; pointer-events: none; 
+              background: rgba(0,0,0,0.5); padding: 12px 20px; border-radius: 8px; 
+              border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(8px); }
+        #ui h2 { margin: 0 0 6px 0; font-size: 18px; }
+        #ui p { margin: 0; font-size: 12px; color: #aaa; }
+        .crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+        .crosshair::before, .crosshair::after { content: ''; position: absolute; background: rgba(255,255,255,0.7); }
+        .crosshair::before { width: 2px; height: 16px; left: -1px; top: -8px; }
+        .crosshair::after { width: 16px; height: 2px; left: -8px; top: -1px; }
     </style>
 </head>
 <body>
-    <div id="ui"><h1>SOLID WORLD</h1><p>Space: Jump | Left Click: Break | Right Click: Place</p></div>
-    <div class="dot"></div>
+    <div id="ui">
+        <h2>SoT Voxel World</h2>
+        <p>WASD: Move | Space: Jump | Shift: Sprint</p>
+        <p>Left Click: Break | Right Click: Place</p>
+    </div>
+    <div class="crosshair"></div>
     <script type="module">
         import { MinecraftApp } from './compiled.js';
         new MinecraftApp().animate();
