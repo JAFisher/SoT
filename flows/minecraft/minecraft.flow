@@ -7,8 +7,8 @@ cliscripts->build tsc main.ts --outDir dist --skipLibCheck
 type->ChunkKey = string
 
 // --- Chunk Class ---
-Chunk[Chunk.ts{mesh: any, x: number, z: number, matrix: any, maxInstances: number, voxels: Set}]
-@Chunk.constructor{x: number, z: number, noise2D: any, texture: any}
+Chunk[Chunk.ts{group: any, meshes: any, x: number, z: number, matrix: any, maxInstances: number, voxels: Set}]
+@Chunk.constructor{x: number, z: number, noise2D: any, materials: any}
 @@Chunk.constructor.code
   this.x = x;
   this.z = z;
@@ -16,95 +16,78 @@ Chunk[Chunk.ts{mesh: any, x: number, z: number, matrix: any, maxInstances: numbe
   this.voxels = new Set();
   
   const size = 16;
-  const heightLimit = 32; // Increased to accommodate taller hills
+  const heightLimit = 32;
   const geometry = new three.BoxGeometry(1, 1, 1);
-  const material = new three.MeshLambertMaterial({ 
-    map: texture,
-    color: 0xffffff
-  });
   
   this.maxInstances = size * size * heightLimit;
-  this.mesh = new three.InstancedMesh(geometry, material, this.maxInstances);
-  this.mesh.instanceMatrix.setUsage(three.DynamicDrawUsage);
+  this.group = new three.Group();
+  this.meshes = {};
   
-  // Initialize instanceColor for all instances so setColorAt works
-  const colorAttr = new three.InstancedBufferAttribute(new Float32Array(this.maxInstances * 3), 3);
-  this.mesh.instanceColor = colorAttr;
-  for (let c = 0; c < this.maxInstances; c++) {
-      this.mesh.setColorAt(c, new three.Color(0xffffff));
+  for (const key in materials) {
+    this.meshes[key] = new three.InstancedMesh(geometry, materials[key], this.maxInstances);
+    this.meshes[key].instanceMatrix.setUsage(three.DynamicDrawUsage);
+    this.meshes[key].count = 0;
+    this.meshes[key].frustumCulled = false;
+    // Add custom property to identify the type when raycasting
+    this.meshes[key].userData = { type: key, chunk: this };
+    this.group.add(this.meshes[key]);
   }
   
-  const colors = [0x4a8c3f, 0x7c5e3c, 0x808080, 0x4c3314, 0xadd8e6, 0x1E90FF, 0x2d5a27];
   const seaLevel = 12;
   
-  let i = 0;
   for (let lx = 0; lx < size; lx++) {
     for (let lz = 0; lz < size; lz++) {
       const gx = this.x * size + lx;
       const gz = this.z * size + lz;
       
-      // Multi-octave (fractal) noise for varied terrain
-      // Base elevation
       const baseEl = noise2D(gx / 128, gz / 128) * 10 + 10;
-      // Macro hills and valleys
       const macroHills = noise2D(gx / 64, gz / 64) * 5;
-      // Micro detail (roughness)
       const detail = noise2D(gx / 16, gz / 16) * 2;
       
       const h = Math.max(1, Math.floor(baseEl + macroHills + detail));
       
       for (let ly = 0; ly < h && ly < heightLimit; ly++) {
         this.matrix.setPosition(lx, ly, lz);
-        this.mesh.setMatrixAt(i, this.matrix);
-        // Top layer = grass, next 2 = dirt, rest = stone
-        let colIndex = 2; // Stone
-        if (ly === h - 1) colIndex = 0; // Grass
-        else if (ly >= h - 3) colIndex = 1; // Dirt
+        let type = 'stone';
+        if (ly === h - 1) type = 'grass';
+        else if (ly >= h - 3) type = 'dirt';
         
-        this.mesh.setColorAt(i, new three.Color(colors[colIndex]));
-        i++;
+        const mesh = this.meshes[type];
+        mesh.setMatrixAt(mesh.count++, this.matrix);
         this.voxels.add(lx + "," + ly + "," + lz);
       }
       
-      // Generate water above terrain up to seaLevel
+      // Water
       if (h < seaLevel) {
         for (let ly = h; ly < seaLevel && ly < heightLimit; ly++) {
           this.matrix.setPosition(lx, ly, lz);
-          this.mesh.setMatrixAt(i, this.matrix);
-          this.mesh.setColorAt(i, new three.Color(colors[5])); // Blue water
-          i++;
+          const mesh = this.meshes['water'];
+          mesh.setMatrixAt(mesh.count++, this.matrix);
         }
       } else if (h >= seaLevel && h < heightLimit) {
-        // Chance to spawn a tree on grass
-        const isGrass = Math.floor(baseEl + macroHills + detail) === h; // Simple check if top layer
+        // Trees
+        const isGrass = Math.floor(baseEl + macroHills + detail) === h;
         if (isGrass && h + 5 < heightLimit) {
-          // Pseudo-random chance based on coordinates
           const treeChance = (Math.sin(gx * 12.9898 + gz * 78.233) * 43758.5453) % 1;
           if (Math.abs(treeChance) > 0.98) {
-             // Generate trunk
-             const trunkHeight = Math.floor(Math.abs(Math.sin(gx * 7.123 + gz * 12.989) * 4)) + 3; // Random height 3 to 6
+             const trunkHeight = Math.floor(Math.abs(Math.sin(gx * 7.123 + gz * 12.989) * 4)) + 3;
              for(let ty = 0; ty < trunkHeight; ty++) {
                 this.matrix.setPosition(lx, h + ty, lz);
-                this.mesh.setMatrixAt(i, this.matrix);
-                this.mesh.setColorAt(i, new three.Color(colors[3])); // Wood
-                i++;
+                const mesh = this.meshes['wood'];
+                mesh.setMatrixAt(mesh.count++, this.matrix);
                 this.voxels.add(lx + "," + (h + ty) + "," + lz);
              }
-             // Generate leaves
              for(let dx = -1; dx <= 1; dx++) {
                for(let dz = -1; dz <= 1; dz++) {
                  for(let dy = 0; dy <= 1; dy++) {
                    const leafX = lx + dx;
                    const leafZ = lz + dz;
-                   // Keep leaves inside chunk for simplicity
                    if (leafX >= 0 && leafX < size && leafZ >= 0 && leafZ < size) {
-                     // Don't replace the trunk
                      if (!(dx === 0 && dz === 0 && dy === 0)) {
                        const leafY = h + trunkHeight - 1 + dy;
                        this.matrix.setPosition(leafX, leafY, leafZ);
-                       this.mesh.setMatrixAt(i, this.matrix);
-                       this.mesh.setColorAt(i, new three.Color(colors[6])); // Dark Green Leaves
-                       i++;
+                       const mesh = this.meshes['leaves'];
+                       mesh.setMatrixAt(mesh.count++, this.matrix);
                        this.voxels.add(leafX + "," + leafY + "," + leafZ);
                      }
                    }
@@ -116,23 +99,24 @@ Chunk[Chunk.ts{mesh: any, x: number, z: number, matrix: any, maxInstances: numbe
       }
     }
   }
-  this.mesh.count = i;
-  this.mesh.instanceMatrix.needsUpdate = true;
-  this.mesh.instanceColor.needsUpdate = true;
-  this.mesh.position.set(this.x * size, 0, this.z * size);
+  
+  for (const key in this.meshes) {
+    this.meshes[key].instanceMatrix.needsUpdate = true;
+  }
+  this.group.position.set(this.x * size, 0, this.z * size);
 @@Chunk.constructor.end
 
 // --- World Manager ---
-World[World.ts{scene: any, chunks: Map, noise2D: any, renderDistance: number, texture: any}]
+World[World.ts{scene: any, chunks: Map, noise2D: any, renderDistance: number, materials: any}]
 World --> Chunk
 
-@World.constructor{scene: any, texture: any}
+@World.constructor{scene: any, materials: any}
 @@World.constructor.code
   this.scene = scene;
   this.chunks = new Map();
   this.noise2D = SimplexNoise.createNoise2D();
   this.renderDistance = 2;
-  this.texture = texture;
+  this.materials = materials;
 @@World.constructor.end
 
 @World.isSolid{x: number, y: number, z: number}: boolean
@@ -165,26 +149,24 @@ World --> Chunk
   const pX = Math.floor(playerPos.x / size);
   const pZ = Math.floor(playerPos.z / size);
 
-  // Load chunks within render distance
   for (let x = pX - this.renderDistance; x <= pX + this.renderDistance; x++) {
     for (let z = pZ - this.renderDistance; z <= pZ + this.renderDistance; z++) {
       const key = x + "," + z;
       if (!this.chunks.has(key)) {
-        const chunk = new Chunk(x, z, this.noise2D, this.texture);
+        const chunk = new Chunk(x, z, this.noise2D, this.materials);
         this.chunks.set(key, chunk);
-        this.scene.add(chunk.mesh);
+        this.scene.add(chunk.group);
       }
     }
   }
   
-  // Unload chunks beyond render distance + 1 buffer
   const unloadDist = this.renderDistance + 1;
   for (const [key, chunk] of this.chunks) {
     const dx = chunk.x - pX;
     const dz = chunk.z - pZ;
     if (Math.abs(dx) > unloadDist || Math.abs(dz) > unloadDist) {
-      this.scene.remove(chunk.mesh);
-      chunk.mesh.dispose();
+      this.scene.remove(chunk.group);
+      for (const t in chunk.meshes) { chunk.meshes[t].dispose(); }
       this.chunks.delete(key);
     }
   }
@@ -264,7 +246,7 @@ Player[Player.ts{camera: any, keys: any, velocity: any, height: number, radius: 
   if (world.isSolid(this.camera.position.x, nextY - this.height, this.camera.position.z)) {
     this.velocity.y = 0;
     nextY = Math.ceil(nextY - this.height) + this.height;
-    if (this.keys['Space'] && !inWater) this.velocity.y = 10;
+    if (this.keys['Space'] && !inWater) this.velocity.y = 12; // Increased jump power from 10 to 12
   }
   this.camera.position.y = nextY;
   
@@ -379,28 +361,37 @@ MinecraftApp --> Player
   this.renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(this.renderer.domElement);
 
-  // Procedural block texture (White with a dark well-defined border)
+  const loader = new three.TextureLoader();
+  const grassTex = loader.load('assets/grass.png'); grassTex.magFilter = three.NearestFilter;
+  const brickTex = loader.load('assets/bricks.png'); brickTex.magFilter = three.NearestFilter;
+  const glassTex = loader.load('assets/glass.png'); glassTex.magFilter = three.NearestFilter;
+
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = 32;
   const ctx = canvas.getContext('2d');
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, 32, 32);
-  // Drawing multiple layers for a better "bezel" look
-  ctx.strokeStyle = '#222222'; // Darker border
-  ctx.lineWidth = 4;
-  ctx.strokeRect(2, 2, 28, 28);
-  ctx.strokeStyle = '#999999'; // Inner soft border
-  ctx.lineWidth = 1;
-  ctx.strokeRect(5, 5, 22, 22);
+  ctx.strokeStyle = '#222222'; ctx.lineWidth = 4; ctx.strokeRect(2, 2, 28, 28);
+  ctx.strokeStyle = '#999999'; ctx.lineWidth = 1; ctx.strokeRect(5, 5, 22, 22);
   
-  const texture = new three.CanvasTexture(canvas);
-  texture.magFilter = three.NearestFilter;
-  texture.wrapS = texture.wrapT = three.RepeatWrapping;
-  texture.needsUpdate = true;
+  const texFallback = new three.CanvasTexture(canvas);
+  texFallback.magFilter = three.NearestFilter;
+  
+  const materials = {
+      grass: new three.MeshLambertMaterial({ map: grassTex }),
+      dirt: new three.MeshLambertMaterial({ map: texFallback, color: 0x7c5e3c }),
+      stone: new three.MeshLambertMaterial({ map: texFallback, color: 0x808080 }),
+      wood: new three.MeshLambertMaterial({ map: texFallback, color: 0x4c3314 }),
+      water: new three.MeshLambertMaterial({ map: texFallback, color: 0xadd8e6, transparent: true, opacity: 0.8 }),
+      tnt: new three.MeshLambertMaterial({ map: texFallback, color: 0xff0000 }),
+      leaves: new three.MeshLambertMaterial({ map: texFallback, color: 0x2d5a27 }),
+      bricks: new three.MeshLambertMaterial({ map: brickTex }),
+      glass: new three.MeshLambertMaterial({ map: glassTex, transparent: true, opacity: 0.5, side: three.DoubleSide })
+  };
 
   this.scene.fog = new three.Fog(0x87ceeb, 20, 60);
 
-  this.world = new World(this.scene, texture);
+  this.world = new World(this.scene, materials);
   this.player = new Player(this.camera, this.scene);
   this.clouds = new Clouds(this.scene);
 
@@ -428,44 +419,47 @@ MinecraftApp --> Player
 @MinecraftApp.handleInteraction{isBreaking: boolean}: void
 @@MinecraftApp.handleInteraction.code
   this.player.raycaster.setFromCamera({x: 0, y: 0}, this.camera);
-  const meshes = Array.from(this.world.chunks.values()).map(c => c.mesh);
-  const intersects = this.player.raycaster.intersectObjects(meshes);
+  let allMeshes = [];
+  for (const chunk of this.world.chunks.values()) {
+    allMeshes.push(...Object.values(chunk.meshes));
+  }
+  
+  const intersects = this.player.raycaster.intersectObjects(allMeshes);
   
   if (intersects.length > 0) {
     const hit = intersects[0];
     const mesh = hit.object;
-    const chunkX = Math.floor(mesh.position.x / 16);
-    const chunkZ = Math.floor(mesh.position.z / 16);
-    const chunk = this.world.chunks.get(chunkX + "," + chunkZ);
+    const chunk = mesh.userData.chunk;
     if (!chunk) return;
     
     const m = new three.Matrix4();
     mesh.getMatrixAt(hit.instanceId, m);
     const localPos = new three.Vector3().setFromMatrixPosition(m);
-    const worldPos = localPos.clone().add(mesh.position);
+    const worldPos = localPos.clone().add(chunk.group.position);
 
     if (isBreaking) {
-      const color = new three.Color();
-      mesh.getColorAt(hit.instanceId, color);
-      if (color.getHex() === 0xff0000) {
+      if (mesh.userData.type === 'tnt') {
          // BOOM!
          const radius = 4;
          for (let [key, cChunk] of this.world.chunks) {
             let needsUpdate = false;
-            for(let i=0; i<cChunk.mesh.count; i++) {
-               const m2 = new three.Matrix4();
-               cChunk.mesh.getMatrixAt(i, m2);
-               if (m2.elements[0] === 0) continue; // Skip already destroyed blocks
-               
-               const pLocal = new three.Vector3().setFromMatrixPosition(m2);
-               const pWorld = pLocal.clone().add(cChunk.mesh.position);
-               if (pWorld.distanceTo(worldPos) <= radius) {
-                  cChunk.mesh.setMatrixAt(i, new three.Matrix4().makeScale(0,0,0));
-                  cChunk.voxels.delete(Math.round(pLocal.x) + "," + Math.round(pLocal.y) + "," + Math.round(pLocal.z));
-                  needsUpdate = true;
-               }
+            for (const t in cChunk.meshes) {
+                const cMesh = cChunk.meshes[t];
+                for(let i=0; i<cMesh.count; i++) {
+                   const m2 = new three.Matrix4();
+                   cMesh.getMatrixAt(i, m2);
+                   if (m2.elements[0] === 0) continue; // Skip already destroyed blocks
+                   
+                   const pLocal = new three.Vector3().setFromMatrixPosition(m2);
+                   const pWorld = pLocal.clone().add(cChunk.group.position);
+                   if (pWorld.distanceTo(worldPos) <= radius) {
+                      cMesh.setMatrixAt(i, new three.Matrix4().makeScale(0,0,0));
+                      cChunk.voxels.delete(Math.round(pLocal.x) + "," + Math.round(pLocal.y) + "," + Math.round(pLocal.z));
+                      needsUpdate = true;
+                   }
+                }
+                if (needsUpdate) cMesh.instanceMatrix.needsUpdate = true;
             }
-            if (needsUpdate) cChunk.mesh.instanceMatrix.needsUpdate = true;
          }
          // Player knockback
          const dist = this.player.camera.position.distanceTo(worldPos);
@@ -474,25 +468,31 @@ MinecraftApp --> Player
          }
       } else {
         mesh.setMatrixAt(hit.instanceId, new three.Matrix4().makeScale(0, 0, 0));
-        chunk.voxels.delete(Math.round(localPos.x) + "," + Math.round(localPos.y) + "," + Math.round(localPos.z));
+        
+        // Use m to get exact matrix before converting to localPos 
+        const m = new three.Matrix4();
+        mesh.getMatrixAt(hit.instanceId, m);
+        const lPos = new three.Vector3().setFromMatrixPosition(m);
+
+        chunk.voxels.delete(Math.round(lPos.x) + "," + Math.round(lPos.y) + "," + Math.round(lPos.z));
         mesh.instanceMatrix.needsUpdate = true;
+        mesh.computeBoundingSphere();
       }
     } else {
-      // Guard against overflow
-      if (mesh.count >= chunk.maxInstances) return;
+      const activeTypes = ['grass', 'bricks', 'glass', 'wood', 'leaves', 'tnt'];
+      const targetType = activeTypes[this.player.selectedBlock] || 'grass';
+      const targetMesh = chunk.meshes[targetType];
+      
+      if (targetMesh.count >= chunk.maxInstances) return;
       localPos.add(hit.face.normal);
       m.setPosition(localPos);
-      mesh.setMatrixAt(mesh.count, m);
+      targetMesh.setMatrixAt(targetMesh.count, m);
+      targetMesh.count++;
+      targetMesh.instanceMatrix.needsUpdate = true;
+      targetMesh.computeBoundingSphere();
       
-      // Set color using setColorAt
-      const colors = [0x4a8c3f, 0x7c5e3c, 0x808080, 0x4c3314, 0xadd8e6, 0xff0000];
-      mesh.setColorAt(mesh.count, new three.Color(colors[this.player.selectedBlock]));
-      mesh.instanceColor.needsUpdate = true;
-      
-      mesh.count++;
       chunk.voxels.add(Math.round(localPos.x) + "," + Math.round(localPos.y) + "," + Math.round(localPos.z));
     }
-    mesh.instanceMatrix.needsUpdate = true;
   }
 @@MinecraftApp.handleInteraction.end
 
@@ -506,12 +506,16 @@ MinecraftApp --> Player
   
   // Selector Logic
   this.player.raycaster.setFromCamera({x: 0, y: 0}, this.camera);
-  const meshes = Array.from(this.world.chunks.values()).map(c => c.mesh);
-  const intersects = this.player.raycaster.intersectObjects(meshes);
+  let allMeshes = [];
+  for (const chunk of this.world.chunks.values()) {
+    allMeshes.push(...Object.values(chunk.meshes));
+  }
+  const intersects = this.player.raycaster.intersectObjects(allMeshes);
   if (intersects.length > 0) {
     const m = new three.Matrix4();
     intersects[0].object.getMatrixAt(intersects[0].instanceId, m);
-    this.selector.position.setFromMatrixPosition(m).add(intersects[0].object.position);
+    // add chunk.group position
+    this.selector.position.setFromMatrixPosition(m).add(intersects[0].object.userData.chunk.group.position);
     this.selector.visible = true;
   } else { this.selector.visible = false; }
 
@@ -575,11 +579,11 @@ web->index.html.code
     <div class="crosshair"></div>
     
     <div id="hotbar">
-        <div class="slot active" data-key="1"><div class="preview" style="background: #4a8c3f;"></div></div>
-        <div class="slot" data-key="2"><div class="preview" style="background: #7c5e3c;"></div></div>
-        <div class="slot" data-key="3"><div class="preview" style="background: #808080;"></div></div>
+        <div class="slot active" data-key="1"><div class="preview" style="background: url(assets/grass.png); background-size: cover;"></div></div>
+        <div class="slot" data-key="2"><div class="preview" style="background: url(assets/bricks.png); background-size: cover;"></div></div>
+        <div class="slot" data-key="3"><div class="preview" style="background: url(assets/glass.png); background-size: cover; opacity: 0.8;"></div></div>
         <div class="slot" data-key="4"><div class="preview" style="background: #4c3314;"></div></div>
-        <div class="slot" data-key="5"><div class="preview" style="background: #add8e6; opacity: 0.7;"></div></div>
+        <div class="slot" data-key="5"><div class="preview" style="background: #2d5a27;"></div></div>
         <div class="slot" data-key="6"><div class="preview" style="background: #ff0000;"></div></div>
     </div>
 

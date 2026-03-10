@@ -1,5 +1,5 @@
 import { readdir, readFile } from "fs/promises";
-import { existsSync, mkdirSync } from "fs";
+import { existsSync, mkdirSync, cpSync } from "fs";
 import path from "path";
 import { generateFromFlowchart } from "./generateFromFlowchart.js";
 
@@ -49,6 +49,12 @@ async function build() {
 
                 mkdirSync(outPath, { recursive: true });
                 generateFromFlowchart(content, outPath, folderPath);
+
+                const assetsPath = path.join(folderPath, "assets");
+                if (existsSync(assetsPath)) {
+                    cpSync(assetsPath, path.join(outPath, "assets"), { recursive: true });
+                    console.log(`   Copied assets from ${assetsPath} to ${outPath}/assets`);
+                }
 
                 results.success.push(`${folderName}/${serviceName}`);
             } catch (err) {
