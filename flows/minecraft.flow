@@ -211,7 +211,7 @@ Player[Player.ts{camera: any, keys: any, velocity: any, height: number, radius: 
     this.keys[e.code] = true;
     if (e.code.startsWith('Digit')) {
       const num = parseInt(e.code.replace('Digit', ''));
-      if (num >= 1 && num <= 5) {
+      if (num >= 1 && num <= 6) {
         this.selectedBlock = num - 1;
         // Update UI highlight
         document.querySelectorAll('.slot').forEach((s, i) => {
@@ -441,25 +441,56 @@ MinecraftApp --> Player
     
     const m = new three.Matrix4();
     mesh.getMatrixAt(hit.instanceId, m);
-    const pos = new three.Vector3().setFromMatrixPosition(m);
+    const localPos = new three.Vector3().setFromMatrixPosition(m);
+    const worldPos = localPos.clone().add(mesh.position);
 
     if (isBreaking) {
-      mesh.setMatrixAt(hit.instanceId, new three.Matrix4().makeScale(0, 0, 0));
-      chunk.voxels.delete(pos.x + "," + pos.y + "," + pos.z);
+      const color = new three.Color();
+      mesh.getColorAt(hit.instanceId, color);
+      if (color.getHex() === 0xff0000) {
+         // BOOM!
+         const radius = 4;
+         for (let [key, cChunk] of this.world.chunks) {
+            let needsUpdate = false;
+            for(let i=0; i<cChunk.mesh.count; i++) {
+               const m2 = new three.Matrix4();
+               cChunk.mesh.getMatrixAt(i, m2);
+               if (m2.elements[0] === 0) continue; // Skip already destroyed blocks
+               
+               const pLocal = new three.Vector3().setFromMatrixPosition(m2);
+               const pWorld = pLocal.clone().add(cChunk.mesh.position);
+               if (pWorld.distanceTo(worldPos) <= radius) {
+                  cChunk.mesh.setMatrixAt(i, new three.Matrix4().makeScale(0,0,0));
+                  cChunk.voxels.delete(Math.round(pLocal.x) + "," + Math.round(pLocal.y) + "," + Math.round(pLocal.z));
+                  needsUpdate = true;
+               }
+            }
+            if (needsUpdate) cChunk.mesh.instanceMatrix.needsUpdate = true;
+         }
+         // Player knockback
+         const dist = this.player.camera.position.distanceTo(worldPos);
+         if (dist < 10) {
+            this.player.velocity.y = (10 - dist) * 8; // Launch player up
+         }
+      } else {
+        mesh.setMatrixAt(hit.instanceId, new three.Matrix4().makeScale(0, 0, 0));
+        chunk.voxels.delete(Math.round(localPos.x) + "," + Math.round(localPos.y) + "," + Math.round(localPos.z));
+        mesh.instanceMatrix.needsUpdate = true;
+      }
     } else {
       // Guard against overflow
       if (mesh.count >= chunk.maxInstances) return;
-      pos.add(hit.face.normal);
-      m.setPosition(pos);
+      localPos.add(hit.face.normal);
+      m.setPosition(localPos);
       mesh.setMatrixAt(mesh.count, m);
       
       // Set color using setColorAt
-      const colors = [0x4a8c3f, 0x7c5e3c, 0x808080, 0x4c3314, 0xadd8e6];
+      const colors = [0x4a8c3f, 0x7c5e3c, 0x808080, 0x4c3314, 0xadd8e6, 0xff0000];
       mesh.setColorAt(mesh.count, new three.Color(colors[this.player.selectedBlock]));
       mesh.instanceColor.needsUpdate = true;
       
       mesh.count++;
-      chunk.voxels.add(pos.x + "," + pos.y + "," + pos.z);
+      chunk.voxels.add(Math.round(localPos.x) + "," + Math.round(localPos.y) + "," + Math.round(localPos.z));
     }
     mesh.instanceMatrix.needsUpdate = true;
   }
@@ -538,7 +569,7 @@ web->index.html.code
 <body>
     <div id="ui">
         <h2>SoT Voxel World</h2>
-        <p>1-5: Select Block | WASD: Move</p>
+        <p>1-6: Select Block | WASD: Move</p>
         <p>Left Click: Break | Right Click: Place</p>
     </div>
     <div class="crosshair"></div>
@@ -549,6 +580,7 @@ web->index.html.code
         <div class="slot" data-key="3"><div class="preview" style="background: #808080;"></div></div>
         <div class="slot" data-key="4"><div class="preview" style="background: #4c3314;"></div></div>
         <div class="slot" data-key="5"><div class="preview" style="background: #add8e6; opacity: 0.7;"></div></div>
+        <div class="slot" data-key="6"><div class="preview" style="background: #ff0000;"></div></div>
     </div>
 
     <script type="module">
