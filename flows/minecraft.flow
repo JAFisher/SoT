@@ -34,7 +34,8 @@ Chunk[Chunk.ts{mesh: any, x: number, z: number, matrix: any, maxInstances: numbe
       this.mesh.setColorAt(c, new three.Color(0xffffff));
   }
   
-  const colors = [0x4a8c3f, 0x7c5e3c, 0x808080, 0x4c3314, 0xadd8e6];
+  const colors = [0x4a8c3f, 0x7c5e3c, 0x808080, 0x4c3314, 0xadd8e6, 0x1E90FF];
+  const seaLevel = 12;
   
   let i = 0;
   for (let lx = 0; lx < size; lx++) {
@@ -63,6 +64,17 @@ Chunk[Chunk.ts{mesh: any, x: number, z: number, matrix: any, maxInstances: numbe
         this.mesh.setColorAt(i, new three.Color(colors[colIndex]));
         i++;
         this.voxels.add(lx + "," + ly + "," + lz);
+      }
+      
+      // Generate water above terrain up to seaLevel
+      if (h < seaLevel) {
+        for (let ly = h; ly < seaLevel && ly < heightLimit; ly++) {
+          this.matrix.setPosition(lx, ly, lz);
+          this.mesh.setMatrixAt(i, this.matrix);
+          this.mesh.setColorAt(i, new three.Color(colors[5])); // Blue water
+          i++;
+          // Deliberately NOT adding to voxels so it has no collision
+        }
       }
     }
   }
