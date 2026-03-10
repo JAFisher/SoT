@@ -14,36 +14,50 @@ async function build() {
         process.exit(1);
     }
 
-    const files = (await readdir(FLOWS_DIR)).filter((f) => f.endsWith(".flow"));
+    const items = await readdir(FLOWS_DIR, { withFileTypes: true });
+    const folders = items.filter(item => item.isDirectory());
 
-    if (files.length === 0) {
-        console.warn("⚠️  No .flow files found in " + FLOWS_DIR + "/");
+    if (folders.length === 0) {
+        console.warn("⚠️  No folders found in " + FLOWS_DIR + "/");
         process.exit(0);
     }
 
     const results = { success: [], failed: [] };
 
-    for (const file of files) {
-        const serviceName = path.basename(file, ".flow");
-        const flowPath = path.join(FLOWS_DIR, file);
-        const outPath = path.join(OUT_DIR, serviceName);
+    for (const folder of folders) {
+        const folderName = folder.name;
+        const folderPath = path.join(FLOWS_DIR, folderName);
 
-        try {
-            const content = await readFile(flowPath, "utf-8");
-            console.log("📦 Building service:  " + serviceName);
-            console.log("   Source:  " + flowPath);
-            console.log("   Output:  " + outPath);
+        const folderItems = await readdir(folderPath, { withFileTypes: true });
+        const flowFiles = folderItems.filter(f => f.isFile() && f.name.endsWith(".flow"));
 
-            mkdirSync(outPath, { recursive: true });
-            generateFromFlowchart(content, outPath);
-
-            results.success.push(serviceName);
-        } catch (err) {
-            console.error("❌ Failed to build " + serviceName + ": " + err.message);
-            results.failed.push(serviceName);
+        if (flowFiles.length === 0) {
+            console.warn("⚠️  No .flow files found in " + folderPath + "/");
+            continue;
         }
 
-        console.log("");
+        for (const file of flowFiles) {
+            const serviceName = path.basename(file.name, ".flow");
+            const flowPath = path.join(folderPath, file.name);
+            const outPath = path.join(OUT_DIR, folderName, serviceName);
+
+            try {
+                const content = await readFile(flowPath, "utf-8");
+                console.log("📦 Building flow:  " + serviceName + " (in " + folderName + ")");
+                console.log("   Source:  " + flowPath);
+                console.log("   Output:  " + outPath);
+
+                mkdirSync(outPath, { recursive: true });
+                generateFromFlowchart(content, outPath, folderPath);
+
+                results.success.push(`${folderName}/${serviceName}`);
+            } catch (err) {
+                console.error("❌ Failed to build " + serviceName + " in " + folderName + ": " + err.message);
+                results.failed.push(`${folderName}/${serviceName}`);
+            }
+
+            console.log("");
+        }
     }
 
     // Summary

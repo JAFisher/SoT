@@ -39,7 +39,7 @@ function parseProps(propStr) {
     });
 }
 
-async function parseFlowchart(definition) {
+async function parseFlowchart(definition, sourceDir = "./flows") {
     const compositionEdges = [];
     const extendsEdges = [];
     const nodes = {};
@@ -223,7 +223,7 @@ async function parseFlowchart(definition) {
 
     processedFiles.add("ROOT");
     const rootLines = definition.split("\n").map(l => l.trim()).filter(l => l && !/^graph\b/.test(l) && !/^%%/.test(l));
-    await parseWorker(rootLines, "./flows");
+    await parseWorker(rootLines, sourceDir);
 
     return { nodes, compositionEdges, extendsEdges, methods, types, interfaces, mainBlocks, externals };
 }
@@ -356,25 +356,40 @@ async function main() {
         process.exit(1);
     }
 
-    const files = (await readdir(FLOWS_DIR)).filter(f => f.endsWith(".flow"));
-    if (files.length === 0) {
-        console.warn("⚠️  No .flow files found.");
+    const items = await readdir(FLOWS_DIR, { withFileTypes: true });
+    const folders = items.filter(item => item.isDirectory());
+
+    if (folders.length === 0) {
+        console.warn("⚠️  No folders found in " + FLOWS_DIR + "/");
         process.exit(0);
     }
 
     const result = {};
 
-    for (const file of files) {
-        const name = path.basename(file, ".flow");
-        const content = await readFile(path.join(FLOWS_DIR, file), "utf-8");
+    for (const folder of folders) {
+        const folderName = folder.name;
+        const folderPath = path.join(FLOWS_DIR, folderName);
 
-        console.log(`  📦  ${name}`);
+        const folderItems = await readdir(folderPath, { withFileTypes: true });
+        const flowFiles = folderItems.filter(f => f.isFile() && f.name.endsWith(".flow"));
 
-        const parsed = await parseFlowchart(content);
-        const diagram = toMermaidDiagram(parsed);
-        const metadata = collectMetadata(parsed);
+        for (const file of flowFiles) {
+            const name = path.basename(file.name, ".flow");
+            const content = await readFile(path.join(folderPath, file.name), "utf-8");
 
-        result[name] = { diagram, metadata };
+            console.log(`  📦  ${folderName}/${name}`);
+
+            const parsed = await parseFlowchart(content, folderPath);
+            const diagram = toMermaidDiagram(parsed);
+            const metadata = collectMetadata(parsed);
+
+            result[`${folderName}/${name}`] = { diagram, metadata };
+        }
+    }
+
+    if (Object.keys(result).length === 0) {
+        console.warn("⚠️  No .flow files found.");
+        process.exit(0);
     }
 
     if (!existsSync(OUT_DIR)) {

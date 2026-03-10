@@ -1,5 +1,5 @@
 {
-  "apiwithclient": {
+  "apiexample/apiwithclient": {
     "diagram": "graph TD\n  Task[\"Task\n─────────────────\nid: number\ntitle: string\ndone: boolean\"]\n  Server[\"Server\n─────────────────\nport: number\ntasks: Task[]\n─────────────────\nstart(): void\"]\n  Client[\"Client\n─────────────────\nserverUrl: string\n─────────────────\nfetchTasks(): void\"]",
     "metadata": {
       "nodeCount": 3,
@@ -29,7 +29,7 @@
       }
     }
   },
-  "auth": {
+  "authexample/auth": {
     "diagram": "graph TD\n  AuthService[\"AuthService\n─────────────────\nsecretKey: string\ntokenExpiry: number\n─────────────────\nregister(req: LoginRequest): User\nlogin(req: LoginRequest, user: User): AuthResult\"]\n  User[\"User\n─────────────────\nid: string\nusername: string\npasswordHash: string\nrole: string\ncreatedAt: number\"]\n  Session[\"Session\n─────────────────\ntoken: string\nuserId: string\nexpiresAt: number\nisActive: boolean\n─────────────────\nvalidate(): boolean\nrevoke(): void\"]\n  AuthService --> User\n  AuthService --> Session\n\n  subgraph Types\n    direction TB\n    T_LoginRequest[\"«type»\nLoginRequest\n─────────────────\nusername: string\npassword: string\"]\n    T_AuthResult[\"«type»\nAuthResult\n─────────────────\nsuccess: boolean\ntoken: string\nmessage: string\"]\n  end",
     "metadata": {
       "nodeCount": 3,
@@ -79,7 +79,50 @@
       ]
     }
   },
-  "calculator": {
+  "blackjack/blackjack": {
+    "diagram": "graph TD\n  Deck[\"Deck\n─────────────────\ncards: string[]\n─────────────────\nshuffle(): void\"]\n  Hand[\"Hand\n─────────────────\ncards: string[]\nisDealer: boolean\n─────────────────\ngetScore(): number\"]\n  Game[\"Game\n─────────────────\ndeck: Deck\nplayerHand: Hand\ndealerHand: Hand\n─────────────────\ndealerTurn(): void\nstart(): void\"]\n  Game --> Deck\n  Game --> Hand",
+    "metadata": {
+      "nodeCount": 3,
+      "compositionEdgeCount": 2,
+      "inheritanceEdgeCount": 0,
+      "types": {},
+      "interfaces": {},
+      "methods": [
+        {
+          "class": "Deck",
+          "name": "shuffle",
+          "signature": "Deck.shuffle(): void",
+          "async": false,
+          "hasCode": true
+        },
+        {
+          "class": "Hand",
+          "name": "getScore",
+          "signature": "Hand.getScore(): number",
+          "async": false,
+          "hasCode": true
+        },
+        {
+          "class": "Game",
+          "name": "dealerTurn",
+          "signature": "Game.dealerTurn(): void",
+          "async": false,
+          "hasCode": true
+        },
+        {
+          "class": "Game",
+          "name": "start",
+          "signature": "Game.start(): void",
+          "async": false,
+          "hasCode": true
+        }
+      ],
+      "externals": {
+        "commander": "commander"
+      }
+    }
+  },
+  "calculator/calculator": {
     "diagram": "graph TD\n  Calculator[\"Calculator\n─────────────────\ndisplayValue: string\nfirstOperand: number | null\noperator: string | null\nwaitingForSecondOperand: boolean\n─────────────────\ninputDigit(digit: string): void\ninputOperator(nextOperator: string): void\nperformCalculation(op: string, first: number, second: number): number\nclear(): void\nrun(): void\"]",
     "metadata": {
       "nodeCount": 1,
@@ -130,7 +173,7 @@
       }
     }
   },
-  "chalk": {
+  "chalk/chalk": {
     "diagram": "graph TD\n  LogEntry[\"LogEntry\n─────────────────\ntimestamp: string\nlevel: string\nmessage: string\"]\n  AlertConfig[\"AlertConfig\n─────────────────\nthreshold: number\nadminEmail: string\"]\n  Monitor[\"Monitor\n─────────────────\nlogPath: string\nerrorCount: number\n─────────────────\nwatch(): void\"]\n  Alerter[\"Alerter\n─────────────────\nlastAlert: string\n─────────────────\nsend(msg: string): void\"]",
     "metadata": {
       "nodeCount": 4,
@@ -161,7 +204,7 @@
       }
     }
   },
-  "chat_app": {
+  "chat/chat_app": {
     "diagram": "graph TD\n  WebServer[\"WebServer\n─────────────────\napp: any\nserver: any\nport: number\n─────────────────\nstart(): void\nget(path: string, callback: any): void\"]\n  ChatManager[\"ChatManager\n─────────────────\nio: any\nusers: Map<string, string>\nrooms: Set<string>\n─────────────────\nattach(server: any): void\"]",
     "metadata": {
       "nodeCount": 2,
@@ -200,7 +243,7 @@
       }
     }
   },
-  "chat_engine": {
+  "chat/chat_engine": {
     "diagram": "graph TD\n  ChatManager[\"ChatManager\n─────────────────\nio: any\nusers: Map<string, string>\nrooms: Set<string>\n─────────────────\nattach(server: any): void\"]",
     "metadata": {
       "nodeCount": 1,
@@ -222,10 +265,10 @@
       }
     }
   },
-  "dashboard": {
-    "diagram": "graph TD\n  WebServer[\"WebServer\n─────────────────\napp: any\nserver: any\nport: number\n─────────────────\nstart(): void\nget(path: string, callback: any): void\"]\n  DashboardData[\"DashboardData\n─────────────────\nmetrics: any\n─────────────────\ngetLatest(): any\"]",
+  "chat/web_core": {
+    "diagram": "graph TD\n  WebServer[\"WebServer\n─────────────────\napp: any\nserver: any\nport: number\n─────────────────\nstart(): void\nget(path: string, callback: any): void\"]",
     "metadata": {
-      "nodeCount": 2,
+      "nodeCount": 1,
       "compositionEdgeCount": 0,
       "inheritanceEdgeCount": 0,
       "types": {},
@@ -244,13 +287,6 @@
           "signature": "WebServer.get(path: string, callback: any): void",
           "async": false,
           "hasCode": true
-        },
-        {
-          "class": "DashboardData",
-          "name": "getLatest",
-          "signature": "DashboardData.getLatest(): any",
-          "async": false,
-          "hasCode": true
         }
       ],
       "externals": {
@@ -260,64 +296,26 @@
       }
     }
   },
-  "db": {
-    "diagram": "graph TD\n  DB[\"Database\n─────────────────\nconnect(): void\"]\n\n  subgraph Types\n    direction TB\n    T_User[\"«type»\nUser\n─────────────────\nid: number\nusername: string\nemail: string\"]\n    T_QueryOptions[\"«type»\nQueryOptions\n─────────────────\nlimit: number\noffset: number\"]\n  end\n\n  subgraph Interfaces\n    direction TB\n    I_IRepository[\"«interface»\nIRepository\n─────────────────\nfindMany: (options: QueryOptions): Promise<Array<User>>\nfindOne: (id: number): Promise<User>\"]\n  end",
+  "dashboard/dashboard": {
+    "diagram": "graph TD\n  DashboardData[\"DashboardData\n─────────────────\nmetrics: any\n─────────────────\ngetLatest(): any\"]",
     "metadata": {
       "nodeCount": 1,
       "compositionEdgeCount": 0,
       "inheritanceEdgeCount": 0,
-      "types": {
-        "User": [
-          "id: number",
-          "username: string",
-          "email: string"
-        ],
-        "QueryOptions": [
-          "limit: number",
-          "offset: number"
-        ]
-      },
-      "interfaces": {
-        "IRepository": [
-          "findMany: (options: QueryOptions): Promise<Array<User>>",
-          "findOne: (id: number): Promise<User>"
-        ]
-      },
+      "types": {},
+      "interfaces": {},
       "methods": [
         {
-          "class": "Database",
-          "name": "connect",
-          "signature": "Database.connect(): void",
+          "class": "DashboardData",
+          "name": "getLatest",
+          "signature": "DashboardData.getLatest(): any",
           "async": false,
           "hasCode": true
         }
       ]
     }
   },
-  "db_types": {
-    "diagram": "graph TD\n\n  subgraph Types\n    direction TB\n    T_UserRecord[\"«type»\nUserRecord\n─────────────────\nid: number\nname: string\nemail: string\"]\n  end\n\n  subgraph Interfaces\n    direction TB\n    I_IDatabase[\"«interface»\nIDatabase\n─────────────────\ninit: (): Promise<void>\naddUser: (name: string, email: string): Promise<void>\ngetUsers: (): Promise<Array<UserRecord>>\"]\n  end",
-    "metadata": {
-      "nodeCount": 0,
-      "compositionEdgeCount": 0,
-      "inheritanceEdgeCount": 0,
-      "types": {
-        "UserRecord": [
-          "id: number",
-          "name: string",
-          "email: string"
-        ]
-      },
-      "interfaces": {
-        "IDatabase": [
-          "init: (): Promise<void>",
-          "addUser: (name: string, email: string): Promise<void>",
-          "getUsers: (): Promise<Array<UserRecord>>"
-        ]
-      },
-      "methods": []
-    }
-  },
-  "galaxy": {
+  "galaxy/galaxy": {
     "diagram": "graph TD\n  Ship[\"Ship\n─────────────────\nname: string\nfuel: number\nlocation: Planet\ncargo: string[]\n─────────────────\ncalculateDistance(target: Planet): number\nflyTo(target: Planet): boolean\"]\n  Planet[\"Planet\n─────────────────\nname: string\nx: number\ny: number\nresource: string\n─────────────────\ngetPrice(item: string): number\"]\n  Trader[\"Trader\n─────────────────\nname: string\ncredits: number\nship: Ship\n─────────────────\nbuyResource(planet: Planet, item: string): boolean\nsellResource(planet: Planet, item: string): boolean\"]\n  Ship --> Planet\n  Trader --> Ship\n\n  subgraph Types\n    direction TB\n    T_TradeResult[\"«type»\nTradeResult\n─────────────────\nsuccess: boolean\nmessage: string\"]\n  end",
     "metadata": {
       "nodeCount": 3,
@@ -369,26 +367,65 @@
       ]
     }
   },
-  "mfa": {
-    "diagram": "graph TD\n  AuthService[\"AuthService\n─────────────────\nsecretKey: string\"]\n  User[\"User\n─────────────────\nid: string\nemail: string\nisMfaEnabled: boolean\"]\n  MfaService[\"MfaService\n─────────────────\nprovider: string\n─────────────────\nsendCode(user: User): string\"]\n  AuthService --> User\n  AuthService --> MfaService",
+  "minecraft/minecraft": {
+    "diagram": "graph TD\n  Chunk[\"Chunk\n─────────────────\nmesh: any\nx: number\nz: number\nmatrix: any\nmaxInstances: number\nvoxels: Set\"]\n  World[\"World\n─────────────────\nscene: any\nchunks: Map\nnoise2D: any\nrenderDistance: number\ntexture: any\n─────────────────\nisSolid(x: number, y: number, z: number): boolean\nupdate(playerPos: any): void\"]\n  Player[\"Player\n─────────────────\ncamera: any\nkeys: any\nvelocity: any\nheight: number\nradius: number\nraycaster: any\ntorch: any\nselectedBlock: number\n─────────────────\nupdate(delta: number, world: any): void\"]\n  Clouds[\"Clouds\n─────────────────\nscene: any\nmesh: any\nmaxDisplacement: number\ntime: number\n─────────────────\nupdate(delta: number, playerPos: any): void\"]\n  MinecraftApp[\"MinecraftApp\n─────────────────\nscene: any\ncamera: any\nrenderer: any\nworld: any\nplayer: any\nsun: any\ntime: number\nselector: any\nclock: any\nclouds: any\n─────────────────\nhandleInteraction(isBreaking: boolean): void\nanimate(): void\"]\n  World --> Chunk\n  MinecraftApp --> World\n  MinecraftApp --> Player",
     "metadata": {
-      "nodeCount": 3,
-      "compositionEdgeCount": 2,
+      "nodeCount": 5,
+      "compositionEdgeCount": 3,
       "inheritanceEdgeCount": 0,
       "types": {},
       "interfaces": {},
       "methods": [
         {
-          "class": "MfaService",
-          "name": "sendCode",
-          "signature": "MfaService.sendCode(user: User): string",
+          "class": "World",
+          "name": "isSolid",
+          "signature": "World.isSolid(x: number, y: number, z: number): boolean",
+          "async": false,
+          "hasCode": true
+        },
+        {
+          "class": "World",
+          "name": "update",
+          "signature": "World.update(playerPos: any): void",
+          "async": false,
+          "hasCode": true
+        },
+        {
+          "class": "Player",
+          "name": "update",
+          "signature": "Player.update(delta: number, world: any): void",
+          "async": false,
+          "hasCode": true
+        },
+        {
+          "class": "Clouds",
+          "name": "update",
+          "signature": "Clouds.update(delta: number, playerPos: any): void",
+          "async": false,
+          "hasCode": true
+        },
+        {
+          "class": "MinecraftApp",
+          "name": "handleInteraction",
+          "signature": "MinecraftApp.handleInteraction(isBreaking: boolean): void",
+          "async": false,
+          "hasCode": true
+        },
+        {
+          "class": "MinecraftApp",
+          "name": "animate",
+          "signature": "MinecraftApp.animate(): void",
           "async": false,
           "hasCode": true
         }
-      ]
+      ],
+      "externals": {
+        "three": "three",
+        "SimplexNoise": "simplex-noise"
+      }
     }
   },
-  "notes": {
+  "notes/notes": {
     "diagram": "graph TD",
     "metadata": {
       "nodeCount": 0,
@@ -454,179 +491,7 @@
       }
     }
   },
-  "notification_service": {
-    "diagram": "graph TD\n  Alerter[\"Alerter\n─────────────────\nsend(message: string, type: #quot;info#quot; | #quot;warn#quot; | #quot;error#quot;): void\"]\n  Monitor[\"Monitor\n─────────────────\nalerter: Alerter\n─────────────────\nlogAction(action: string, success: boolean): void\"]",
-    "metadata": {
-      "nodeCount": 2,
-      "compositionEdgeCount": 0,
-      "inheritanceEdgeCount": 0,
-      "types": {},
-      "interfaces": {},
-      "methods": [
-        {
-          "class": "Alerter",
-          "name": "send",
-          "signature": "Alerter.send(message: string, type: \"info\" | \"warn\" | \"error\"): void",
-          "async": false,
-          "hasCode": true
-        },
-        {
-          "class": "Monitor",
-          "name": "logAction",
-          "signature": "Monitor.logAction(action: string, success: boolean): void",
-          "async": false,
-          "hasCode": true
-        }
-      ],
-      "externals": {
-        "chalk": "chalk"
-      }
-    }
-  },
-  "orders": {
-    "diagram": "graph TD\n  OrderService[\"OrderService\n─────────────────\ntaxRate: number\nprocessingFee: number\n─────────────────\nplaceOrder(order: Order): OrderSummary\nrefundOrder(orderId: string, order: Order): boolean\"]\n  Order[\"Order\n─────────────────\nid: string\ncustomerId: string\nstatus: string\ncreatedAt: number\n─────────────────\naddItem(item: LineItem): void\ngetTotal(): number\"]\n  LineItem[\"LineItem\n─────────────────\nproductId: string\nproductName: string\nquantity: number\nunitPrice: number\"]\n  PaymentProcessor[\"PaymentProcessor\n─────────────────\nprovider: string\napiKey: string\n─────────────────\ncharge(amount: number, customerId: string): PaymentResult\"]\n  OrderService --> Order\n  Order --> LineItem\n  OrderService --> PaymentProcessor\n\n  subgraph Types\n    direction TB\n    T_OrderSummary[\"«type»\nOrderSummary\n─────────────────\norderId: string\ntotal: number\ntax: number\nstatus: string\"]\n    T_PaymentResult[\"«type»\nPaymentResult\n─────────────────\napproved: boolean\ntransactionId: string\nmessage: string\"]\n  end",
-    "metadata": {
-      "nodeCount": 4,
-      "compositionEdgeCount": 3,
-      "inheritanceEdgeCount": 0,
-      "types": {
-        "OrderSummary": [
-          "orderId: string",
-          "total: number",
-          "tax: number",
-          "status: string"
-        ],
-        "PaymentResult": [
-          "approved: boolean",
-          "transactionId: string",
-          "message: string"
-        ]
-      },
-      "interfaces": {},
-      "methods": [
-        {
-          "class": "Order",
-          "name": "addItem",
-          "signature": "Order.addItem(item: LineItem): void",
-          "async": false,
-          "hasCode": true
-        },
-        {
-          "class": "Order",
-          "name": "getTotal",
-          "signature": "Order.getTotal(): number",
-          "async": false,
-          "hasCode": true
-        },
-        {
-          "class": "OrderService",
-          "name": "placeOrder",
-          "signature": "OrderService.placeOrder(order: Order): OrderSummary",
-          "async": false,
-          "hasCode": true
-        },
-        {
-          "class": "OrderService",
-          "name": "refundOrder",
-          "signature": "OrderService.refundOrder(orderId: string, order: Order): boolean",
-          "async": false,
-          "hasCode": true
-        },
-        {
-          "class": "PaymentProcessor",
-          "name": "charge",
-          "signature": "PaymentProcessor.charge(amount: number, customerId: string): PaymentResult",
-          "async": false,
-          "hasCode": true
-        }
-      ]
-    }
-  },
-  "physics_core": {
-    "diagram": "graph TD\n  PhysicsService[\"PhysicsService\n─────────────────\nball: any\npaddles: any\nbounds: any\n─────────────────\nupdate(): any\"]",
-    "metadata": {
-      "nodeCount": 1,
-      "compositionEdgeCount": 0,
-      "inheritanceEdgeCount": 0,
-      "types": {},
-      "interfaces": {},
-      "methods": [
-        {
-          "class": "PhysicsService",
-          "name": "update",
-          "signature": "PhysicsService.update(): any",
-          "async": false,
-          "hasCode": true
-        }
-      ]
-    }
-  },
-  "poker": {
-    "diagram": "graph TD\n  Deck[\"Deck\n─────────────────\ncards: string[]\n─────────────────\nshuffle(): void\"]\n  Hand[\"Hand\n─────────────────\ncards: string[]\nisDealer: boolean\n─────────────────\ngetScore(): number\"]\n  Game[\"Game\n─────────────────\ndeck: Deck\nplayerHand: Hand\ndealerHand: Hand\n─────────────────\ndealerTurn(): void\nstart(): void\"]\n  Game --> Deck\n  Game --> Hand",
-    "metadata": {
-      "nodeCount": 3,
-      "compositionEdgeCount": 2,
-      "inheritanceEdgeCount": 0,
-      "types": {},
-      "interfaces": {},
-      "methods": [
-        {
-          "class": "Deck",
-          "name": "shuffle",
-          "signature": "Deck.shuffle(): void",
-          "async": false,
-          "hasCode": true
-        },
-        {
-          "class": "Hand",
-          "name": "getScore",
-          "signature": "Hand.getScore(): number",
-          "async": false,
-          "hasCode": true
-        },
-        {
-          "class": "Game",
-          "name": "dealerTurn",
-          "signature": "Game.dealerTurn(): void",
-          "async": false,
-          "hasCode": true
-        },
-        {
-          "class": "Game",
-          "name": "start",
-          "signature": "Game.start(): void",
-          "async": false,
-          "hasCode": true
-        }
-      ],
-      "externals": {
-        "commander": "commander"
-      }
-    }
-  },
-  "pong_ui": {
-    "diagram": "graph TD\n  PhysicsService[\"PhysicsService\n─────────────────\nball: any\npaddles: any\nbounds: any\n─────────────────\nupdate(): any\"]",
-    "metadata": {
-      "nodeCount": 1,
-      "compositionEdgeCount": 0,
-      "inheritanceEdgeCount": 0,
-      "types": {},
-      "interfaces": {},
-      "methods": [
-        {
-          "class": "PhysicsService",
-          "name": "update",
-          "signature": "PhysicsService.update(): any",
-          "async": false,
-          "hasCode": true
-        }
-      ],
-      "externals": {
-        "electron": "electron"
-      }
-    }
-  },
-  "rpg": {
+  "rpg/rpg": {
     "diagram": "graph TD\n  Entity[\"Entity\n─────────────────\nid: string\nname: string\nhealth: number\nisAlive: boolean\"]\n  Player[\"Player\n─────────────────\nlevel: number\nexperience: number\nweapon: Weapon\ninventory: Inventory\nstats: Stats\n─────────────────\nattack(target: Enemy): number\ngainExperience(amount: number): void\"]\n  Enemy[\"Enemy\n─────────────────\nlootTable: string[]\nstats: Stats\n─────────────────\ntakeTurn(target: Player): void\ndropLoot(): string\"]\n  Weapon[\"Weapon\n─────────────────\nname: string\ndamage: number\ntype: string\"]\n  Inventory[\"Inventory\n─────────────────\nitems: Item[]\ncapacity: number\n─────────────────\naddItem(item: Item): boolean\"]\n  Item[\"Item\n─────────────────\nname: string\ndescription: string\nvalue: number\nquantity: number\"]\n  Player -->|extends| Entity\n  Enemy -->|extends| Entity\n  Player --> Weapon\n  Player --> Inventory\n  Enemy --> Player\n  Inventory --> Item\n\n  subgraph Types\n    direction TB\n    T_Stats[\"«type»\nStats\n─────────────────\nstrength: number\nagility: number\nintelligence: number\ndefense: number\"]\n  end\n\n  subgraph Interfaces\n    direction TB\n    I_IActivatable[\"«interface»\nIActivatable\n─────────────────\ncooldown: number\nlastUsed: number\"]\n  end",
     "metadata": {
       "nodeCount": 6,
@@ -685,93 +550,7 @@
       ]
     }
   },
-  "space_invaders": {
-    "diagram": "graph TD\n  WebServer[\"WebServer\n─────────────────\napp: any\nserver: any\nport: number\n─────────────────\nstart(): void\nget(path: string, callback: any): void\"]\n  GameEngine[\"GameEngine\"]",
-    "metadata": {
-      "nodeCount": 2,
-      "compositionEdgeCount": 0,
-      "inheritanceEdgeCount": 0,
-      "types": {},
-      "interfaces": {},
-      "methods": [
-        {
-          "class": "WebServer",
-          "name": "start",
-          "signature": "WebServer.start(): void",
-          "async": false,
-          "hasCode": true
-        },
-        {
-          "class": "WebServer",
-          "name": "get",
-          "signature": "WebServer.get(path: string, callback: any): void",
-          "async": false,
-          "hasCode": true
-        }
-      ],
-      "externals": {
-        "express": "express",
-        "http": "node:http",
-        "path": "node:path"
-      }
-    }
-  },
-  "sqlite_service": {
-    "diagram": "graph TD\n  DB[\"SqliteDatabase\n─────────────────\n⚡ init(): Promise<void>\n⚡ addUser(name: string, email: string): Promise<void>\n⚡ getUsers(): Promise<Array<UserRecord>>\"]\n  IDatabase[\"IDatabase\"]\n  DB -->|extends| IDatabase\n\n  subgraph Types\n    direction TB\n    T_UserRecord[\"«type»\nUserRecord\n─────────────────\nid: number\nname: string\nemail: string\"]\n  end\n\n  subgraph Interfaces\n    direction TB\n    I_IDatabase[\"«interface»\nIDatabase\n─────────────────\ninit: (): Promise<void>\naddUser: (name: string, email: string): Promise<void>\ngetUsers: (): Promise<Array<UserRecord>>\"]\n  end",
-    "metadata": {
-      "nodeCount": 2,
-      "compositionEdgeCount": 0,
-      "inheritanceEdgeCount": 1,
-      "types": {
-        "UserRecord": [
-          "id: number",
-          "name: string",
-          "email: string"
-        ]
-      },
-      "interfaces": {
-        "IDatabase": [
-          "init: (): Promise<void>",
-          "addUser: (name: string, email: string): Promise<void>",
-          "getUsers: (): Promise<Array<UserRecord>>"
-        ]
-      },
-      "methods": [
-        {
-          "class": "SqliteDatabase",
-          "name": "init",
-          "signature": "SqliteDatabase.init(): Promise<void>",
-          "async": true,
-          "hasCode": true
-        },
-        {
-          "class": "SqliteDatabase",
-          "name": "addUser",
-          "signature": "SqliteDatabase.addUser(name: string, email: string): Promise<void>",
-          "async": true,
-          "hasCode": true
-        },
-        {
-          "class": "SqliteDatabase",
-          "name": "getUsers",
-          "signature": "SqliteDatabase.getUsers(): Promise<Array<UserRecord>>",
-          "async": true,
-          "hasCode": true
-        },
-        {
-          "class": "",
-          "name": "main",
-          "signature": ".main(): void",
-          "async": true,
-          "hasCode": true
-        }
-      ],
-      "externals": {
-        "sqlite3": "sqlite3"
-      }
-    }
-  },
-  "stocktracker": {
+  "stocks/stocktracker": {
     "diagram": "graph TD\n  StockService[\"StockService\n─────────────────\nstocks: any\n─────────────────\nupdateStocks(): any\"]",
     "metadata": {
       "nodeCount": 1,
@@ -794,31 +573,7 @@
       }
     }
   },
-  "test_rollup": {
-    "diagram": "graph TD\n  RollupTestClass[\"RollupTestClass\n─────────────────\nmessage: string\n─────────────────\nsayHello(): void\"]\n\n  subgraph Interfaces\n    direction TB\n    I_RollupTestInterface[\"«interface»\nRollupTestInterface\n─────────────────\nid: number\nname: string\"]\n  end",
-    "metadata": {
-      "nodeCount": 1,
-      "compositionEdgeCount": 0,
-      "inheritanceEdgeCount": 0,
-      "types": {},
-      "interfaces": {
-        "RollupTestInterface": [
-          "id: number",
-          "name: string"
-        ]
-      },
-      "methods": [
-        {
-          "class": "RollupTestClass",
-          "name": "sayHello",
-          "signature": "RollupTestClass.sayHello(): void",
-          "async": false,
-          "hasCode": true
-        }
-      ]
-    }
-  },
-  "three_demo": {
+  "tetris/three_demo": {
     "diagram": "graph TD\n  Board[\"Board\n─────────────────\nwidth: number\nheight: number\ngrid: any[]\nblocks: any[]\ngroup: any\n─────────────────\nisOccupied(x: number, y: number): boolean\naddBlocks(blocks: any[]): void\nclearLines(): number\"]\n  Tetromino[\"Tetromino\n─────────────────\nx: number\ny: number\nshape: number[][]\ncolor: number\nblocks: any[]\ngroup: any\n─────────────────\ncreateMeshes(): void\nupdatePosition(): void\ngetGlobalBlocks(): any[]\nrotate(): void\"]\n  Lighting[\"Lighting\n─────────────────\nlight: any\"]\n  ThreeApp[\"ThreeApp\n─────────────────\nscene: any\ncamera: any\nrenderer: any\nboard: any\ncurrentpiece: any\ndropTimer: number\ngameOver: boolean\nscore: number\n─────────────────\nhandleInput(e: any): void\nupdateScore(lines: number): void\nanimate(): void\"]\n  ThreeApp --> Board\n  ThreeApp --> Tetromino\n  ThreeApp --> Lighting",
     "metadata": {
       "nodeCount": 4,
@@ -903,7 +658,7 @@
       }
     }
   },
-  "todolist": {
+  "todolist/todolist": {
     "diagram": "graph TD\n  TodoManager[\"TodoManager\n─────────────────\ntasks: any[]\n─────────────────\naddTask(title: string): void\ntoggleTask(id: number): void\ndeleteTask(id: number): void\"]",
     "metadata": {
       "nodeCount": 1,
@@ -937,130 +692,6 @@
       "externals": {
         "electron": "electron",
         "path": "path"
-      }
-    }
-  },
-  "user_service": {
-    "diagram": "graph TD\n  DB[\"Database\n─────────────────\nconnect(): void\"]\n  Alerter[\"Alerter\n─────────────────\nsend(message: string, type: #quot;info#quot; | #quot;warn#quot; | #quot;error#quot;): void\"]\n  Monitor[\"Monitor\n─────────────────\nalerter: Alerter\n─────────────────\nlogAction(action: string, success: boolean): void\"]\n  UserService[\"UserService\n─────────────────\nmonitor: Monitor\n─────────────────\ngetUser(id: number): Promise<User>\"]\n  UserService --> DB\n  UserService --> Monitor\n\n  subgraph Types\n    direction TB\n    T_User[\"«type»\nUser\n─────────────────\nid: number\nusername: string\nemail: string\"]\n    T_QueryOptions[\"«type»\nQueryOptions\n─────────────────\nlimit: number\noffset: number\"]\n  end\n\n  subgraph Interfaces\n    direction TB\n    I_IRepository[\"«interface»\nIRepository\n─────────────────\nfindMany: (options: QueryOptions): Promise<Array<User>>\nfindOne: (id: number): Promise<User>\"]\n  end",
-    "metadata": {
-      "nodeCount": 4,
-      "compositionEdgeCount": 2,
-      "inheritanceEdgeCount": 0,
-      "types": {
-        "User": [
-          "id: number",
-          "username: string",
-          "email: string"
-        ],
-        "QueryOptions": [
-          "limit: number",
-          "offset: number"
-        ]
-      },
-      "interfaces": {
-        "IRepository": [
-          "findMany: (options: QueryOptions): Promise<Array<User>>",
-          "findOne: (id: number): Promise<User>"
-        ]
-      },
-      "methods": [
-        {
-          "class": "Database",
-          "name": "connect",
-          "signature": "Database.connect(): void",
-          "async": false,
-          "hasCode": true
-        },
-        {
-          "class": "Alerter",
-          "name": "send",
-          "signature": "Alerter.send(message: string, type: \"info\" | \"warn\" | \"error\"): void",
-          "async": false,
-          "hasCode": true
-        },
-        {
-          "class": "Monitor",
-          "name": "logAction",
-          "signature": "Monitor.logAction(action: string, success: boolean): void",
-          "async": false,
-          "hasCode": true
-        },
-        {
-          "class": "UserService",
-          "name": "getUser",
-          "signature": "UserService.getUser(id: number): Promise<User>",
-          "async": false,
-          "hasCode": true
-        },
-        {
-          "class": "",
-          "name": "main",
-          "signature": ".main(): void",
-          "async": true,
-          "hasCode": true
-        }
-      ],
-      "externals": {
-        "chalk": "chalk"
-      }
-    }
-  },
-  "weather": {
-    "diagram": "graph TD\n  WeatherService[\"WeatherService\n─────────────────\napiKey: string\nhistory: WeatherUpdate[]\n─────────────────\n⚡ getWeather(city: string): Promise<WeatherUpdate>\"]\n\n  subgraph Types\n    direction TB\n    T_WeatherUpdate[\"«type»\nWeatherUpdate\n─────────────────\ntemp: number\ncondition: string\ntimestamp: number\"]\n  end",
-    "metadata": {
-      "nodeCount": 1,
-      "compositionEdgeCount": 0,
-      "inheritanceEdgeCount": 0,
-      "types": {
-        "WeatherUpdate": [
-          "temp: number",
-          "condition: string",
-          "timestamp: number"
-        ]
-      },
-      "interfaces": {},
-      "methods": [
-        {
-          "class": "WeatherService",
-          "name": "getWeather",
-          "signature": "WeatherService.getWeather(city: string): Promise<WeatherUpdate>",
-          "async": true,
-          "hasCode": true
-        }
-      ],
-      "externals": {
-        "axios": "axios"
-      }
-    }
-  },
-  "web_core": {
-    "diagram": "graph TD\n  WebServer[\"WebServer\n─────────────────\napp: any\nserver: any\nport: number\n─────────────────\nstart(): void\nget(path: string, callback: any): void\"]",
-    "metadata": {
-      "nodeCount": 1,
-      "compositionEdgeCount": 0,
-      "inheritanceEdgeCount": 0,
-      "types": {},
-      "interfaces": {},
-      "methods": [
-        {
-          "class": "WebServer",
-          "name": "start",
-          "signature": "WebServer.start(): void",
-          "async": false,
-          "hasCode": true
-        },
-        {
-          "class": "WebServer",
-          "name": "get",
-          "signature": "WebServer.get(path: string, callback: any): void",
-          "async": false,
-          "hasCode": true
-        }
-      ],
-      "externals": {
-        "express": "express",
-        "http": "node:http",
-        "path": "node:path"
       }
     }
   }

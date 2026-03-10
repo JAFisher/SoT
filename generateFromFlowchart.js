@@ -7,7 +7,7 @@ import { execSync } from "child_process";
  * inheritance edges, methods, types, interfaces, main blocks, and EXTERNALS.
  * Supports recursive includes via include->filename.flow
  */
-function parseFlowchart(definition) {
+function parseFlowchart(definition, sourceDir = "./flows") {
     const compositionEdges = [];
     const extendsEdges = [];
     const nodes = Object.create(null);
@@ -258,7 +258,7 @@ function parseFlowchart(definition) {
     }
 
     const rootLines = definition.split("\n").map(l => l.trim()).filter(l => l && !/^graph\b/.test(l));
-    parseWorker(rootLines, "./flows", "");
+    parseWorker(rootLines, sourceDir, "");
 
     return { nodes, compositionEdges, extendsEdges, methods, types, interfaces, mainBlocks, webBlocks, externals, cliScripts, pkgOverrides, rollups };
 }
@@ -618,7 +618,7 @@ function extractReferencedTypes(typeStr) {
     return matches.filter(m => !builtIns.has(m));
 }
 
-export function generateFromFlowchart(definition, outDir = "./out") {
-    const parsed = parseFlowchart(definition);
+export function generateFromFlowchart(definition, outDir = "./out", sourceDir = "./flows") {
+    const parsed = parseFlowchart(definition, sourceDir);
     generateFiles(outDir, parsed);
 }
