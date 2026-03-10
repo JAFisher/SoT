@@ -16,7 +16,7 @@ Chunk[Chunk.ts{mesh: any, x: number, z: number, matrix: any, maxInstances: numbe
   this.voxels = new Set();
   
   const size = 16;
-  const heightLimit = 20; 
+  const heightLimit = 32; // Increased to accommodate taller hills
   const geometry = new three.BoxGeometry(1, 1, 1);
   const material = new three.MeshLambertMaterial({ 
     map: texture,
@@ -41,8 +41,18 @@ Chunk[Chunk.ts{mesh: any, x: number, z: number, matrix: any, maxInstances: numbe
     for (let lz = 0; lz < size; lz++) {
       const gx = this.x * size + lx;
       const gz = this.z * size + lz;
-      const h = Math.floor(noise2D(gx / 32, gz / 32) * 6 + 4);
-      for (let ly = 0; ly < h; ly++) {
+      
+      // Multi-octave (fractal) noise for varied terrain
+      // Base elevation
+      const baseEl = noise2D(gx / 128, gz / 128) * 10 + 10;
+      // Macro hills and valleys
+      const macroHills = noise2D(gx / 64, gz / 64) * 5;
+      // Micro detail (roughness)
+      const detail = noise2D(gx / 16, gz / 16) * 2;
+      
+      const h = Math.max(1, Math.floor(baseEl + macroHills + detail));
+      
+      for (let ly = 0; ly < h && ly < heightLimit; ly++) {
         this.matrix.setPosition(lx, ly, lz);
         this.mesh.setMatrixAt(i, this.matrix);
         // Top layer = grass, next 2 = dirt, rest = stone
@@ -77,15 +87,26 @@ World --> Chunk
 
 @World.isSolid{x: number, y: number, z: number}: boolean
 @@World.isSolid.code
+  if (y < 0) return true; // Bedrock barrier
+  
+  // Need to duplicate the new multi-octave noise function here to keep collision accurate
+  const baseEl = this.noise2D(x / 128, z / 128) * 10 + 10;
+  const macroHills = this.noise2D(x / 64, z / 64) * 5;
+  const detail = this.noise2D(x / 16, z / 16) * 2;
+  const terrainHeight = Math.max(1, Math.floor(baseEl + macroHills + detail));
+  
+  if (y < terrainHeight) return true; // Inside natural generated terrain
+
   const cx = Math.floor(x / 16);
   const cz = Math.floor(z / 16);
-  const chunk = this.chunks.get(`${cx},${cz}`);
-  if (!chunk) return false;
-  
-  const lx = Math.floor(x) - (cx * 16);
-  const ly = Math.floor(y);
-  const lz = Math.floor(z) - (cz * 16);
-  return chunk.voxels.has(`${lx},${ly},${lz}`);
+  const chunk = this.chunks.get(cx + "," + cz);
+  if (chunk) {
+    const lx = Math.floor(x - cx * 16);
+    const ly = Math.floor(y);
+    const lz = Math.floor(z - cz * 16);
+    return chunk.voxels.has(lx + "," + ly + "," + lz);
+  }
+  return false;
 @@World.isSolid.end
 
 @World.update{playerPos: any}: void
