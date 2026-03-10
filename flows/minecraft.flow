@@ -194,8 +194,22 @@ Player[Player.ts{camera: any, keys: any, velocity: any, height: number, radius: 
 
 @Player.update{delta: number, world: any}: void
 @@Player.update.code
-  const moveSpeed = (this.keys['ShiftLeft'] ? 15 : 8) * delta;
-  const gravity = 28 * delta;
+  let moveSpeed = (this.keys['ShiftLeft'] ? 15 : 8) * delta;
+  let gravity = 28 * delta;
+  
+  const seaLevel = 12;
+  const inWater = (this.camera.position.y - this.height * 0.5) < seaLevel && 
+                  !world.isSolid(this.camera.position.x, this.camera.position.y - this.height * 0.5, this.camera.position.z);
+
+  if (inWater) {
+    moveSpeed *= 0.6; // Slower in water
+    gravity = 5 * delta; // Less gravity (buoyancy)
+    this.velocity.y *= 0.9; // Water drag
+    
+    if (this.keys['Space']) {
+      this.velocity.y += 18 * delta; // Swim upwards
+    }
+  }
   
   this.torch.position.copy(this.camera.position);
 
@@ -212,7 +226,7 @@ Player[Player.ts{camera: any, keys: any, velocity: any, height: number, radius: 
   if (world.isSolid(this.camera.position.x, nextY - this.height, this.camera.position.z)) {
     this.velocity.y = 0;
     nextY = Math.ceil(nextY - this.height) + this.height;
-    if (this.keys['Space']) this.velocity.y = 10;
+    if (this.keys['Space'] && !inWater) this.velocity.y = 10;
   }
   this.camera.position.y = nextY;
   
