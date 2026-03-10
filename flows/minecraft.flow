@@ -34,7 +34,7 @@ Chunk[Chunk.ts{mesh: any, x: number, z: number, matrix: any, maxInstances: numbe
       this.mesh.setColorAt(c, new three.Color(0xffffff));
   }
   
-  const colors = [0x4a8c3f, 0x7c5e3c, 0x808080, 0x4c3314, 0xadd8e6, 0x1E90FF];
+  const colors = [0x4a8c3f, 0x7c5e3c, 0x808080, 0x4c3314, 0xadd8e6, 0x1E90FF, 0x2d5a27];
   const seaLevel = 12;
   
   let i = 0;
@@ -73,7 +73,45 @@ Chunk[Chunk.ts{mesh: any, x: number, z: number, matrix: any, maxInstances: numbe
           this.mesh.setMatrixAt(i, this.matrix);
           this.mesh.setColorAt(i, new three.Color(colors[5])); // Blue water
           i++;
-          // Deliberately NOT adding to voxels so it has no collision
+        }
+      } else if (h >= seaLevel && h < heightLimit) {
+        // Chance to spawn a tree on grass
+        const isGrass = Math.floor(baseEl + macroHills + detail) === h; // Simple check if top layer
+        if (isGrass && h + 5 < heightLimit) {
+          // Pseudo-random chance based on coordinates
+          const treeChance = (Math.sin(gx * 12.9898 + gz * 78.233) * 43758.5453) % 1;
+          if (Math.abs(treeChance) > 0.98) {
+             // Generate trunk
+             const trunkHeight = Math.floor(Math.abs(Math.sin(gx * 7.123 + gz * 12.989) * 4)) + 3; // Random height 3 to 6
+             for(let ty = 0; ty < trunkHeight; ty++) {
+                this.matrix.setPosition(lx, h + ty, lz);
+                this.mesh.setMatrixAt(i, this.matrix);
+                this.mesh.setColorAt(i, new three.Color(colors[3])); // Wood
+                i++;
+                this.voxels.add(lx + "," + (h + ty) + "," + lz);
+             }
+             // Generate leaves
+             for(let dx = -1; dx <= 1; dx++) {
+               for(let dz = -1; dz <= 1; dz++) {
+                 for(let dy = 0; dy <= 1; dy++) {
+                   const leafX = lx + dx;
+                   const leafZ = lz + dz;
+                   // Keep leaves inside chunk for simplicity
+                   if (leafX >= 0 && leafX < size && leafZ >= 0 && leafZ < size) {
+                     // Don't replace the trunk
+                     if (!(dx === 0 && dz === 0 && dy === 0)) {
+                       const leafY = h + trunkHeight - 1 + dy;
+                       this.matrix.setPosition(leafX, leafY, leafZ);
+                       this.mesh.setMatrixAt(i, this.matrix);
+                       this.mesh.setColorAt(i, new three.Color(colors[6])); // Dark Green Leaves
+                       i++;
+                       this.voxels.add(leafX + "," + leafY + "," + leafZ);
+                     }
+                   }
+                 }
+               }
+             }
+          }
         }
       }
     }
