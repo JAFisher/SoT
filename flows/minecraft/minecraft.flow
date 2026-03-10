@@ -217,9 +217,10 @@ Player[Player.ts{camera: any, keys: any, velocity: any, height: number, radius: 
   let moveSpeed = (this.keys['ShiftLeft'] ? 15 : 8) * delta;
   let gravity = 28 * delta;
   
+  const feetY = this.camera.position.y - this.height;
   const seaLevel = 12;
-  const inWater = (this.camera.position.y - this.height * 0.5) < seaLevel && 
-                  !world.isSolid(this.camera.position.x, this.camera.position.y - this.height * 0.5, this.camera.position.z);
+  const inWater = feetY < seaLevel && 
+                  !world.isSolid(this.camera.position.x, feetY, this.camera.position.z);
 
   if (inWater) {
     moveSpeed *= 0.6; // Slower in water
@@ -269,15 +270,23 @@ Player[Player.ts{camera: any, keys: any, velocity: any, height: number, radius: 
 
   // X Collision (check feet and head level)
   const xNext = this.camera.position.x + moveDir.x + (Math.sign(moveDir.x) * this.radius);
-  if (!world.isSolid(xNext, this.camera.position.y - 1.0, this.camera.position.z) &&
-      !world.isSolid(xNext, this.camera.position.y - 0.3, this.camera.position.z)) {
+  const blockedX = world.isSolid(xNext, this.camera.position.y - 1.0, this.camera.position.z) || 
+                   world.isSolid(xNext, this.camera.position.y - 0.3, this.camera.position.z);
+  if (!blockedX) {
     this.camera.position.x += moveDir.x;
   }
+  
   // Z Collision (check feet and head level)
   const zNext = this.camera.position.z + moveDir.z + (Math.sign(moveDir.z) * this.radius);
-  if (!world.isSolid(this.camera.position.x, this.camera.position.y - 1.0, zNext) &&
-      !world.isSolid(this.camera.position.x, this.camera.position.y - 0.3, zNext)) {
+  const blockedZ = world.isSolid(this.camera.position.x, this.camera.position.y - 1.0, zNext) || 
+                   world.isSolid(this.camera.position.x, this.camera.position.y - 0.3, zNext);
+  if (!blockedZ) {
     this.camera.position.z += moveDir.z;
+  }
+  
+  // Water auto-step (clamber out of water onto a shore/block)
+  if (inWater && (blockedX || blockedZ) && this.keys['Space']) {
+    this.velocity.y = 8;
   }
 @@Player.update.end
 
