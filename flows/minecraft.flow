@@ -299,8 +299,70 @@ Player[Player.ts{camera: any, keys: any, velocity: any, height: number, radius: 
   }
 @@Player.update.end
 
+// --- Clouds Layer ---
+Clouds[Clouds.ts{scene: any, mesh: any, maxDisplacement: number, time: number}]
+@Clouds.constructor{scene: any}
+@@Clouds.constructor.code
+  this.scene = scene;
+  this.time = 0;
+  
+  const size = 64; // Grid size for clouds (64x64 blocks)
+  const spread = 8; // Distance between cloud checks
+  const geometry = new three.BoxGeometry(4, 3, 4); // Fluffy cloud block size
+  const material = new three.MeshLambertMaterial({ 
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.8
+  });
+  
+  // Calculate max possible instances based on noise threshold
+  let instanceCount = 0;
+  const noise2D = SimplexNoise.createNoise2D();
+  for (let x = 0; x < size; x++) {
+    for (let z = 0; z < size; z++) {
+      if (noise2D(x * 0.1, z * 0.1) > 0.3) instanceCount++;
+    }
+  }
+
+  this.mesh = new three.InstancedMesh(geometry, material, instanceCount);
+  
+  const matrix = new three.Matrix4();
+  let i = 0;
+  for (let x = 0; x < size; x++) {
+    for (let z = 0; z < size; z++) {
+      if (noise2D(x * 0.1, z * 0.1) > 0.3) {
+        matrix.setPosition((x - size/2) * spread, 60, (z - size/2) * spread);
+        this.mesh.setMatrixAt(i, matrix);
+        i++;
+      }
+    }
+  }
+  
+  // Max distance they can drift before wrapping
+  this.maxDisplacement = (size * spread) / 2;
+  
+  scene.add(this.mesh);
+@@Clouds.constructor.end
+
+@Clouds.update{delta: number, playerPos: any}: void
+@@Clouds.update.code
+  this.time += delta;
+  const driftSpeed = 2.0;
+  
+  // Slowly drift
+  let driftX = (this.time * driftSpeed) % this.maxDisplacement;
+  let driftZ = (this.time * driftSpeed * 0.5) % this.maxDisplacement;
+  
+  // Keep clouds relatively centered over the player, but drifting
+  // Snapping them in chunks to prevent floating point jitter at high values
+  const snapX = Math.floor(playerPos.x / this.maxDisplacement) * this.maxDisplacement;
+  const snapZ = Math.floor(playerPos.z / this.maxDisplacement) * this.maxDisplacement;
+
+  this.mesh.position.set(snapX + driftX, 0, snapZ + driftZ);
+@@Clouds.update.end
+
 // --- Main App ---
-MinecraftApp[MinecraftApp.ts{scene: any, camera: any, renderer: any, world: any, player: any, sun: any, time: number, selector: any, clock: any}]
+MinecraftApp[MinecraftApp.ts{scene: any, camera: any, renderer: any, world: any, player: any, sun: any, time: number, selector: any, clock: any, clouds: any}]
 MinecraftApp --> World
 MinecraftApp --> Player
 
@@ -336,11 +398,11 @@ MinecraftApp --> Player
   texture.wrapS = texture.wrapT = three.RepeatWrapping;
   texture.needsUpdate = true;
 
-  // Fog to hide chunk pop-in
   this.scene.fog = new three.Fog(0x87ceeb, 20, 60);
 
   this.world = new World(this.scene, texture);
   this.player = new Player(this.camera, this.scene);
+  this.clouds = new Clouds(this.scene);
 
   this.selector = new three.Mesh(new three.BoxGeometry(1.02, 1.02, 1.02), new three.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.5 }));
   this.scene.add(this.selector);
@@ -409,6 +471,7 @@ MinecraftApp --> Player
   const delta = Math.min(this.clock.getDelta(), 0.1); // Real delta, capped to prevent spiral
   this.player.update(delta, this.world);
   this.world.update(this.camera.position);
+  this.clouds.update(delta, this.camera.position);
   
   // Selector Logic
   this.player.raycaster.setFromCamera({x: 0, y: 0}, this.camera);
@@ -445,7 +508,7 @@ MinecraftApp --> Player
 @@MinecraftApp.animate.end
 
 // --- Build Config ---
-Rollup->{Chunk.ts, World.ts, Player.ts, MinecraftApp.ts}
+Rollup->{Clouds.ts, Chunk.ts, World.ts, Player.ts, MinecraftApp.ts}
 
 // --- Web UI ---
 web->index.html.code
