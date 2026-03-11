@@ -16,9 +16,10 @@ function parseFlowchart(definition, sourceDir = "./flows") {
     const interfaces = {};
     const mainBlocks = [];
     const webBlocks = [];
+    const dockerBlocks = [];
     const externals = {};
-    const cliScripts = {};
-    const pkgOverrides = {};
+    const cliScripts = [];
+    const pkgOverrides = [];
     const processedFiles = new Set();
     const rollups = [];
 
@@ -219,6 +220,19 @@ function parseFlowchart(definition, sourceDir = "./flows") {
                 continue;
             }
 
+            // 8.6 Docker Blocks
+            const dockerStartMatch = line.match(/^docker->start$/);
+            if (dockerStartMatch) {
+                let codeBlock = "";
+                i++;
+                while (i < lines.length && !lines[i].match(/^docker->end$/)) {
+                    codeBlock += lines[i] + "\n";
+                    i++;
+                }
+                dockerBlocks.push({ code: codeBlock.trim(), namespace });
+                continue;
+            }
+
             // 8.7 Rollup Blocks
             const rollupMatch = line.match(/^Rollup->\{([^}]+)\}/);
             if (rollupMatch) {
@@ -243,7 +257,7 @@ function parseFlowchart(definition, sourceDir = "./flows") {
             const cliScriptMatch = line.match(cliScriptPattern);
             if (cliScriptMatch) {
                 const [, scriptName, scriptCommand] = cliScriptMatch;
-                cliScripts[scriptName] = scriptCommand;
+                cliScripts.push({ name: scriptName, command: scriptCommand, namespace });
                 continue;
             }
 
@@ -251,7 +265,7 @@ function parseFlowchart(definition, sourceDir = "./flows") {
             const pkgOverrideMatch = line.match(pkgOverridePattern);
             if (pkgOverrideMatch) {
                 const [, fieldName, fieldValue] = pkgOverrideMatch;
-                pkgOverrides[fieldName] = fieldValue;
+                pkgOverrides.push({ name: fieldName, value: fieldValue, namespace });
                 continue;
             }
         }
@@ -260,7 +274,7 @@ function parseFlowchart(definition, sourceDir = "./flows") {
     const rootLines = definition.split("\n").map(l => l.trim()).filter(l => l && !/^graph\b/.test(l));
     parseWorker(rootLines, sourceDir, "");
 
-    return { nodes, compositionEdges, extendsEdges, methods, types, interfaces, mainBlocks, webBlocks, externals, cliScripts, pkgOverrides, rollups };
+    return { nodes, compositionEdges, extendsEdges, methods, types, interfaces, mainBlocks, webBlocks, dockerBlocks, externals, cliScripts, pkgOverrides, rollups };
 }
 
 /** Helper functions: parseProps, indent, stripTs, toPascalCase (identical to your original) **/
@@ -311,7 +325,7 @@ function toPascalCase(str) { return str.replace(/[-_](.)/g, (_, c) => c.toUpperC
 /**
  * GENERATE FILES
  */
-function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods, types, interfaces, mainBlocks, webBlocks, externals, cliScripts, pkgOverrides, rollups }) {
+function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods, types, interfaces, mainBlocks, webBlocks, dockerBlocks, externals, cliScripts, pkgOverrides, rollups }) {
     // === Pre-calculate all component names (for cross-namespace imports) ===
     const allClassNames = new Set(Object.entries(nodes).map(([id, n]) => toPascalCase(path.basename(n.file || id, ".ts"))));
     const allInterfaceNames = new Set(Object.keys(interfaces));
@@ -323,6 +337,16 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
         fs.mkdirSync(path.dirname(outPath), { recursive: true });
         fs.writeFileSync(outPath, web.code, "utf-8");
         console.log("📄 Web file generated: " + web.filename);
+    }
+
+    // === 0.5. Docker Blocks ===
+    if (dockerBlocks) {
+        for (const docker of dockerBlocks) {
+            const outPath = path.join(baseDir, docker.namespace, "Dockerfile");
+            fs.mkdirSync(path.dirname(outPath), { recursive: true });
+            fs.writeFileSync(outPath, docker.code, "utf-8");
+            console.log("🐳 Dockerfile generated in " + (docker.namespace || "root"));
+        }
     }
 
     function getRelativeImport(fromNamespace, toNamespace, filename) {
@@ -530,6 +554,23 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
         }
     }
 
+    // Resolve scoped package overrides and scripts
+    const rootCliScripts = {};
+    for (const script of cliScripts) {
+        if (!script.namespace) rootCliScripts[script.name] = script.command;
+    }
+
+    const rootPkgOverrides = {};
+    for (const pkg of pkgOverrides) {
+        if (!pkg.namespace) {
+            try {
+                rootPkgOverrides[pkg.name] = JSON.parse(pkg.value);
+            } catch (e) {
+                rootPkgOverrides[pkg.name] = pkg.value;
+            }
+        }
+    }
+
     const packageJson = {
         name: "sot-generated-project",
         version: "1.0.0",
@@ -537,9 +578,9 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
         scripts: {
             "build": "tsc main.ts --outDir dist",
             "start": "node dist/main.js",
-            ...cliScripts
+            ...rootCliScripts
         },
-        ...pkgOverrides,
+        ...rootPkgOverrides,
         dependencies: dependencies,
         devDependencies: { "ts-node": "^10.9.1", "typescript": "^5.0.0", "@types/node": "^20.0.0" }
     };
