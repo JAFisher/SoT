@@ -1,0 +1,557 @@
+extern->three from "three"
+cliscripts->start npx -y http-server -p 8080
+cliscripts->build tsc main.ts --outDir dist --skipLibCheck
+
+
+
+// --- Classes ---
+
+Ball[Ball.ts{mesh: any, vel: any, radius: number, isCue: boolean, active: boolean}]
+@Ball.constructor{x: number, z: number, colorStr: string, isCue: boolean, isStripe: boolean}
+@@Ball.constructor.code
+  this.radius = 0.5;
+  this.isCue = isCue;
+  this.active = true;
+  this.vel = new three.Vector3(0, 0, 0);
+  
+  const geometry = new three.SphereGeometry(this.radius, 32, 32);
+  let material;
+  
+  if (isCue) {
+    material = new three.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1, metalness: 0.1 });
+  } else {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+    
+    if (isStripe) {
+       ctx.fillStyle = '#ffffff';
+       ctx.fillRect(0, 0, 512, 256);
+       ctx.fillStyle = colorStr;
+       ctx.fillRect(0, 64, 512, 128); // Stripe in middle
+    } else {
+       ctx.fillStyle = colorStr;
+       ctx.fillRect(0, 0, 512, 256);
+    }
+    
+    // Number circle (white circle on all non-cue balls)
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(256, 128, 40, 0, Math.PI*2);
+    ctx.fill();
+    
+    const texture = new three.CanvasTexture(canvas);
+    texture.anisotropy = 4;
+    material = new three.MeshStandardMaterial({ 
+      map: texture, 
+      roughness: 0.1, 
+      metalness: 0.1 
+    });
+  }
+  
+  this.mesh = new three.Mesh(geometry, material);
+  this.mesh.position.set(x, this.radius, z);
+  this.mesh.castShadow = true;
+  this.mesh.userData = { isBall: true, ball: this };
+@@Ball.constructor.end
+
+@Ball.update{delta: number, friction: number, width: number, length: number}: void
+@@Ball.update.code
+  if (!this.active) return;
+  
+  // Apply velocity
+  this.mesh.position.x += this.vel.x * delta;
+  this.mesh.position.z += this.vel.z * delta;
+  
+  // Roll animation
+  const speed = this.vel.length();
+  if (speed > 0.01) {
+    const axis = new three.Vector3(-this.vel.z, 0, this.vel.x).normalize();
+    this.mesh.rotateOnWorldAxis(axis, (speed * delta) / this.radius);
+  }
+  
+  // Apply friction
+  this.vel.multiplyScalar(friction);
+  if (this.vel.length() < 0.05) {
+    this.vel.set(0,0,0);
+  }
+  
+  // Box collision (Cushions)
+  const restitution = 0.8;
+  const hw = width / 2 - this.radius;
+  const hl = length / 2 - this.radius;
+  
+  if (this.mesh.position.x > hw) {
+      this.mesh.position.x = hw;
+      this.vel.x *= -restitution;
+  } else if (this.mesh.position.x < -hw) {
+      this.mesh.position.x = -hw;
+      this.vel.x *= -restitution;
+  }
+  
+  if (this.mesh.position.z > hl) {
+      this.mesh.position.z = hl;
+      this.vel.z *= -restitution;
+  } else if (this.mesh.position.z < -hl) {
+      this.mesh.position.z = -hl;
+      this.vel.z *= -restitution;
+  }
+@@Ball.update.end
+
+Table[Table.ts{group: any, width: number, length: number, pockets: any[]}]
+@Table.constructor{}
+@@Table.constructor.code
+  this.width = 10;
+  this.length = 20;
+  this.group = new three.Group();
+  
+  // Textures
+  const loader = new three.TextureLoader();
+  const feltTex = loader.load('assets/felt.jpg');
+  feltTex.wrapS = three.RepeatWrapping;
+  feltTex.wrapT = three.RepeatWrapping;
+  feltTex.repeat.set(4, 8); // Tile the texture
+  
+  const woodTex = loader.load('assets/wood.jpg');
+  woodTex.wrapS = three.RepeatWrapping;
+  woodTex.wrapT = three.RepeatWrapping;
+  woodTex.repeat.set(2, 4);
+  
+  // Felt surface
+  const feltGeo = new three.BoxGeometry(this.width, 0.5, this.length);
+  const feltMat = new three.MeshStandardMaterial({ 
+    map: feltTex, 
+    color: 0x008800, // Tint it strong green
+    roughness: 0.9 
+  });
+  const felt = new three.Mesh(feltGeo, feltMat);
+  felt.position.y = -0.25;
+  felt.receiveShadow = true;
+  this.group.add(felt);
+  
+  // Cushions (Edges)
+  const cushionThickness = 1;
+  const cushionHeight = 0.8;
+  const cushionMat = new three.MeshStandardMaterial({ 
+    map: woodTex,
+    color: 0x8b5a2b, // Warm wood tint
+    roughness: 0.6
+  });
+  
+  const cTop = new three.Mesh(new three.BoxGeometry(this.width + cushionThickness*2, cushionHeight, cushionThickness), cushionMat);
+  cTop.position.set(0, cushionHeight/2, -this.length/2 - cushionThickness/2);
+  cTop.receiveShadow = true; cTop.castShadow = true;
+  
+  const cBot = new three.Mesh(new three.BoxGeometry(this.width + cushionThickness*2, cushionHeight, cushionThickness), cushionMat);
+  cBot.position.set(0, cushionHeight/2, this.length/2 + cushionThickness/2);
+  cBot.receiveShadow = true; cBot.castShadow = true;
+  
+  const cLeft = new three.Mesh(new three.BoxGeometry(cushionThickness, cushionHeight, this.length), cushionMat);
+  cLeft.position.set(-this.width/2 - cushionThickness/2, cushionHeight/2, 0);
+  cLeft.receiveShadow = true; cLeft.castShadow = true;
+  
+  const cRight = new three.Mesh(new three.BoxGeometry(cushionThickness, cushionHeight, this.length), cushionMat);
+  cRight.position.set(this.width/2 + cushionThickness/2, cushionHeight/2, 0);
+  cRight.receiveShadow = true; cRight.castShadow = true;
+  
+  this.group.add(cTop, cBot, cLeft, cRight);
+  
+  // Pockets
+  this.pockets = [];
+  const pRadius = 1.0; // Increased size
+  const pGeo = new three.CylinderGeometry(pRadius, pRadius, 0.6, 16);
+  const pMat = new three.MeshBasicMaterial({ color: 0x000000 });
+  
+  const hw = this.width / 2;
+  const hl = this.length / 2;
+  const pPositions = [
+    [-hw, -hl], [hw, -hl], // Top corners
+    [-hw, 0],   [hw, 0],   // Sides
+    [-hw, hl],  [hw, hl]   // Bottom corners
+  ];
+  
+  for(let pos of pPositions) {
+     const pMesh = new three.Mesh(pGeo, pMat);
+     pMesh.position.set(pos[0], 0.01, pos[1]);
+     this.group.add(pMesh);
+     this.pockets.push({x: pos[0], z: pos[1], radius: pRadius});
+  }
+@@Table.constructor.end
+
+PoolGame[PoolGame.ts{scene: any, camera: any, renderer: any, clock: any, table: any, balls: any[], cueBall: any, isDragging: boolean, dragStart: any, dragLine: any, raycaster: any, mouse: any}]
+PoolGame --> Table
+PoolGame --> Ball
+
+@PoolGame.constructor{}
+@@PoolGame.constructor.code
+  this.scene = new three.Scene();
+  this.scene.background = new three.Color(0x222222);
+  this.clock = new three.Clock();
+  
+  // Camera Orbit properties
+  this.camAngleXZ = 0;
+  this.camAngleY = Math.PI / 4; // 45 degrees up
+  this.camRadius = 20;
+
+  this.camera = new three.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+  this.updateCamera();
+  
+  // Renderer
+  this.renderer = new three.WebGLRenderer({ antialias: true });
+  this.renderer.setSize(window.innerWidth, window.innerHeight);
+  this.renderer.shadowMap.enabled = true;
+  document.body.appendChild(this.renderer.domElement);
+  
+  // Lighting
+  const ambient = new three.AmbientLight(0xffffff, 0.4);
+  this.scene.add(ambient);
+  
+  const dirLight = new three.DirectionalLight(0xffffff, 0.8);
+  dirLight.position.set(5, 15, 5);
+  dirLight.castShadow = true;
+  dirLight.shadow.camera.top = 15;
+  dirLight.shadow.camera.bottom = -15;
+  dirLight.shadow.camera.left = -15;
+  dirLight.shadow.camera.right = 15;
+  this.scene.add(dirLight);
+  
+  // Table
+  this.table = new Table();
+  this.scene.add(this.table.group);
+  
+  // Balls setup
+  this.balls = [];
+  this.cueBall = new Ball(0, 5, "#ffffff", true, false);
+  this.balls.push(this.cueBall);
+  this.scene.add(this.cueBall.mesh);
+  
+  // Rack standard 8-ball triangle
+  let y_spacing = Math.sqrt(3) * 0.5 * 1.05; // Tight rack
+  let start_z = -5;
+  
+  const ballData = [
+    { c: '#fcd34d', s: false }, // 1
+    { c: '#2563eb', s: false }, // 2
+    { c: '#ef4444', s: false }, // 3
+    { c: '#7c3aed', s: false }, // 4
+    { c: '#f97316', s: false }, // 5
+    { c: '#16a34a', s: false }, // 6
+    { c: '#7f1d1d', s: false }, // 7
+    { c: '#111111', s: false }, // 8
+    { c: '#fcd34d', s: true },  // 9
+    { c: '#2563eb', s: true },  // 10
+    { c: '#ef4444', s: true },  // 11
+    { c: '#7c3aed', s: true },  // 12
+    { c: '#f97316', s: true },  // 13
+    { c: '#16a34a', s: true },  // 14
+    { c: '#7f1d1d', s: true }   // 15
+  ];
+  
+  const layout = [
+    0, // row 0
+    8, 1, // row 1
+    9, 7, 2, // row 2 (index 7 is 8-ball, positioned in the middle)
+    10, 3, 11, 4, // row 3
+    12, 13, 5, 14, 6 // row 4
+  ];
+  
+  let i = 0;
+  for(let row=0; row<5; row++) {
+     for(let col=0; col<=row; col++) {
+        let x = (col - row/2) * 1.05;
+        let z = start_z - (row * y_spacing);
+        let bd = ballData[layout[i]];
+        
+        let ball = new Ball(x, z, bd.c, false, bd.s);
+        this.balls.push(ball);
+        this.scene.add(ball.mesh);
+        
+        ball.mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+        i++;
+     }
+  }
+  
+  // Interactions
+  this.raycaster = new three.Raycaster();
+  this.mouse = new three.Vector2();
+  this.isDragging = false; // Left click drag for cue
+  this.isOrbiting = false; // Right click drag for camera
+  this.lastMouse = { x: 0, y: 0 };
+  this.dragStart = new three.Vector3();
+  
+  // Drag line indicator
+  const lineMat = new three.LineBasicMaterial({ color: 0xffffff, linewidth: 2 });
+  const lineGeo = new three.BufferGeometry().setFromPoints([new three.Vector3(0,0,0), new three.Vector3(0,0,0)]);
+  this.dragLine = new three.Line(lineGeo, lineMat);
+  this.dragLine.visible = false;
+  this.scene.add(this.dragLine);
+  
+  // Events
+  window.addEventListener('resize', () => {
+    this.camera.aspect = window.innerWidth / window.innerHeight;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+  
+  window.addEventListener('mousedown', (e) => this.onMouseDown(e));
+  window.addEventListener('mousemove', (e) => this.onMouseMove(e));
+  window.addEventListener('mouseup', (e) => this.onMouseUp(e));
+  window.addEventListener('contextmenu', (e) => e.preventDefault());
+  window.addEventListener('wheel', (e) => {
+    this.camRadius += e.deltaY * 0.05;
+    this.camRadius = Math.max(5, Math.min(this.camRadius, 50));
+    this.updateCamera();
+  });
+@@PoolGame.constructor.end
+
+@PoolGame.updateCamera{}: void
+@@PoolGame.updateCamera.code
+  this.camera.position.x = Math.sin(this.camAngleXZ) * Math.cos(this.camAngleY) * this.camRadius;
+  this.camera.position.y = Math.sin(this.camAngleY) * this.camRadius;
+  this.camera.position.z = Math.cos(this.camAngleXZ) * Math.cos(this.camAngleY) * this.camRadius;
+  this.camera.lookAt(0, 0, 0);
+@@PoolGame.updateCamera.end
+
+@PoolGame.getIntersect{e: any}: any
+@@PoolGame.getIntersect.code
+  this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+  this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+  this.raycaster.setFromCamera(this.mouse, this.camera);
+  
+  // Check intersection with cue ball first
+  const intersects = this.raycaster.intersectObject(this.cueBall.mesh);
+  if (intersects.length > 0) return intersects[0].point;
+  
+  // Map to floor plane (y=0.5)
+  const plane = new three.Plane(new three.Vector3(0, 1, 0), -0.5);
+  const target = new three.Vector3();
+  this.raycaster.ray.intersectPlane(plane, target);
+  return target;
+@@PoolGame.getIntersect.end
+
+@PoolGame.onMouseDown{e: any}: void
+@@PoolGame.onMouseDown.code
+  this.lastMouse.x = e.clientX;
+  this.lastMouse.y = e.clientY;
+  
+  if (e.button === 2) {
+    // Right click starts orbit
+    this.isOrbiting = true;
+    return;
+  }
+
+  if (e.button === 0) {
+    // Left click starts shot
+    if (this.cueBall.vel.length() > 0.1) return; // Can't hit while moving
+    
+    this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+    this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    this.raycaster.setFromCamera(this.mouse, this.camera);
+    
+    const intersects = this.raycaster.intersectObject(this.cueBall.mesh);
+    if (intersects.length > 0) {
+       this.isDragging = true;
+       this.dragStart.copy(this.cueBall.mesh.position);
+       this.dragLine.visible = true;
+    }
+  }
+@@PoolGame.onMouseDown.end
+
+@PoolGame.onMouseMove{e: any}: void
+@@PoolGame.onMouseMove.code
+  const deltaX = e.clientX - this.lastMouse.x;
+  const deltaY = e.clientY - this.lastMouse.y;
+  this.lastMouse.x = e.clientX;
+  this.lastMouse.y = e.clientY;
+  
+  // Handle Orbit
+  if (this.isOrbiting) {
+     this.camAngleXZ -= deltaX * 0.01;
+     this.camAngleY += deltaY * 0.01;
+     
+     // Clamp vertical angle to avoid flipping and keep it above table mostly
+     this.camAngleY = Math.max(0.1, Math.min(Math.PI / 2 - 0.1, this.camAngleY));
+     this.updateCamera();
+     return;
+  }
+
+  // Handle Drag Shoot
+  if (!this.isDragging) return;
+  const point = this.getIntersect(e);
+  if (point) {
+     const dragVec = new three.Vector3().subVectors(this.dragStart, point);
+     const endPoint = new three.Vector3().addVectors(this.dragStart, dragVec.multiplyScalar(2));
+     
+     const positions = this.dragLine.geometry.attributes.position.array;
+     positions[0] = this.dragStart.x; positions[1] = 0.6; positions[2] = this.dragStart.z;
+     positions[3] = endPoint.x;     positions[4] = 0.6; positions[5] = endPoint.z;
+     this.dragLine.geometry.attributes.position.needsUpdate = true;
+  }
+@@PoolGame.onMouseMove.end
+
+@PoolGame.onMouseUp{e: any}: void
+@@PoolGame.onMouseUp.code
+  if (e.button === 2) {
+    this.isOrbiting = false;
+  }
+
+  if (e.button === 0 && this.isDragging) {
+    this.isDragging = false;
+    this.dragLine.visible = false;
+    
+    const point = this.getIntersect(e);
+    if (point) {
+       const force = new three.Vector3().subVectors(this.dragStart, point);
+       force.multiplyScalar(4.0);
+       if (force.length() > 40) force.setLength(40);
+       
+       this.cueBall.vel.copy(force);
+    }
+  }
+@@PoolGame.onMouseUp.end
+
+@PoolGame.resolveCollision{b1: Ball, b2: Ball}: void
+@@PoolGame.resolveCollision.code
+  const dx = b2.mesh.position.x - b1.mesh.position.x;
+  const dz = b2.mesh.position.z - b1.mesh.position.z;
+  const dist = Math.sqrt(dx * dx + dz * dz);
+  
+  if (dist === 0) return;
+  const min_dist = b1.radius + b2.radius;
+  
+  if (dist < min_dist) {
+    // Separate the balls
+    const overlap = min_dist - dist;
+    const nx = dx / dist;
+    const nz = dz / dist;
+    
+    // Move each back by half the overlap
+    b1.mesh.position.x -= nx * overlap * 0.5;
+    b1.mesh.position.z -= nz * overlap * 0.5;
+    b2.mesh.position.x += nx * overlap * 0.5;
+    b2.mesh.position.z += nz * overlap * 0.5;
+    
+    // Normal vector
+    const unx = dx / dist;
+    const unz = dz / dist;
+    
+    // Tangent vector
+    const utx = -unz;
+    const utz = unx;
+    
+    // Dot product velocity with normal and tangent
+    const v1n = unx * b1.vel.x + unz * b1.vel.z;
+    const v1t = utx * b1.vel.x + utz * b1.vel.z;
+    const v2n = unx * b2.vel.x + unz * b2.vel.z;
+    const v2t = utx * b2.vel.x + utz * b2.vel.z;
+    
+    // Mass is equal, so 1D elastic collision along normal:
+    const m1 = 1;
+    const m2 = 1;
+    let v1n_after = (v1n * (m1 - m2) + 2 * m2 * v2n) / (m1 + m2);
+    let v2n_after = (v2n * (m2 - m1) + 2 * m1 * v1n) / (m1 + m2);
+    
+    // Add some energy loss (restitution)
+    const restitution = 0.95;
+    v1n_after *= restitution;
+    v2n_after *= restitution;
+    
+    // Convert velocities back to vectors
+    b1.vel.x = v1n_after * unx + v1t * utx;
+    b1.vel.z = v1n_after * unz + v1t * utz;
+    b2.vel.x = v2n_after * unx + v2t * utx;
+    b2.vel.z = v2n_after * unz + v2t * utz;
+  }
+@@PoolGame.resolveCollision.end
+
+@PoolGame.animate{}: void
+@@PoolGame.animate.code
+  requestAnimationFrame(() => this.animate());
+  
+  // Fixed timestep for stable physics
+  const dt = 1/60; 
+  const friction = 0.985;
+  
+  // Multiple sub-steps for better collision accuracy
+  const iterations = 4;
+  const subDt = dt / iterations;
+  
+  for(let step = 0; step < iterations; step++) {
+    // 1. Move balls and check wall collisions
+    for(let ball of this.balls) {
+        ball.update(subDt, Math.pow(friction, 1/iterations), this.table.width, this.table.length);
+    }
+    
+    // 2. Check Pocketing
+    for(let i = this.balls.length - 1; i >= 0; i--) {
+        let ball = this.balls[i];
+        if (!ball.active) continue;
+        
+        for(let p of this.table.pockets) {
+           const dx = p.x - ball.mesh.position.x;
+           const dz = p.z - ball.mesh.position.z;
+           if (dx*dx + dz*dz < (p.radius * p.radius)) {
+              // Sunk!
+              ball.active = false;
+              this.scene.remove(ball.mesh);
+              if (ball.isCue) { // Scratch
+                 setTimeout(() => {
+                    ball.mesh.position.set(0, ball.radius, 5);
+                    ball.vel.set(0,0,0);
+                    ball.active = true;
+                    this.scene.add(ball.mesh);
+                 }, 1000);
+              }
+              break;
+           }
+        }
+    }
+    
+    // 3. Resolve Ball-to-Ball collisions
+    for(let i = 0; i < this.balls.length; i++) {
+        for(let j = i + 1; j < this.balls.length; j++) {
+           if (this.balls[i].active && this.balls[j].active) {
+              this.resolveCollision(this.balls[i], this.balls[j]);
+           }
+        }
+    }
+  }
+  
+  this.renderer.render(this.scene, this.camera);
+@@PoolGame.animate.end
+
+// --- Build Config ---
+Rollup->{Ball.ts, Table.ts, PoolGame.ts}
+
+// --- Web UI ---
+web->index.html.code
+<!DOCTYPE html>
+<html>
+<head>
+    <title>3D Pool Simulator</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #222; font-family: 'Inter', sans-serif; }
+        #ui { position: absolute; top: 20px; left: 20px; color: white; pointer-events: none; 
+              background: rgba(0,0,0,0.7); padding: 15px; border-radius: 8px; }
+        #ui h2 { margin: 0 0 10px 0; color: #facc15; }
+        #ui p { margin: 5px 0; font-size: 14px; color: #ddd; }
+        .kbd { background: #444; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <h2>3D Pool</h2>
+        <p>Right Click & Drag to rotate camera.</p>
+        <p>Scroll to zoom in/out.</p>
+        <p>Left Click & Drag Cue Ball to shoot.</p>
+    </div>
+    
+    <script type="module">
+        import { PoolGame } from './compiled.js';
+        const game = new PoolGame();
+        game.animate();
+    </script>
+</body>
+</html>
+web->index.html.end
