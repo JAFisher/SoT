@@ -1,0 +1,493 @@
+graph TD
+  include->../chat/web_core.flow
+  include->elements.flow
+
+  cliscripts->start node dist/visualizer/main.js
+
+  @@main.code
+    const web = new WebServer();
+    const elementData = new ElementData();
+
+    // API Route for elements data
+    web.get("/api/elements", (req: any, res: any) => {
+      res.json(elementData.getElements());
+    });
+
+    // Serve Dashboard UI
+    web.get("/", (req: any, res: any) => {
+      res.sendFile(path.join(process.cwd(), "index.html"));
+    });
+
+    web.start(3000);
+  @@main.end
+
+  web->index.html.code
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <title>SoT Periodic Table Visualizer | Premium</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --bg: #05070a;
+        --glass: rgba(255, 255, 255, 0.03);
+        --glass-border: rgba(255, 255, 255, 0.1);
+        --text: #ffffff;
+        --text-dim: rgba(255, 255, 255, 0.6);
+        
+        --diatomic-nonmetal: #3b82f6;
+        --noble-gas: #a855f7;
+        --alkali-metal: #ef4444;
+        --alkaline-earth-metal: #f97316;
+        --metalloid: #10b981;
+        --polyatomic-nonmetal: #0ea5e9;
+        --post-transition-metal: #14b8a6;
+        --transition-metal: #f59e0b;
+        --lanthanide: #ec4899;
+        --actinide: #be185d;
+        --halogen: #22c55e;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        font-family: 'Outfit', sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        margin: 0;
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+        overflow-x: hidden;
+        background-image: 
+            radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.05) 0%, transparent 40%),
+            radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.05) 0%, transparent 40%);
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 40px;
+        width: 100%;
+        max-width: 1200px;
+      }
+
+      h1 {
+        font-size: 48px;
+        font-weight: 800;
+        margin: 0 0 10px 0;
+        letter-spacing: -1px;
+        background: linear-gradient(to right, #fff, #94a3b8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .controls {
+          display: flex;
+          gap: 20px;
+          margin-bottom: 30px;
+          width: 100%;
+          justify-content: center;
+      }
+
+      .search-box {
+          background: var(--glass);
+          border: 1px solid var(--glass-border);
+          padding: 12px 20px;
+          border-radius: 100px;
+          color: white;
+          width: 400px;
+          font-family: inherit;
+          font-size: 16px;
+          backdrop-filter: blur(10px);
+          transition: all 0.3s ease;
+      }
+
+      .search-box:focus {
+          outline: none;
+          background: rgba(255, 255, 255, 0.08);
+          border-color: rgba(255, 255, 255, 0.3);
+          box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
+      }
+
+      .periodic-table {
+        display: grid;
+        grid-template-columns: repeat(18, 1fr);
+        grid-template-rows: repeat(10, 1fr);
+        gap: 6px;
+        padding: 10px;
+        position: relative;
+      }
+
+      .element-card {
+        aspect-ratio: 1;
+        width: 65px;
+        position: relative;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        border-radius: 8px;
+        transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        text-align: center;
+        background: var(--glass);
+        backdrop-filter: blur(4px);
+      }
+
+      .element-card:hover {
+        transform: scale(1.4) translateY(-5px);
+        z-index: 100;
+        border-color: rgba(255, 255, 255, 0.4);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      }
+
+      .element-card.dimmed {
+          opacity: 0.15;
+          filter: grayscale(0.8) blur(1px);
+          transform: scale(0.95);
+      }
+
+      .element-card.highlight {
+          transform: scale(1.1);
+          border-color: white;
+          box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+          z-index: 50;
+      }
+
+      .element-number {
+        position: absolute;
+        top: 4px;
+        left: 6px;
+        font-size: 9px;
+        font-weight: 600;
+        opacity: 0.5;
+      }
+
+      .element-symbol {
+        font-size: 22px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+      }
+
+      .element-name {
+        font-size: 8px;
+        font-weight: 400;
+        margin-top: 2px;
+        opacity: 0.7;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        justify-content: center;
+        margin-top: 50px;
+        max-width: 1100px;
+        background: var(--glass);
+        padding: 20px;
+        border-radius: 20px;
+        border: 1px solid var(--glass-border);
+        backdrop-filter: blur(10px);
+      }
+      
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 6px 12px;
+        border-radius: 100px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
+      }
+
+      .legend-item:hover {
+          background: rgba(255, 255, 255, 0.05);
+          border-color: var(--glass-border);
+      }
+
+      .legend-item.active {
+          background: rgba(255, 255, 255, 0.1);
+          border-color: rgba(255, 255, 255, 0.3);
+      }
+
+      .legend-color {
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+      }
+      
+      #modal {
+          display: none;
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%) scale(0.9);
+          background: rgba(10, 15, 25, 0.95);
+          padding: 40px;
+          border-radius: 32px;
+          box-shadow: 0 30px 100px rgba(0,0,0,0.8);
+          z-index: 1000;
+          width: 450px;
+          border: 1px solid rgba(255,255,255,0.15);
+          backdrop-filter: blur(20px);
+          transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+          opacity: 0;
+      }
+
+      #modal.show {
+          transform: translate(-50%, -50%) scale(1);
+          opacity: 1;
+      }
+      
+      #modal h2 { margin: 0; font-size: 80px; font-weight: 800; line-height: 1;}
+      #modal .name { font-size: 28px; font-weight: 600; margin: 10px 0 30px 0; letter-spacing: -0.5px;}
+      
+      .data-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 15px;
+      }
+
+      .data-item {
+          background: rgba(255, 255, 255, 0.03);
+          padding: 15px;
+          border-radius: 16px;
+          border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      .data-label { font-size: 11px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 5px; letter-spacing: 1px;}
+      .data-value { font-size: 18px; font-weight: 600;}
+      
+      #overlay {
+          display: none;
+          position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0,0,0,0.4);
+          z-index: 999;
+          backdrop-filter: blur(8px);
+          opacity: 0;
+          transition: opacity 0.3s ease;
+      }
+
+      #overlay.show {
+          display: block;
+          opacity: 1;
+      }
+      
+      .close-btn {
+          position: absolute;
+          top: 25px;
+          right: 25px;
+          width: 30px;
+          height: 30px;
+          border-radius: 50%;
+          border: 1px solid rgba(255,255,255,0.1);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          color: var(--text-dim);
+          transition: all 0.2s;
+      }
+      
+      .close-btn:hover {
+          background: rgba(255,255,255,0.1);
+          color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+        <h1>Periodic Table</h1>
+        <div class="controls">
+            <input type="text" class="search-box" id="search" placeholder="Search by name, symbol, or atomic number..." spellcheck="false">
+        </div>
+    </div>
+    
+    <div class="periodic-table" id="ptable"></div>
+    
+    <div class="legend" id="legend"></div>
+    
+    <div id="overlay" onclick="closeModal()"></div>
+    <div id="modal">
+        <div class="close-btn" onclick="closeModal()">✕</div>
+        <h2 id="m-symbol"></h2>
+        <div class="name" id="m-name"></div>
+        
+        <div class="data-grid">
+            <div class="data-item">
+                <div class="data-label">Atomic Number</div>
+                <div class="data-value" id="m-number"></div>
+            </div>
+            <div class="data-item">
+                <div class="data-label">Atomic Mass</div>
+                <div class="data-value" id="m-mass"></div>
+            </div>
+            <div class="data-item" style="grid-column: span 2;">
+                <div class="data-label">Category</div>
+                <div class="data-value" id="m-cat"></div>
+            </div>
+            <div class="data-item">
+                <div class="data-label">Discovery Year</div>
+                <div class="data-value" id="m-year"></div>
+            </div>
+            <div class="data-item">
+                <div class="data-label">Discovered By</div>
+                <div class="data-value" id="m-by"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+      let elementsData = [];
+      let activeCategory = null;
+
+      const categories = [
+        'diatomic-nonmetal', 'noble-gas', 'alkali-metal', 'alkaline-earth-metal',
+        'metalloid', 'polyatomic-nonmetal', 'post-transition-metal', 'transition-metal',
+        'lanthanide', 'actinide', 'halogen'
+      ];
+      
+      function getCategoryColor(cat) {
+        return `var(--${cat})`;
+      }
+
+      function initLegend() {
+          const leg = document.getElementById('legend');
+          categories.forEach(cat => {
+              const div = document.createElement('div');
+              div.className = 'legend-item';
+              div.innerHTML = `<div class="legend-color" style="background: ${getCategoryColor(cat)}"></div> ${cat.replace(/-/g, ' ')}`;
+              div.onclick = () => toggleCategory(cat, div);
+              leg.appendChild(div);
+          });
+      }
+
+      function toggleCategory(cat, el) {
+          if (activeCategory === cat) {
+              activeCategory = null;
+              document.querySelectorAll('.legend-item').forEach(li => li.classList.remove('active'));
+          } else {
+              activeCategory = cat;
+              document.querySelectorAll('.legend-item').forEach(li => li.classList.remove('active'));
+              el.classList.add('active');
+          }
+          filterElements();
+      }
+
+      async function fetchData() {
+        const res = await fetch('/api/elements');
+        elementsData = await res.json();
+        renderTable(elementsData);
+      }
+
+      function renderTable(data) {
+        const table = document.getElementById('ptable');
+        table.innerHTML = '';
+        
+        data.forEach(el => {
+          const card = document.createElement('div');
+          card.className = 'element-card';
+          card.id = `el-${el.number}`;
+          
+          let col = el.group;
+          let row = el.period;
+          
+          if (el.category === 'lanthanide') {
+            row = 9;
+            col = el.number - 57 + 4;
+          } else if (el.category === 'actinide') {
+            row = 10;
+            col = el.number - 89 + 4;
+          }
+          
+          card.style.gridColumn = col;
+          card.style.gridRow = row;
+          card.style.borderLeft = `4px solid ${getCategoryColor(el.category)}`;
+          
+          card.innerHTML = `
+            <div class="element-number">${el.number}</div>
+            <div class="element-symbol" style="color: ${getCategoryColor(el.category)}">${el.symbol}</div>
+            <div class="element-name">${el.name}</div>
+          `;
+          
+          card.onclick = () => openModal(el);
+          table.appendChild(card);
+        });
+      }
+
+      function filterElements() {
+          const query = document.getElementById('search').value.toLowerCase();
+          
+          elementsData.forEach(el => {
+              const card = document.getElementById(`el-${el.number}`);
+              if (!card) return;
+
+              const matchesSearch = el.name.toLowerCase().includes(query) || 
+                                   el.symbol.toLowerCase().includes(query) || 
+                                   el.number.toString().includes(query);
+              
+              const matchesCategory = !activeCategory || el.category === activeCategory;
+
+              if (matchesSearch && matchesCategory) {
+                  card.classList.remove('dimmed');
+                  if (query.length > 0 || activeCategory) {
+                      card.classList.add('highlight');
+                  } else {
+                      card.classList.remove('highlight');
+                  }
+              } else {
+                  card.classList.add('dimmed');
+                  card.classList.remove('highlight');
+              }
+          });
+      }
+      
+      function openModal(el) {
+          document.getElementById('m-symbol').innerText = el.symbol;
+          document.getElementById('m-symbol').style.color = getCategoryColor(el.category);
+          document.getElementById('m-name').innerText = el.name;
+          document.getElementById('m-number').innerText = el.number;
+          document.getElementById('m-mass').innerText = el.mass;
+          document.getElementById('m-cat').innerText = el.category.replace(/-/g, ' ');
+          document.getElementById('m-year').innerText = el.year || 'Unknown';
+          document.getElementById('m-by').innerText = el.discoveredBy || 'N/A';
+          
+          const overlay = document.getElementById('overlay');
+          const modal = document.getElementById('modal');
+          
+          modal.style.display = 'block';
+          overlay.style.display = 'block';
+          setTimeout(() => {
+              overlay.classList.add('show');
+              modal.classList.add('show');
+          }, 10);
+      }
+      
+      function closeModal() {
+          const overlay = document.getElementById('overlay');
+          const modal = document.getElementById('modal');
+          
+          overlay.classList.remove('show');
+          modal.classList.remove('show');
+          setTimeout(() => {
+              overlay.style.display = 'none';
+          }, 300);
+      }
+
+      document.getElementById('search').addEventListener('input', filterElements);
+
+      initLegend();
+      fetchData();
+    </script>
+  </body>
+  </html>
+  web->index.html.end
