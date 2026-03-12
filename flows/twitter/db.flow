@@ -59,15 +59,19 @@ Database[Database.ts{pool: any}]
   }));
 @@Database.getMessagesBetween.end
 
-@async @Database.getPublicTweets{}: any
+@async @Database.getPublicTweets{limit: number, offset: number}: any
 @@Database.getPublicTweets.code
+  const l = limit || 10;
+  const o = offset || 0;
   const res = await this.pool.query(
     "SELECT m1.*, m2.sender_username as retweeted_author, " +
     "(SELECT COUNT(*) FROM messages m3 WHERE m3.replied_to_id = m1.id) as reply_count " +
     "FROM messages m1 " +
     "LEFT JOIN messages m2 ON m1.retweeted_id = m2.id " +
     "WHERE m1.receiver_username = '' " +
-    "ORDER BY m1.timestamp DESC"
+    "ORDER BY m1.timestamp DESC " +
+    "LIMIT $1 OFFSET $2",
+    [l, o]
   );
   return res.rows.map(row => ({
     id: row.id,

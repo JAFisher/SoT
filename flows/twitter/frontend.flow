@@ -16,6 +16,8 @@ TwitterApp --> Messaging
   this.messaging = new Messaging();
   this.initialized = false;
   this.renderCount = 0;
+  this.tweetsOffset = 0;
+  this.tweetsLimit = 25;
 @@TwitterApp.constructor.end
 
 @async @TwitterApp.init{}: void
@@ -33,16 +35,56 @@ TwitterApp --> Messaging
 
 @async @TwitterApp.renderTimeline{containerId: string}: void
 @@TwitterApp.renderTimeline.code
+  await this.loadTimeline(containerId, false);
+@@TwitterApp.renderTimeline.end
+
+@async @TwitterApp.loadTimeline{containerId: string, append: boolean}: void
+@@TwitterApp.loadTimeline.code
   const container = document.getElementById(containerId);
   if (!container) return;
   
-  const tweets = await this.feed.getTimeline();
+  if (!append) {
+    this.tweetsOffset = 0;
+    container.innerHTML = '';
+  }
+  
+  const tweets = await this.feed.getTimeline(this.tweetsLimit, this.tweetsOffset);
+  
+  if (tweets.length === 0) {
+    if (append) {
+      this.showToast("No more tweets to load", "info");
+      const loadMoreBtn = document.getElementById('loadMoreBtn');
+      if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+    } else {
+      container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">No tweets yet!</div>';
+    }
+    return;
+  }
+  
   let html = '';
   tweets.forEach(t => {
     html += this.renderSingleTweet(t);
   });
-  container.innerHTML = html;
-@@TwitterApp.renderTimeline.end
+  
+  if (append) {
+    container.innerHTML += html;
+  } else {
+    container.innerHTML = html;
+  }
+  
+  this.tweetsOffset += tweets.length;
+  
+  // Show/Hide load more button based on if we got a full page
+  const loadMoreBtn = document.getElementById('loadMoreBtn');
+  if (loadMoreBtn) {
+    loadMoreBtn.style.display = tweets.length < this.tweetsLimit ? 'none' : 'block';
+  }
+@@TwitterApp.loadTimeline.end
+
+@async @TwitterApp.loadMore{containerId: string}: void
+@@TwitterApp.loadMore.code
+  await this.loadTimeline(containerId, true);
+@@TwitterApp.loadMore.end
 
 @TwitterApp.renderSingleTweet{t: any}: string
 @@TwitterApp.renderSingleTweet.code

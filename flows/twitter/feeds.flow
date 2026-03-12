@@ -71,11 +71,12 @@ Feed --> AuthFE
   return { ok: response.ok, status: response.status, data };
 @@Feed.retweetMessage.end
 
-@async @Feed.getTimeline{}: any
+@async @Feed.getTimeline{limit: number, offset: number}: any
 @@Feed.getTimeline.code
-  const response = await fetch('http://localhost:8080/api/tweets');
-  if (!response.ok) throw new Error("Failed to fetch timeline");
-  return await response.json();
+  const l = limit || 10;
+  const o = offset || 0;
+  const res = await fetch("http://localhost:8080/api/tweets?limit=" + l + "&offset=" + o);
+  return await res.json();
 @@Feed.getTimeline.end
 
 @async @Feed.getUserTweets{username: string}: any

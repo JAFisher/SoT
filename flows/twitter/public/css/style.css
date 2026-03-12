@@ -416,3 +416,14 @@ h4 {
     animation: heartPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     color: var(--danger-color) !important;
 }
+
+.load-more-container {
+    display: flex;
+    justify-content: center;
+    padding: 24px 0;
+}
+
+#loadMoreBtn {
+    width: auto;
+    min-width: 200px;
+}
