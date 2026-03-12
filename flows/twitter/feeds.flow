@@ -10,29 +10,26 @@ Feed --> AuthFE
   this.tweets = [];
 @@Feed.constructor.end
 
-@async @Feed.postTweet{authorUsername: string, content: string, repliedToId: string, retweetedId: string}: Tweet
+@async @Feed.postTweet{senderUsername: string, content: string, repliedToId: string, retweetedId: string, imageUrl: string}: any
 @@Feed.postTweet.code
-  const token = localStorage.getItem('token');
-  const response = await fetch('http://localhost:8080/api/tweets', {
-    method: 'POST',
+  const response = await fetch("http://localhost:8080/api/tweets", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + token
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + window.app.auth.token
     },
-    body: JSON.stringify({ content, repliedToId, retweetedId })
+    body: JSON.stringify({ senderUsername, content, repliedToId, retweetedId, imageUrl })
   });
-  if (!response.ok) throw new Error("Failed to post tweet");
   return await response.json();
 @@Feed.postTweet.end
 
 @async @Feed.likeMessage{messageId: string}: any
 @@Feed.likeMessage.code
-  const token = localStorage.getItem('token');
   const response = await fetch('http://localhost:8080/api/like', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + token
+      'Authorization': 'Bearer ' + window.app.auth.token
     },
     body: JSON.stringify({ messageId })
   });
@@ -42,12 +39,11 @@ Feed --> AuthFE
 
 @async @Feed.unlikeMessage{messageId: string}: any
 @@Feed.unlikeMessage.code
-  const token = localStorage.getItem('token');
   const response = await fetch('http://localhost:8080/api/unlike', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + token
+      'Authorization': 'Bearer ' + window.app.auth.token
     },
     body: JSON.stringify({ messageId })
   });
@@ -57,12 +53,11 @@ Feed --> AuthFE
 
 @async @Feed.retweetMessage{originalId: string}: any
 @@Feed.retweetMessage.code
-  const token = localStorage.getItem('token');
   const response = await fetch('http://localhost:8080/api/retweet', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + token
+      'Authorization': 'Bearer ' + window.app.auth.token
     },
     body: JSON.stringify({ originalId })
   });
@@ -91,3 +86,22 @@ Feed --> AuthFE
   if (!response.ok) throw new Error("Failed to fetch replies");
   return await response.json();
 @@Feed.getReplies.end
+
+@async @Feed.uploadImage{base64Data: string}: any
+@@Feed.uploadImage.code
+
+ 
+  const response = await fetch("http://localhost:8080/api/upload", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + window.app.auth.token
+    },
+    body: JSON.stringify({ base64Data })
+  });
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.error || "Upload failed");
+  }
+  return await response.json();
+@@Feed.uploadImage.end

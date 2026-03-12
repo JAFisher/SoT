@@ -427,3 +427,73 @@ h4 {
     width: auto;
     min-width: 200px;
 }
+
+.tweet-image-container {
+    margin-top: 12px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.tweet-image {
+    width: 100%;
+    display: block;
+    max-height: 500px;
+    object-fit: cover;
+}
+
+/* Avatar Styles */
+.profile-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.profile-avatar-sm {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--border-color);
+}
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.btn-text {
+    background: transparent;
+    border: none;
+    color: var(--accent-color);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 0;
+    text-align: left;
+    text-decoration: underline;
+}
+
+.btn-text:hover {
+    color: var(--accent-hover);
+}
+
+.tweet-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.tweet-header-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.reply-header-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}

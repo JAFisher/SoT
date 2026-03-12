@@ -25,17 +25,17 @@ Database[Database.ts{pool: any}]
 @async @Database.init{}: void
 @@Database.init.code
 
-  await this.pool.query("CREATE TABLE IF NOT EXISTS users (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), username VARCHAR(255) UNIQUE NOT NULL, name VARCHAR(255) NOT NULL, password_hash VARCHAR(255) NOT NULL);");
-  await this.pool.query("CREATE TABLE IF NOT EXISTS messages (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), sender_username VARCHAR(255) NOT NULL, receiver_username VARCHAR(255) NOT NULL,content TEXT NOT NULL,timestamp BIGINT NOT NULL,replied_to_id UUID,retweeted_id UUID,liked_count INT DEFAULT 0, retweet_count INT DEFAULT 0);");
+  await this.pool.query("CREATE TABLE IF NOT EXISTS users (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), username VARCHAR(255) UNIQUE NOT NULL, name VARCHAR(255) NOT NULL, password_hash VARCHAR(255) NOT NULL, avatar_url TEXT);");
+  await this.pool.query("CREATE TABLE IF NOT EXISTS messages (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), sender_username VARCHAR(255) NOT NULL, receiver_username VARCHAR(255) NOT NULL,content TEXT NOT NULL,timestamp BIGINT NOT NULL,replied_to_id UUID,retweeted_id UUID,liked_count INT DEFAULT 0, retweet_count INT DEFAULT 0, image_url TEXT);");
   await this.pool.query("CREATE TABLE IF NOT EXISTS likes ( id SERIAL PRIMARY KEY, message_id UUID NOT NULL REFERENCES messages(id), username VARCHAR(255) NOT NULL, UNIQUE(message_id, username));");
   console.log("Database initialized.");
 @@Database.init.end
 
-@async @Database.insertMessage{senderUsername: string, receiverUsername: string, content: string, timestamp: number, repliedToId: string, retweetedId: string}: any
+@async @Database.insertMessage{senderUsername: string, receiverUsername: string, content: string, timestamp: number, repliedToId: string, retweetedId: string, imageUrl: string}: any
 @@Database.insertMessage.code
   const res = await this.pool.query(
-    "INSERT INTO messages (sender_username, receiver_username, content, timestamp, replied_to_id, retweeted_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
-    [senderUsername, receiverUsername, content, timestamp, repliedToId || null, retweetedId || null]
+    "INSERT INTO messages (sender_username, receiver_username, content, timestamp, replied_to_id, retweeted_id, image_url) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
+    [senderUsername, receiverUsername, content, timestamp, repliedToId || null, retweetedId || null, imageUrl || null]
   );
   return res.rows[0];
 @@Database.insertMessage.end
@@ -64,10 +64,11 @@ Database[Database.ts{pool: any}]
   const l = limit || 10;
   const o = offset || 0;
   const res = await this.pool.query(
-    "SELECT m1.*, m2.sender_username as retweeted_author, " +
+    "SELECT m1.*, m2.sender_username as retweeted_author, u1.avatar_url as author_avatar, " +
     "(SELECT COUNT(*) FROM messages m3 WHERE m3.replied_to_id = m1.id) as reply_count " +
     "FROM messages m1 " +
     "LEFT JOIN messages m2 ON m1.retweeted_id = m2.id " +
+    "LEFT JOIN users u1 ON m1.sender_username = u1.username " +
     "WHERE m1.receiver_username = '' " +
     "ORDER BY m1.timestamp DESC " +
     "LIMIT $1 OFFSET $2",
@@ -76,6 +77,7 @@ Database[Database.ts{pool: any}]
   return res.rows.map(row => ({
     id: row.id,
     authorUsername: row.sender_username,
+    authorAvatar: row.author_avatar,
     content: row.content,
     timestamp: Number(row.timestamp),
     repliedToId: row.replied_to_id,
@@ -83,7 +85,8 @@ Database[Database.ts{pool: any}]
     retweetedAuthor: row.retweeted_author,
     likedCount: row.liked_count,
     retweetCount: row.retweet_count,
-    repliesCount: Number(row.reply_count)
+    repliesCount: Number(row.reply_count),
+    imageUrl: row.image_url
   }));
 @@Database.getPublicTweets.end
 
@@ -169,7 +172,8 @@ Database[Database.ts{pool: any}]
       retweetedAuthor: origRow.sender_username,
       likedCount: 0,
       retweetCount: 0,
-      repliesCount: 0
+      repliesCount: 0,
+      imageUrl: null
     };
   } catch (e) {
     if (client) await client.query('ROLLBACK');
@@ -183,9 +187,10 @@ Database[Database.ts{pool: any}]
 @async @Database.getReplies{messageId: string}: any
 @@Database.getReplies.code
   const res = await this.pool.query(
-    "SELECT m1.*, " +
+    "SELECT m1.*, u1.avatar_url as author_avatar, " +
     "(SELECT COUNT(*) FROM messages m2 WHERE m2.replied_to_id = m1.id) as reply_count " +
     "FROM messages m1 " +
+    "LEFT JOIN users u1 ON m1.sender_username = u1.username " +
     "WHERE m1.replied_to_id = $1 " +
     "ORDER BY m1.timestamp ASC",
     [messageId]
@@ -193,13 +198,20 @@ Database[Database.ts{pool: any}]
   return res.rows.map(row => ({
     id: row.id,
     sender_username: row.sender_username,
+    authorAvatar: row.author_avatar,
     content: row.content,
     timestamp: Number(row.timestamp),
     likedCount: row.liked_count,
     retweetCount: row.retweet_count,
-    repliesCount: Number(row.reply_count)
+    repliesCount: Number(row.reply_count),
+    imageUrl: row.image_url
   }));
 @@Database.getReplies.end
+
+@async @Database.updateUserAvatar{username: string, avatarUrl: string}: void
+@@Database.updateUserAvatar.code
+  await this.pool.query("UPDATE users SET avatar_url = $1 WHERE username = $2", [avatarUrl, username]);
+@@Database.updateUserAvatar.end
 
 @async @Database.query{text: string, params: any}: any
 @@Database.query.code

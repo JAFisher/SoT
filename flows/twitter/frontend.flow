@@ -92,20 +92,27 @@ TwitterApp --> Messaging
   const name = t.authorName || t.authorUsername;
   const isRetweet = !!t.retweetedId;
   const retweetTag = isRetweet ? "<span class=\"retweet-tag\">🔄 Retweeted from @" + t.retweetedAuthor + "</span>" : "";
-  
-  const currentUser = this.auth.getCurrentUser();
-  const canRetweet = currentUser && currentUser.username !== t.authorUsername;
-  const retweetBtn = canRetweet ? 
+    const currentUser = this.auth.getCurrentUser();
+    const canRetweet = currentUser && currentUser.username !== t.authorUsername;
+    const retweetBtn = canRetweet ?
     "<button class=\"tweet-btn retweet-btn\" id=\"retweet-btn-instance-" + instanceId + "\" onclick=\"window.app.retweet('" + t.id + "', " + instanceId + ")\">🔄 " + (t.retweetCount || 0) + "</button>" : "";
+    
+    const avatarUrl = t.authorAvatar || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
+    const avatarHtml = "<img src=\"" + avatarUrl + "\" class=\"tweet-avatar\">";
+    const imageHtml = t.imageUrl ? "<div class=\"tweet-image-container\"><img src=\"" + t.imageUrl + "\" class=\"tweet-image\"></div>" : "";
 
-  return "<div class=\"tweet\" id=\"tweet-instance-" + instanceId + "\">" +
-      "<div class=\"tweet-header\">" +
-        "<span class=\"tweet-name\">" + name + "</span>" +
-        "<span class=\"tweet-username\">@" + t.authorUsername + "</span>" +
-        retweetTag +
-      "</div>" +
-      "<div class=\"tweet-content\">" + t.content + "</div>" +
-      "<div class=\"tweet-footer\">" +
+    return "<div class=\"tweet\" id=\"tweet-instance-" + instanceId + "\">" +
+    "<div class=\"tweet-header\">" +
+    avatarHtml +
+    "<div class=\"tweet-header-info\">" +
+    "<span class=\"tweet-name\">" + name + "</span>" +
+    "<span class=\"tweet-username\">@" + t.authorUsername + "</span>" +
+    retweetTag +
+    "</div>" +
+    "</div>" +
+    "<div class=\"tweet-content\">" + t.content + "</div>" +
+    imageHtml +
+    "<div class=\"tweet-footer\">" +
         "<button class=\"tweet-btn reply-btn\" onclick=\"window.app.startReply('" + t.id + "', '" + t.authorUsername + "', " + instanceId + ")\">💬 " + (t.repliesCount || 0) + "</button>" +
         retweetBtn +
         "<button class=\"tweet-btn like-btn\" id=\"like-btn-instance-" + instanceId + "\" onclick=\"window.app.like('" + t.id + "', " + instanceId + ")\">❤️ " + (t.likedCount || 0) + "</button>" +
@@ -118,14 +125,19 @@ TwitterApp --> Messaging
 @TwitterApp.renderSingleReply{r: any}: string
 @@TwitterApp.renderSingleReply.code
   const rInstanceId = ++this.renderCount;
-  const currentUser = this.auth.getCurrentUser();
-  const canRetweet = currentUser && currentUser.username !== r.sender_username;
-  const retweetBtn = canRetweet ? 
+    const currentUser = this.auth.getCurrentUser();
+    const canRetweet = currentUser && currentUser.username !== r.sender_username;
+    const retweetBtn = canRetweet ?
     "<button class=\"tweet-btn retweet-btn btn-compact\" onclick=\"window.app.retweet('" + r.id + "', " + rInstanceId + ")\">🔄 " + (r.retweetCount || 0) + "</button>" : "";
 
-  return "<div class=\"reply\" id=\"tweet-instance-" + rInstanceId + "\">" +
-    "<div class=\"reply-header\">@" + r.sender_username + "</div>" +
+    const avatarUrl = r.authorAvatar || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
+    const avatarHtml = "<img src=\"" + avatarUrl + "\" class=\"tweet-avatar\">";
+    const imageHtml = r.imageUrl ? "<div class=\"tweet-image-container\"><img src=\"" + r.imageUrl + "\" class=\"tweet-image\"></div>" : "";
+
+    return "<div class=\"reply\" id=\"tweet-instance-" + rInstanceId + "\">" +
+    "<div class=\"reply-header\"><div class=\"reply-header-info\">" + avatarHtml + "<span>@" + r.sender_username + "</span></div></div>" +
     "<div class=\"reply-content\">" + r.content + "</div>" +
+    imageHtml +
     "<div class=\"reply-footer\">" +
       "<button class=\"tweet-btn reply-btn btn-compact\" onclick=\"window.app.startReply('" + r.id + "', '" + r.sender_username + "', " + rInstanceId + ")\">💬 " + (r.repliesCount || 0) + "</button>" +
       retweetBtn +
@@ -156,14 +168,40 @@ TwitterApp --> Messaging
   container.style.display = 'block';
 @@TwitterApp.toggleReplies.end
 
-@async @TwitterApp.postNewTweet{authorUsername: string, content: string, repliedToId: string, retweetedId: string}: any
+@async @TwitterApp.postNewTweet{authorUsername: string, content: string, repliedToId: string, retweetedId: string, imageUrl: string}: any
 @@TwitterApp.postNewTweet.code
-  const res = await this.feed.postTweet(authorUsername, content, repliedToId, retweetedId);
+  const res = await this.feed.postTweet(authorUsername, content, repliedToId, retweetedId, imageUrl);
   if (res) {
     this.showToast("Tweet posted!", "success");
   }
   return res;
 @@TwitterApp.postNewTweet.end
+
+@async @TwitterApp.updateAvatar{avatarUrl: string}: void
+@@TwitterApp.updateAvatar.code
+  const response = await fetch("http://localhost:8080/api/user/avatar", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + this.auth.token
+    },
+    body: JSON.stringify({ avatarUrl })
+  });
+  if (response.ok) {
+    this.showToast("Avatar updated!", "success");
+    // Update local user object
+    const user = this.auth.getCurrentUser();
+    if (user) {
+        user.avatar_url = avatarUrl;
+        localStorage.setItem('user', JSON.stringify(user));
+    }
+    // Update sidebar if exists
+    const sidebarAvatar = document.getElementById('sidebar-avatar');
+    if (sidebarAvatar) sidebarAvatar.src = avatarUrl;
+  } else {
+    this.showToast("Failed to update avatar", "error");
+  }
+@@TwitterApp.updateAvatar.end
 
 @TwitterApp.startReply{tweetId: string, author: string, instanceId: number}: void
 @@TwitterApp.startReply.code
@@ -198,7 +236,7 @@ TwitterApp --> Messaging
   if (!content) return;
   
   const author = this.auth.currentUser.username;
-  const res = await this.feed.postTweet(author, content, parentTweetId, '');
+  const res = await this.feed.postTweet(author, content, parentTweetId, '', '');
   
   const inputDiv = document.getElementById("reply-input-instance-" + instanceId);
   if (inputDiv) inputDiv.remove();

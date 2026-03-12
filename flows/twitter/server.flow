@@ -1,5 +1,7 @@
 include->auth.flow
 
+extern->fs from "node:fs"
+extern->path from "node:path"
 extern->http from "node:http"
 
 Server[Server.ts{port: number, auth: any}]
@@ -77,7 +79,7 @@ Server --> Auth
 
     if (req.method === 'GET' && req.url.startsWith('/api/tweets')) {
       const url = new URL(req.url, "http://" + req.headers.host);
-      const limit = parseInt(url.searchParams.get('limit') || '10');
+      const limit = parseInt(url.searchParams.get('limit') || '25');
       const offset = parseInt(url.searchParams.get('offset') || '0');
       try {
         const tweets = await this.auth.db.getPublicTweets(limit, offset);
@@ -101,8 +103,8 @@ Server --> Auth
       req.on('data', chunk => { body += chunk; });
       req.on('end', async () => {
         try {
-          const { content, repliedToId, retweetedId } = JSON.parse(body);
-          const tweet = await this.auth.db.insertMessage(user.username, '', content, Date.now(), repliedToId, retweetedId);
+          const { content, repliedToId, retweetedId, imageUrl } = JSON.parse(body);
+          const tweet = await this.auth.db.insertMessage(user.username, '', content, Date.now(), repliedToId, retweetedId, imageUrl);
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify(tweet));
         } catch (e) {
@@ -111,6 +113,61 @@ Server --> Auth
         }
       });
       return;
+    }
+
+    if (req.method === 'POST' && req.url === '/api/upload') {
+      const user = getAuthUser(req);
+      if (!user) { res.writeHead(401); res.end(); return; }
+      
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', async () => {
+        try {
+          const { base64Data, filename } = JSON.parse(body);
+          
+          // Validation: Check data URL prefix for JPG/PNG
+          if (!base64Data.startsWith('data:image/jpeg;base64,') && 
+              !base64Data.startsWith('data:image/png;base64,')) {
+            res.writeHead(400);
+            res.end(JSON.stringify({ error: "Only JPG and PNG images are allowed" }));
+            return;
+          }
+
+          const ext = base64Data.includes('png') ? '.png' : '.jpg';
+          const pureBase64 = base64Data.split(',')[1];
+          const buffer = Buffer.from(pureBase64, 'base64');
+          
+          const newFilename = "upload_" + Date.now() + "_" + Math.floor(Math.random() * 1000) + ext;
+          // process.cwd() is src/twitter/server
+          const uploadPath = path.join(process.cwd(), 'public', 'images', newFilename);
+          
+          if (!fs.existsSync(path.dirname(uploadPath))) {
+            fs.mkdirSync(path.dirname(uploadPath), { recursive: true });
+          }
+
+          fs.writeFileSync(uploadPath, buffer);
+          
+          res.writeHead(200);
+          res.end(JSON.stringify({ url: 'http://localhost:8080/images/' + newFilename }));
+        } catch (e) {
+          res.writeHead(500);
+          res.end(JSON.stringify({ error: e.message }));
+        }
+      });
+      return;
+    }
+
+    if (req.method === 'GET' && req.url.startsWith('/images/')) {
+      const fileName = req.url.split('/').pop();
+      const imagesDir = path.join(process.cwd(), 'public', 'images');
+      const filePath = path.join(imagesDir, fileName);
+      if (fs.existsSync(filePath)) {
+        const ext = path.extname(filePath).toLowerCase();
+        const contentType = ext === '.png' ? 'image/png' : 'image/jpeg';
+        res.writeHead(200, { 'Content-Type': contentType });
+        fs.createReadStream(filePath).pipe(res);
+        return;
+      }
     }
 
     if (req.method === 'GET' && req.url.startsWith('/api/messages')) {
@@ -209,6 +266,23 @@ Server --> Auth
           const status = e.message.includes("already retweeted") ? 409 : 400;
           res.writeHead(status); 
           res.end(JSON.stringify({ error: e.message }));
+        }
+      });
+      return;
+    }
+
+    if (req.method === 'POST' && req.url === '/api/user/avatar') {
+      const user = getAuthUser(req);
+      if (!user) { res.writeHead(401); res.end(); return; }
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', async () => {
+        try {
+          const { avatarUrl } = JSON.parse(body);
+          await this.auth.db.updateUserAvatar(user.username, avatarUrl);
+          res.writeHead(200); res.end(JSON.stringify({ success: true }));
+        } catch (e) {
+          res.writeHead(400); res.end(JSON.stringify({ error: e.message }));
         }
       });
       return;
