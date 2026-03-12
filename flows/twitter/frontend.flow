@@ -50,7 +50,7 @@ TwitterApp --> Messaging
           "<button class=\"tweet-btn like-btn\" onclick=\"window.app.like('" + t.id + "', " + instanceId + ")\">❤️ " + (t.likedCount || 0) + "</button>" +
           "<button class=\"tweet-btn view-replies-btn\" onclick=\"window.app.toggleReplies('" + t.id + "', " + instanceId + ")\">View Replies</button>" +
         "</div>" +
-        "<div id=\"replies-instance-" + instanceId + "\" class=\"replies-container\" style=\"display: none; margin-left: 20px; border-left: 2px solid #ccc; padding-left: 10px;\"></div>" +
+        "<div id=\"replies-instance-" + instanceId + "\" class=\"replies-container\" style=\"display: none;\"></div>" +
       "</div>";
   }
   container.innerHTML = html;
@@ -73,16 +73,16 @@ TwitterApp --> Messaging
   } else {
     container.innerHTML = replies.map(r => {
       const rInstanceId = ++this.renderCount;
-      return "<div class=\"reply\" id=\"tweet-instance-" + rInstanceId + "\" style=\"margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;\">" +
-        "<div class=\"reply-header\" style=\"font-weight: bold; font-size: 13px;\">@" + r.sender_username + "</div>" +
-        "<div class=\"reply-content\" style=\"font-size: 14px;\">" + r.content + "</div>" +
-        "<div class=\"reply-footer\" style=\"margin-top: 5px;\">" +
-          "<button class=\"tweet-btn reply-btn\" style=\"font-size: 12px; padding: 2px 5px;\" onclick=\"window.app.startReply('" + r.id + "', '" + r.sender_username + "', " + rInstanceId + ")\">💬 " + (r.repliesCount || 0) + "</button>" +
-          "<button class=\"tweet-btn retweet-btn\" style=\"font-size: 12px; padding: 2px 5px;\" onclick=\"window.app.retweet('" + r.id + "', " + rInstanceId + ")\">🔄 " + (r.retweetCount || 0) + "</button>" +
-          "<button class=\"tweet-btn like-btn\" style=\"font-size: 12px; padding: 2px 5px;\" onclick=\"window.app.like('" + r.id + "', " + rInstanceId + ")\">❤️ " + (r.likedCount || 0) + "</button>" +
-          "<button class=\"tweet-btn view-replies-btn\" style=\"font-size: 12px; padding: 2px 5px;\" onclick=\"window.app.toggleReplies('" + r.id + "', " + rInstanceId + ")\">View Replies</button>" +
+      return "<div class=\"reply\" id=\"tweet-instance-" + rInstanceId + "\">" +
+        "<div class=\"reply-header\">@" + r.sender_username + "</div>" +
+        "<div class=\"reply-content\">" + r.content + "</div>" +
+        "<div class=\"reply-footer\">" +
+          "<button class=\"tweet-btn reply-btn btn-compact\" onclick=\"window.app.startReply('" + r.id + "', '" + r.sender_username + "', " + rInstanceId + ")\">💬 " + (r.repliesCount || 0) + "</button>" +
+          "<button class=\"tweet-btn retweet-btn btn-compact\" onclick=\"window.app.retweet('" + r.id + "', " + rInstanceId + ")\">🔄 " + (r.retweetCount || 0) + "</button>" +
+          "<button class=\"tweet-btn like-btn btn-compact\" onclick=\"window.app.like('" + r.id + "', " + rInstanceId + ")\">❤️ " + (r.likedCount || 0) + "</button>" +
+          "<button class=\"tweet-btn view-replies-btn btn-compact\" onclick=\"window.app.toggleReplies('" + r.id + "', " + rInstanceId + ")\">View Replies</button>" +
         "</div>" +
-        "<div id=\"replies-instance-" + rInstanceId + "\" class=\"replies-container\" style=\"display: none; margin-left: 20px; border-left: 2px solid #ccc; padding-left: 10px;\"></div>" +
+        "<div id=\"replies-instance-" + rInstanceId + "\" class=\"replies-container\" style=\"display: none;\"></div>" +
       "</div>";
     }).join('');
   }
@@ -108,12 +108,10 @@ TwitterApp --> Messaging
     const inputDiv = document.createElement('div');
     inputDiv.id = inputId;
     inputDiv.className = "inline-reply-div";
-    inputDiv.style.padding = "10px";
-    inputDiv.style.borderBottom = "1px solid #ddd";
     inputDiv.innerHTML = 
-      "<textarea id=\"input-instance-" + instanceId + "\" style=\"width: 100%; height: 50px; margin-bottom: 5px;\" placeholder=\"Replying to @" + author + "...\"></textarea>" +
-      "<div style=\"display: flex; justify-content: flex-end;\">" +
-        "<button class=\"tweet-btn\" onclick=\"window.app.postInlineReply('" + tweetId + "', " + instanceId + ", '" + author + "')\">Reply</button>" +
+      "<textarea id=\"input-instance-" + instanceId + "\" class=\"inline-reply-textarea\" placeholder=\"Replying to @" + author + "...\"></textarea>" +
+      "<div class=\"inline-reply-actions\">" +
+        "<button class=\"btn btn-primary\" onclick=\"window.app.postInlineReply('" + tweetId + "', " + instanceId + ", '" + author + "')\">Reply</button>" +
       "</div>";
     container.prepend(inputDiv);
     document.getElementById("input-instance-" + instanceId).focus();
@@ -137,16 +135,16 @@ TwitterApp --> Messaging
   const container = document.getElementById("replies-instance-" + instanceId);
   const rInstanceId = ++this.renderCount;
   const newReplyHtml = 
-    "<div class=\"reply\" id=\"tweet-instance-" + rInstanceId + "\" style=\"margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;\">" +
-      "<div class=\"reply-header\" style=\"font-weight: bold; font-size: 13px;\">@" + author + "</div>" +
-      "<div class=\"reply-content\" style=\"font-size: 14px;\">" + content + "</div>" +
-      "<div class=\"reply-footer\" style=\"margin-top: 5px;\">" +
-        "<button class=\"tweet-btn reply-btn\" style=\"font-size: 12px; padding: 2px 5px;\" onclick=\"window.app.startReply('" + res.id + "', '" + author + "', " + rInstanceId + ")\">💬 0</button>" +
-        "<button class=\"tweet-btn retweet-btn\" style=\"font-size: 12px; padding: 2px 5px;\" onclick=\"window.app.retweet('" + res.id + "', " + rInstanceId + ")\">🔄 0</button>" +
-        "<button class=\"tweet-btn like-btn\" style=\"font-size: 12px; padding: 2px 5px;\" onclick=\"window.app.like('" + res.id + "', " + rInstanceId + ")\">❤️ 0</button>" +
-        "<button class=\"tweet-btn view-replies-btn\" style=\"font-size: 12px; padding: 2px 5px;\" onclick=\"window.app.toggleReplies('" + res.id + "', " + rInstanceId + ")\">View Replies</button>" +
+    "<div class=\"reply\" id=\"tweet-instance-" + rInstanceId + "\">" +
+      "<div class=\"reply-header\">@" + author + "</div>" +
+      "<div class=\"reply-content\">" + content + "</div>" +
+      "<div class=\"reply-footer\">" +
+        "<button class=\"tweet-btn reply-btn btn-compact\" onclick=\"window.app.startReply('" + res.id + "', '" + author + "', " + rInstanceId + ")\">💬 0</button>" +
+        "<button class=\"tweet-btn retweet-btn btn-compact\" onclick=\"window.app.retweet('" + res.id + "', " + rInstanceId + ")\">🔄 0</button>" +
+        "<button class=\"tweet-btn like-btn btn-compact\" onclick=\"window.app.like('" + res.id + "', " + rInstanceId + ")\">❤️ 0</button>" +
+        "<button class=\"tweet-btn view-replies-btn btn-compact\" onclick=\"window.app.toggleReplies('" + res.id + "', " + rInstanceId + ")\">View Replies</button>" +
       "</div>" +
-      "<div id=\"replies-instance-" + rInstanceId + "\" class=\"replies-container\" style=\"display: none; margin-left: 20px; border-left: 2px solid #ccc; padding-left: 10px;\"></div>" +
+      "<div id=\"replies-instance-" + rInstanceId + "\" class=\"replies-container\" style=\"display: none;\"></div>" +
     "</div>";
   
   if (container.innerHTML.includes('No replies yet')) {
