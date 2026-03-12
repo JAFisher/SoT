@@ -24,16 +24,18 @@ Database[Database.ts{pool: any}]
 
 @async @Database.init{}: void
 @@Database.init.code
+
   await this.pool.query("CREATE TABLE IF NOT EXISTS users (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), username VARCHAR(255) UNIQUE NOT NULL, name VARCHAR(255) NOT NULL, password_hash VARCHAR(255) NOT NULL);");
-  await this.pool.query("CREATE TABLE IF NOT EXISTS messages (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), sender_username VARCHAR(255) NOT NULL, receiver_username VARCHAR(255) NOT NULL, content TEXT NOT NULL, timestamp BIGINT NOT NULL);");
+  await this.pool.query("CREATE TABLE IF NOT EXISTS messages (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), sender_username VARCHAR(255) NOT NULL, receiver_username VARCHAR(255) NOT NULL,content TEXT NOT NULL,timestamp BIGINT NOT NULL,replied_to_id UUID,retweeted_id UUID,liked_count INT DEFAULT 0, retweet_count INT DEFAULT 0);");
+  await this.pool.query("CREATE TABLE IF NOT EXISTS likes ( id SERIAL PRIMARY KEY, message_id UUID NOT NULL REFERENCES messages(id), username VARCHAR(255) NOT NULL, UNIQUE(message_id, username));");
   console.log("Database initialized.");
 @@Database.init.end
 
-@async @Database.insertMessage{senderUsername: string, receiverUsername: string, content: string, timestamp: number}: any
+@async @Database.insertMessage{senderUsername: string, receiverUsername: string, content: string, timestamp: number, repliedToId: string, retweetedId: string}: any
 @@Database.insertMessage.code
   const res = await this.pool.query(
-    "INSERT INTO messages (sender_username, receiver_username, content, timestamp) VALUES ($1, $2, $3, $4) RETURNING *",
-    [senderUsername, receiverUsername, content, timestamp]
+    "INSERT INTO messages (sender_username, receiver_username, content, timestamp, replied_to_id, retweeted_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+    [senderUsername, receiverUsername, content, timestamp, repliedToId || null, retweetedId || null]
   );
   return res.rows[0];
 @@Database.insertMessage.end
@@ -49,9 +51,93 @@ Database[Database.ts{pool: any}]
     senderUsername: row.sender_username,
     receiverUsername: row.receiver_username,
     content: row.content,
-    timestamp: Number(row.timestamp)
+    timestamp: Number(row.timestamp),
+    repliedToId: row.replied_to_id,
+    retweetedId: row.retweeted_id,
+    likedCount: row.liked_count,
+    retweetCount: row.retweet_count
   }));
 @@Database.getMessagesBetween.end
+
+@async @Database.getPublicTweets{}: any
+@@Database.getPublicTweets.code
+  const res = await this.pool.query(
+    "SELECT * FROM messages WHERE receiver_username = '' ORDER BY timestamp DESC"
+  );
+  return res.rows.map(row => ({
+    id: row.id,
+    authorUsername: row.sender_username,
+    content: row.content,
+    timestamp: Number(row.timestamp),
+    repliedToId: row.replied_to_id,
+    retweetedId: row.retweeted_id,
+    likedCount: row.liked_count,
+    retweetCount: row.retweet_count
+  }));
+@@Database.getPublicTweets.end
+
+@async @Database.likeMessage{messageId: string, username: string}: void
+@@Database.likeMessage.code
+  const client = await this.pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('INSERT INTO likes (message_id, username) VALUES ($1, $2)', [messageId, username]);
+    await client.query('UPDATE messages SET liked_count = liked_count + 1 WHERE id = $1', [messageId]);
+    await client.query('COMMIT');
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+@@Database.likeMessage.end
+
+@async @Database.unlikeMessage{messageId: string, username: string}: void
+@@Database.unlikeMessage.code
+  const client = await this.pool.connect();
+  try {
+    await client.query('BEGIN');
+    const res = await client.query('DELETE FROM likes WHERE message_id = $1 AND username = $2', [messageId, username]);
+    if (res.rowCount > 0) {
+      await client.query('UPDATE messages SET liked_count = liked_count - 1 WHERE id = $1', [messageId]);
+    }
+    await client.query('COMMIT');
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+@@Database.unlikeMessage.end
+
+@async @Database.retweetMessage{sender: string, originalId: string, ts: number}: any
+@@Database.retweetMessage.code
+  const client = await this.pool.connect();
+  try {
+    await client.query('BEGIN');
+    const orig = await client.query('SELECT content FROM messages WHERE id = $1', [originalId]);
+    if (orig.rows.length === 0) throw new Error("Original tweet not found");
+    
+    const retweet = await client.query(
+      "INSERT INTO messages (sender_username, receiver_username, content, timestamp, retweeted_id) VALUES ($1, '', $2, $3, $4) RETURNING *",
+      [sender, orig.rows[0].content, ts, originalId]
+    );
+    await client.query('UPDATE messages SET retweet_count = retweet_count + 1 WHERE id = $1', [originalId]);
+    await client.query('COMMIT');
+    return retweet.rows[0];
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+@@Database.retweetMessage.end
+
+@async @Database.getReplies{messageId: string}: any
+@@Database.getReplies.code
+  const res = await this.pool.query('SELECT * FROM messages WHERE replied_to_id = $1 ORDER BY timestamp ASC', [messageId]);
+  return res.rows;
+@@Database.getReplies.end
 
 @async @Database.query{text: string, params: any}: any
 @@Database.query.code

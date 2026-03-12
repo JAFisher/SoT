@@ -23,23 +23,65 @@ TwitterApp --> Messaging
   this.initialized = true;
 @@TwitterApp.init.end
 
-@TwitterApp.renderTimeline{containerId: string}: void
+@async @TwitterApp.renderTimeline{containerId: string}: void
 @@TwitterApp.renderTimeline.code
   const container = document.getElementById(containerId);
   if (!container) return;
   
-  const tweets = this.feed.getTimeline();
+  const tweets = await this.feed.getTimeline();
   let html = '<h3 class="timeline-header">Timeline</h3>';
   for (const t of tweets) {
     const name = t.authorUsername;
-    html += '<div class="tweet"><div class="tweet-header"><span class="tweet-name">' + name + '</span><span class="tweet-username">@' + t.authorUsername + '</span></div><div class="tweet-content">' + t.content + '</div></div>';
+    const isRetweet = !!t.retweetedId;
+    html += `
+      <div class="tweet" id="tweet-${t.id}">
+        <div class="tweet-header">
+          <span class="tweet-name">${name}</span>
+          <span class="tweet-username">@${t.authorUsername}</span>
+          ${isRetweet ? '<span class="retweet-tag">Retweeted</span>' : ''}
+        </div>
+        <div class="tweet-content">${t.content}</div>
+        <div class="tweet-footer">
+          <button class="tweet-btn reply-btn" onclick="window.app.startReply('${t.id}', '${t.authorUsername}')">💬 ${t.repliesCount || 0}</button>
+          <button class="tweet-btn retweet-btn" onclick="window.app.retweet('${t.id}')">🔄 ${t.retweetCount || 0}</button>
+          <button class="tweet-btn like-btn" onclick="window.app.like('${t.id}')">❤️ ${t.likedCount || 0}</button>
+        </div>
+      </div>`;
   }
   container.innerHTML = html;
 @@TwitterApp.renderTimeline.end
 
-@TwitterApp.postNewTweet{authorUsername: string, content: string}: void
+@async @TwitterApp.postNewTweet{authorUsername: string, content: string, repliedToId: string, retweetedId: string}: void
 @@TwitterApp.postNewTweet.code
-  this.feed.postTweet(authorUsername, content);
+  await this.feed.postTweet(authorUsername, content, repliedToId, retweetedId);
 @@TwitterApp.postNewTweet.end
+
+@TwitterApp.startReply{tweetId: string, author: string}: void
+@@TwitterApp.startReply.code
+  const box = document.getElementById('tweetContent');
+  if (box) {
+    box.value = `@${author} `;
+    box.focus();
+    box.dataset.repliedToId = tweetId;
+    // Show a small "Replying to" label if we had one
+    const label = document.getElementById('replyLabel');
+    if (label) {
+      label.innerText = `Replying to @${author}`;
+      label.style.display = 'block';
+    }
+  }
+@@TwitterApp.startReply.end
+
+@async @TwitterApp.like{tweetId: string}: void
+@@TwitterApp.like.code
+  await this.feed.likeMessage(tweetId);
+  await this.renderTimeline('timeline');
+@@TwitterApp.like.end
+
+@async @TwitterApp.retweet{tweetId: string}: void
+@@TwitterApp.retweet.code
+  await this.feed.retweetMessage(tweetId);
+  await this.renderTimeline('timeline');
+@@TwitterApp.retweet.end
 
 Rollup->{AuthFE.ts, Feed.ts, Messaging.ts, TwitterApp.ts}

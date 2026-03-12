@@ -10,24 +10,76 @@ Feed --> AuthFE
   this.tweets = [];
 @@Feed.constructor.end
 
-@Feed.postTweet{authorUsername: string, content: string}: Tweet
+@async @Feed.postTweet{authorUsername: string, content: string, repliedToId: string, retweetedId: string}: Tweet
 @@Feed.postTweet.code
-  const tweet = {
-    id: Math.random().toString(36).substr(2, 9),
-    authorUsername,
-    content,
-    timestamp: Date.now()
-  };
-  this.tweets.unshift(tweet); // Add to beginning
-  return tweet;
+  const token = localStorage.getItem('token');
+  const response = await fetch('http://localhost:8080/api/tweets', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + token
+    },
+    body: JSON.stringify({ content, repliedToId, retweetedId })
+  });
+  if (!response.ok) throw new Error("Failed to post tweet");
+  return await response.json();
 @@Feed.postTweet.end
 
-@Feed.getTimeline{}: any
+@async @Feed.likeMessage{messageId: string}: any
+@@Feed.likeMessage.code
+  const token = localStorage.getItem('token');
+  const response = await fetch('http://localhost:8080/api/like', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + token
+    },
+    body: JSON.stringify({ messageId })
+  });
+  if (!response.ok) throw new Error("Failed to like");
+  return await response.json();
+@@Feed.likeMessage.end
+
+@async @Feed.unlikeMessage{messageId: string}: any
+@@Feed.unlikeMessage.code
+  const token = localStorage.getItem('token');
+  const response = await fetch('http://localhost:8080/api/unlike', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + token
+    },
+    body: JSON.stringify({ messageId })
+  });
+  if (!response.ok) throw new Error("Failed to unlike");
+  return await response.json();
+@@Feed.unlikeMessage.end
+
+@async @Feed.retweetMessage{originalId: string}: any
+@@Feed.retweetMessage.code
+  const token = localStorage.getItem('token');
+  const response = await fetch('http://localhost:8080/api/retweet', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + token
+    },
+    body: JSON.stringify({ originalId })
+  });
+  if (!response.ok) throw new Error("Failed to retweet");
+  return await response.json();
+@@Feed.retweetMessage.end
+
+@async @Feed.getTimeline{}: any
 @@Feed.getTimeline.code
-  return this.tweets;
+  const response = await fetch('http://localhost:8080/api/tweets');
+  if (!response.ok) throw new Error("Failed to fetch timeline");
+  return await response.json();
 @@Feed.getTimeline.end
 
-@Feed.getUserTweets{username: string}: any
+@async @Feed.getUserTweets{username: string}: any
 @@Feed.getUserTweets.code
-  return this.tweets.filter(t => t.authorUsername === username);
+  const response = await fetch('http://localhost:8080/api/tweets?username=' + username);
+  if (!response.ok) throw new Error("Failed to fetch user tweets");
+  return await response.json();
 @@Feed.getUserTweets.end

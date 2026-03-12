@@ -10,23 +10,29 @@ Messaging --> AuthFE
   this.messages = [];
 @@Messaging.constructor.end
 
-@Messaging.sendMessage{senderUsername: string, receiverUsername: string, content: string}: Message
+@async @Messaging.sendMessage{senderUsername: string, receiverUsername: string, content: string, repliedToId: string, retweetedId: string}: Message
 @@Messaging.sendMessage.code
-  const msg = {
-    id: Math.random().toString(36).substr(2, 9),
-    senderUsername,
-    receiverUsername,
-    content,
-    timestamp: Date.now()
-  };
-  this.messages.push(msg);
-  return msg;
+  const token = localStorage.getItem('token');
+  const response = await fetch('http://localhost:8080/api/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + token
+    },
+    body: JSON.stringify({ receiverUsername, content, repliedToId, retweetedId })
+  });
+  if (!response.ok) throw new Error("Failed to send message");
+  return await response.json();
 @@Messaging.sendMessage.end
 
-@Messaging.getMessagesBetween{user1: string, user2: string}: any
+@async @Messaging.getMessagesBetween{user1: string, user2: string}: any
 @@Messaging.getMessagesBetween.code
-  return this.messages.filter(m => 
-    (m.senderUsername === user1 && m.receiverUsername === user2) ||
-    (m.senderUsername === user2 && m.receiverUsername === user1)
-  ).sort((a, b) => a.timestamp - b.timestamp);
+  const token = localStorage.getItem('token');
+  const response = await fetch('http://localhost:8080/api/messages?with=' + user2, {
+    headers: {
+      'Authorization': 'Bearer ' + token
+    }
+  });
+  if (!response.ok) throw new Error("Failed to fetch messages");
+  return await response.json();
 @@Messaging.getMessagesBetween.end
