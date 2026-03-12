@@ -62,7 +62,8 @@ Database[Database.ts{pool: any}]
 @async @Database.getPublicTweets{}: any
 @@Database.getPublicTweets.code
   const res = await this.pool.query(
-    "SELECT m1.*, m2.sender_username as retweeted_author " +
+    "SELECT m1.*, m2.sender_username as retweeted_author, " +
+    "(SELECT COUNT(*) FROM messages m3 WHERE m3.replied_to_id = m1.id) as reply_count " +
     "FROM messages m1 " +
     "LEFT JOIN messages m2 ON m1.retweeted_id = m2.id " +
     "WHERE m1.receiver_username = '' " +
@@ -77,7 +78,8 @@ Database[Database.ts{pool: any}]
     retweetedId: row.retweeted_id,
     retweetedAuthor: row.retweeted_author,
     likedCount: row.liked_count,
-    retweetCount: row.retweet_count
+    retweetCount: row.retweet_count,
+    repliesCount: Number(row.reply_count)
   }));
 @@Database.getPublicTweets.end
 
@@ -156,8 +158,23 @@ Database[Database.ts{pool: any}]
 
 @async @Database.getReplies{messageId: string}: any
 @@Database.getReplies.code
-  const res = await this.pool.query('SELECT * FROM messages WHERE replied_to_id = $1 ORDER BY timestamp ASC', [messageId]);
-  return res.rows;
+  const res = await this.pool.query(
+    "SELECT m1.*, " +
+    "(SELECT COUNT(*) FROM messages m2 WHERE m2.replied_to_id = m1.id) as reply_count " +
+    "FROM messages m1 " +
+    "WHERE m1.replied_to_id = $1 " +
+    "ORDER BY m1.timestamp ASC",
+    [messageId]
+  );
+  return res.rows.map(row => ({
+    id: row.id,
+    sender_username: row.sender_username,
+    content: row.content,
+    timestamp: Number(row.timestamp),
+    likedCount: row.liked_count,
+    retweetCount: row.retweet_count,
+    repliesCount: Number(row.reply_count)
+  }));
 @@Database.getReplies.end
 
 @async @Database.query{text: string, params: any}: any
