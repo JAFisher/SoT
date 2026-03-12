@@ -83,3 +83,9 @@ Feed --> AuthFE
   if (!response.ok) throw new Error("Failed to fetch user tweets");
   return await response.json();
 @@Feed.getUserTweets.end
+@async @Feed.getReplies{messageId: string}: any
+@@Feed.getReplies.code
+  const response = await fetch('http://localhost:8080/api/replies?id=' + messageId);
+  if (!response.ok) throw new Error("Failed to fetch replies");
+  return await response.json();
+@@Feed.getReplies.end

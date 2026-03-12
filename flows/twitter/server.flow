@@ -21,7 +21,7 @@ Server --> Auth
     res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, POST, GET');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-    console.log(`[BACKEND] ${req.method} ${req.url}`);
+    console.log("[BACKEND] " + req.method + " " + req.url);
 
     if (req.method === 'OPTIONS') {
       res.writeHead(204);
@@ -117,7 +117,7 @@ Server --> Auth
         res.end(JSON.stringify({ error: "Unauthorized" }));
         return;
       }
-      const otherUser = new URL(req.url, `http://${req.headers.host}`).searchParams.get('with');
+      const otherUser = new URL(req.url, "http://" + req.headers.host).searchParams.get('with');
       if (!otherUser) {
         res.writeHead(400);
         res.end(JSON.stringify({ error: "Missing 'with' parameter" }));
@@ -206,6 +206,22 @@ Server --> Auth
           res.writeHead(400); res.end(JSON.stringify({ error: e.message }));
         }
       });
+      return;
+    }
+
+    if (req.method === 'GET' && req.url.startsWith('/api/replies')) {
+      const tweetId = new URL(req.url, "http://" + req.headers.host).searchParams.get('id');
+      if (!tweetId) {
+        res.writeHead(400); res.end(JSON.stringify({ error: "Missing 'id' parameter" }));
+        return;
+      }
+      try {
+        const replies = await this.auth.db.getReplies(tweetId);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(replies));
+      } catch (e) {
+        res.writeHead(500); res.end(JSON.stringify({ error: e.message }));
+      }
       return;
     }
 
