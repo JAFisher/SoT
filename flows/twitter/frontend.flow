@@ -37,7 +37,7 @@ TwitterApp --> Messaging
   if (!container) return;
   
   const tweets = await this.feed.getTimeline();
-  let html = '<h3 class="timeline-header">Timeline</h3>';
+  let html = '';
   tweets.forEach(t => {
     html += this.renderSingleTweet(t);
   });
@@ -116,7 +116,11 @@ TwitterApp --> Messaging
 
 @async @TwitterApp.postNewTweet{authorUsername: string, content: string, repliedToId: string, retweetedId: string}: any
 @@TwitterApp.postNewTweet.code
-  return await this.feed.postTweet(authorUsername, content, repliedToId, retweetedId);
+  const res = await this.feed.postTweet(authorUsername, content, repliedToId, retweetedId);
+  if (res) {
+    this.showToast("Tweet posted!", "success");
+  }
+  return res;
 @@TwitterApp.postNewTweet.end
 
 @TwitterApp.startReply{tweetId: string, author: string, instanceId: number}: void
@@ -170,7 +174,10 @@ TwitterApp --> Messaging
   if (container.innerHTML.includes('No replies yet')) {
     container.innerHTML = '';
   }
-  container.innerHTML = newReplyHtml + container.innerHTML;
+  const newReplyDiv = document.createElement('div');
+  newReplyDiv.innerHTML = newReplyHtml;
+  container.prepend(newReplyDiv.firstElementChild);
+  this.showToast("Reply posted!", "success");
   
   const replyBtn = document.querySelector("#tweet-instance-" + instanceId + " .reply-btn");
   if (replyBtn) {
@@ -181,11 +188,22 @@ TwitterApp --> Messaging
 
 @async @TwitterApp.like{tweetId: string, instanceId: number}: void
 @@TwitterApp.like.code
-  const res = await this.feed.likeMessage(tweetId);
-  const btn = document.querySelector("#tweet-instance-" + instanceId + " .like-btn");
-  if (btn) {
-    const current = parseInt(btn.innerText.replace('❤️ ', '')) || 0;
-    btn.innerText = "❤️ " + (current + 1);
+  try {
+    await this.feed.likeMessage(tweetId);
+    const btnId = "like-btn-instance-" + instanceId;
+    const btn = document.getElementById(btnId);
+    if (btn) {
+      const current = parseInt(btn.innerText.replace('❤️ ', '')) || 0;
+      btn.innerText = "❤️ " + (current + 1);
+      
+      // Add animation class
+      btn.classList.add('heart-pop');
+      setTimeout(() => btn.classList.remove('heart-pop'), 400);
+      
+      this.showToast("Liked!", "success");
+    }
+  } catch (e) {
+    this.showToast("Failed to like", "error");
   }
 @@TwitterApp.like.end
 

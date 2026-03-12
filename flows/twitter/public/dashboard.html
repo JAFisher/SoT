@@ -12,18 +12,20 @@
     <div class="container">
         <div class="header">
             <h2>Home</h2>
-            <button id="logoutBtn" class="btn btn-outline" style="width: auto; padding: 6px 12px; font-size: 14px; margin: 0;">Log out</button>
+            <button id="logoutBtn" class="btn btn-outline"
+                style="width: auto; padding: 6px 12px; font-size: 14px; margin: 0;">Log out</button>
         </div>
 
         <div id="app-box">
             <div class="post-box">
-                <div id="replyLabel" style="display: none; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;"></div>
+                <div id="replyLabel"
+                    style="display: none; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;"></div>
                 <textarea id="tweetContent" placeholder="What is happening?!"></textarea>
                 <div class="post-actions">
                     <button id="postBtn" class="btn btn-primary">Post</button>
                 </div>
             </div>
-            
+            <h3 class="timeline-header">Timeline</h3>
             <div id="timeline"></div>
         </div>
 
@@ -50,7 +52,7 @@
             const box = document.getElementById('tweetContent');
             const content = box.value;
             const repliedToId = box.dataset.repliedToId || '';
-            
+
             if (content.trim() && window.app.auth.currentUser) {
                 await window.app.postNewTweet(window.app.auth.currentUser.username, content, repliedToId, '');
                 await window.app.renderTimeline('timeline');
