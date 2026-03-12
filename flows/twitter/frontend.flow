@@ -192,8 +192,8 @@ TwitterApp --> Messaging
     // Update local user object
     const user = this.auth.getCurrentUser();
     if (user) {
-        user.avatar_url = avatarUrl;
-        localStorage.setItem('user', JSON.stringify(user));
+        user.avatarUrl = avatarUrl;
+        localStorage.setItem('currentUser', JSON.stringify(user));
     }
     // Update sidebar if exists
     const sidebarAvatar = document.getElementById('sidebar-avatar');

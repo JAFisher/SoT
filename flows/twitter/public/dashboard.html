@@ -58,8 +58,8 @@
         } else {
             document.getElementById('header-name').innerText = window.app.auth.currentUser.name || window.app.auth.currentUser.username;
             const user = window.app.auth.getCurrentUser();
-            if (user && user.avatar_url) {
-                document.getElementById('sidebar-avatar').src = user.avatar_url;
+            if (user && user.avatarUrl) {
+                document.getElementById('sidebar-avatar').src = user.avatarUrl;
             }
             await window.app.renderTimeline('timeline');
         }
