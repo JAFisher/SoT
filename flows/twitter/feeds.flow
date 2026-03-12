@@ -66,8 +66,9 @@ Feed --> AuthFE
     },
     body: JSON.stringify({ originalId })
   });
-  if (!response.ok) throw new Error("Failed to retweet");
-  return await response.json();
+  
+  const data = await response.json();
+  return { ok: response.ok, status: response.status, data };
 @@Feed.retweetMessage.end
 
 @async @Feed.getTimeline{}: any

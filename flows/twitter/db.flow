@@ -123,8 +123,19 @@ Database[Database.ts{pool: any}]
   try {
     await client.query('BEGIN');
     
-    console.log(sender, originalId);
-    // Check if already retweeted by this user
+    // 1. Get original tweet info (need sender_username for return object)
+    const origRes = await client.query('SELECT sender_username, content FROM messages WHERE id = $1', [originalId]);
+    if (origRes.rows.length === 0) {
+      throw new Error("Original tweet not found (" + originalId + ")");
+    }
+    const origRow = origRes.rows[0];
+
+    // 2. Prevent self-retweet
+    if (origRow.sender_username === sender) {
+      throw new Error("You cannot retweet your own tweet");
+    }
+
+    // 3. Check for existing retweet by this user
     const existing = await client.query(
       'SELECT id FROM messages WHERE sender_username = $1 AND retweeted_id = $2',
       [sender, originalId]
@@ -133,26 +144,35 @@ Database[Database.ts{pool: any}]
       throw new Error("You have already retweeted this message");
     }
 
-    const check_userId = await client.query('SELECT sender_username FROM messages WHERE id = $1', [originalId]);
-    if (check_userId.rows[0].sender_username === sender) {
-      throw new Error("You cannot retweet your own tweet");
-    }
-
-    const orig = await client.query('SELECT content FROM messages WHERE id = $1', [originalId]);
-    if (orig.rows.length === 0) throw new Error("Original tweet not found");
-    
+    // 4. Create retweet record
     const retweet = await client.query(
       "INSERT INTO messages (sender_username, receiver_username, content, timestamp, retweeted_id) VALUES ($1, '', $2, $3, $4) RETURNING *",
-      [sender, orig.rows[0].content, ts, originalId]
+      [sender, origRow.content, ts, originalId]
     );
+    
+    // 5. Increment original retweet count
     await client.query('UPDATE messages SET retweet_count = retweet_count + 1 WHERE id = $1', [originalId]);
+    
     await client.query('COMMIT');
-    return retweet.rows[0];
+    
+    const row = retweet.rows[0];
+    return {
+      id: row.id,
+      authorUsername: row.sender_username,
+      content: row.content,
+      timestamp: Number(row.timestamp),
+      retweetedId: row.retweeted_id,
+      retweetedAuthor: origRow.sender_username,
+      likedCount: 0,
+      retweetCount: 0,
+      repliesCount: 0
+    };
   } catch (e) {
-    await client.query('ROLLBACK');
+    if (client) await client.query('ROLLBACK');
+    console.error("[DB ERROR] retweetMessage:", e.name, e.message);
     throw e;
   } finally {
-    client.release();
+    if (client) client.release();
   }
 @@Database.retweetMessage.end
 

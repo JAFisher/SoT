@@ -22,6 +22,13 @@ TwitterApp --> Messaging
 @@TwitterApp.init.code
   if (this.initialized) return;
   this.initialized = true;
+
+  // Create toast container
+  if (!document.getElementById('toast-container')) {
+    const container = document.createElement('div');
+    container.id = 'toast-container';
+    document.body.appendChild(container);
+  }
 @@TwitterApp.init.end
 
 @async @TwitterApp.renderTimeline{containerId: string}: void
@@ -31,30 +38,61 @@ TwitterApp --> Messaging
   
   const tweets = await this.feed.getTimeline();
   let html = '<h3 class="timeline-header">Timeline</h3>';
-  for (const t of tweets) {
-    const instanceId = ++this.renderCount;
-    const name = t.authorUsername;
-    const isRetweet = !!t.retweetedId;
-    const retweetTag = isRetweet ? "<span class=\"retweet-tag\">Retweeted from @" + t.retweetedAuthor + "</span>" : "";
-    html += 
-      "<div class=\"tweet\" id=\"tweet-instance-" + instanceId + "\">" +
-        "<div class=\"tweet-header\">" +
-          "<span class=\"tweet-name\">" + name + "</span>" +
-          "<span class=\"tweet-username\">@" + t.authorUsername + "</span>" +
-          retweetTag +
-        "</div>" +
-        "<div class=\"tweet-content\">" + t.content + "</div>" +
-        "<div class=\"tweet-footer\">" +
-          "<button class=\"tweet-btn reply-btn\" onclick=\"window.app.startReply('" + t.id + "', '" + t.authorUsername + "', " + instanceId + ")\">💬 " + (t.repliesCount || 0) + "</button>" +
-          "<button class=\"tweet-btn retweet-btn\" onclick=\"window.app.retweet('" + t.id + "', " + instanceId + ")\">🔄 " + (t.retweetCount || 0) + "</button>" +
-          "<button class=\"tweet-btn like-btn\" onclick=\"window.app.like('" + t.id + "', " + instanceId + ")\">❤️ " + (t.likedCount || 0) + "</button>" +
-          "<button class=\"tweet-btn view-replies-btn\" onclick=\"window.app.toggleReplies('" + t.id + "', " + instanceId + ")\">View Replies</button>" +
-        "</div>" +
-        "<div id=\"replies-instance-" + instanceId + "\" class=\"replies-container\" style=\"display: none;\"></div>" +
-      "</div>";
-  }
+  tweets.forEach(t => {
+    html += this.renderSingleTweet(t);
+  });
   container.innerHTML = html;
 @@TwitterApp.renderTimeline.end
+
+@TwitterApp.renderSingleTweet{t: any}: string
+@@TwitterApp.renderSingleTweet.code
+  const instanceId = ++this.renderCount;
+  const name = t.authorName || t.authorUsername;
+  const isRetweet = !!t.retweetedId;
+  const retweetTag = isRetweet ? "<span class=\"retweet-tag\">🔄 Retweeted from @" + t.retweetedAuthor + "</span>" : "";
+  
+  const currentUser = this.auth.getCurrentUser();
+  const canRetweet = currentUser && currentUser.username !== t.authorUsername;
+  const retweetBtn = canRetweet ? 
+    "<button class=\"tweet-btn retweet-btn\" id=\"retweet-btn-instance-" + instanceId + "\" onclick=\"window.app.retweet('" + t.id + "', " + instanceId + ")\">🔄 " + (t.retweetCount || 0) + "</button>" : "";
+
+  return "<div class=\"tweet\" id=\"tweet-instance-" + instanceId + "\">" +
+      "<div class=\"tweet-header\">" +
+        "<span class=\"tweet-name\">" + name + "</span>" +
+        "<span class=\"tweet-username\">@" + t.authorUsername + "</span>" +
+        retweetTag +
+      "</div>" +
+      "<div class=\"tweet-content\">" + t.content + "</div>" +
+      "<div class=\"tweet-footer\">" +
+        "<button class=\"tweet-btn reply-btn\" onclick=\"window.app.startReply('" + t.id + "', '" + t.authorUsername + "', " + instanceId + ")\">💬 " + (t.repliesCount || 0) + "</button>" +
+        retweetBtn +
+        "<button class=\"tweet-btn like-btn\" id=\"like-btn-instance-" + instanceId + "\" onclick=\"window.app.like('" + t.id + "', " + instanceId + ")\">❤️ " + (t.likedCount || 0) + "</button>" +
+        "<button class=\"tweet-btn view-replies-btn\" onclick=\"window.app.toggleReplies('" + t.id + "', " + instanceId + ")\">View Replies</button>" +
+      "</div>" +
+      "<div id=\"replies-instance-" + instanceId + "\" class=\"replies-container\" style=\"display: none;\"></div>" +
+    "</div>";
+@@TwitterApp.renderSingleTweet.end
+
+@TwitterApp.renderSingleReply{r: any}: string
+@@TwitterApp.renderSingleReply.code
+  const rInstanceId = ++this.renderCount;
+  const currentUser = this.auth.getCurrentUser();
+  const canRetweet = currentUser && currentUser.username !== r.sender_username;
+  const retweetBtn = canRetweet ? 
+    "<button class=\"tweet-btn retweet-btn btn-compact\" onclick=\"window.app.retweet('" + r.id + "', " + rInstanceId + ")\">🔄 " + (r.retweetCount || 0) + "</button>" : "";
+
+  return "<div class=\"reply\" id=\"tweet-instance-" + rInstanceId + "\">" +
+    "<div class=\"reply-header\">@" + r.sender_username + "</div>" +
+    "<div class=\"reply-content\">" + r.content + "</div>" +
+    "<div class=\"reply-footer\">" +
+      "<button class=\"tweet-btn reply-btn btn-compact\" onclick=\"window.app.startReply('" + r.id + "', '" + r.sender_username + "', " + rInstanceId + ")\">💬 " + (r.repliesCount || 0) + "</button>" +
+      retweetBtn +
+      "<button class=\"tweet-btn like-btn btn-compact\" id=\"like-btn-instance-" + rInstanceId + "\" onclick=\"window.app.like('" + r.id + "', " + rInstanceId + ")\">❤️ " + (r.likedCount || 0) + "</button>" +
+      "<button class=\"tweet-btn view-replies-btn btn-compact\" onclick=\"window.app.toggleReplies('" + r.id + "', " + rInstanceId + ")\">View Replies</button>" +
+    "</div>" +
+    "<div id=\"replies-instance-" + rInstanceId + "\" class=\"replies-container\" style=\"display: none;\"></div>" +
+  "</div>";
+@@TwitterApp.renderSingleReply.end
 
 @async @TwitterApp.toggleReplies{tweetId: string, instanceId: number}: void
 @@TwitterApp.toggleReplies.code
@@ -71,20 +109,7 @@ TwitterApp --> Messaging
   if (replies.length === 0) {
     container.innerHTML = '<div style="padding: 10px; color: #888;">No replies yet</div>';
   } else {
-    container.innerHTML = replies.map(r => {
-      const rInstanceId = ++this.renderCount;
-      return "<div class=\"reply\" id=\"tweet-instance-" + rInstanceId + "\">" +
-        "<div class=\"reply-header\">@" + r.sender_username + "</div>" +
-        "<div class=\"reply-content\">" + r.content + "</div>" +
-        "<div class=\"reply-footer\">" +
-          "<button class=\"tweet-btn reply-btn btn-compact\" onclick=\"window.app.startReply('" + r.id + "', '" + r.sender_username + "', " + rInstanceId + ")\">💬 " + (r.repliesCount || 0) + "</button>" +
-          "<button class=\"tweet-btn retweet-btn btn-compact\" onclick=\"window.app.retweet('" + r.id + "', " + rInstanceId + ")\">🔄 " + (r.retweetCount || 0) + "</button>" +
-          "<button class=\"tweet-btn like-btn btn-compact\" onclick=\"window.app.like('" + r.id + "', " + rInstanceId + ")\">❤️ " + (r.likedCount || 0) + "</button>" +
-          "<button class=\"tweet-btn view-replies-btn btn-compact\" onclick=\"window.app.toggleReplies('" + r.id + "', " + rInstanceId + ")\">View Replies</button>" +
-        "</div>" +
-        "<div id=\"replies-instance-" + rInstanceId + "\" class=\"replies-container\" style=\"display: none;\"></div>" +
-      "</div>";
-    }).join('');
+    container.innerHTML = replies.map(r => this.renderSingleReply(r)).join('');
   }
   container.style.display = 'block';
 @@TwitterApp.toggleReplies.end
@@ -133,19 +158,14 @@ TwitterApp --> Messaging
   if (inputDiv) inputDiv.remove();
   
   const container = document.getElementById("replies-instance-" + instanceId);
-  const rInstanceId = ++this.renderCount;
-  const newReplyHtml = 
-    "<div class=\"reply\" id=\"tweet-instance-" + rInstanceId + "\">" +
-      "<div class=\"reply-header\">@" + author + "</div>" +
-      "<div class=\"reply-content\">" + content + "</div>" +
-      "<div class=\"reply-footer\">" +
-        "<button class=\"tweet-btn reply-btn btn-compact\" onclick=\"window.app.startReply('" + res.id + "', '" + author + "', " + rInstanceId + ")\">💬 0</button>" +
-        "<button class=\"tweet-btn retweet-btn btn-compact\" onclick=\"window.app.retweet('" + res.id + "', " + rInstanceId + ")\">🔄 0</button>" +
-        "<button class=\"tweet-btn like-btn btn-compact\" onclick=\"window.app.like('" + res.id + "', " + rInstanceId + ")\">❤️ 0</button>" +
-        "<button class=\"tweet-btn view-replies-btn btn-compact\" onclick=\"window.app.toggleReplies('" + res.id + "', " + rInstanceId + ")\">View Replies</button>" +
-      "</div>" +
-      "<div id=\"replies-instance-" + rInstanceId + "\" class=\"replies-container\" style=\"display: none;\"></div>" +
-    "</div>";
+  const newReplyHtml = this.renderSingleReply({
+    id: res.id,
+    sender_username: author,
+    content: content,
+    repliesCount: 0,
+    retweetCount: 0,
+    likedCount: 0
+  });
   
   if (container.innerHTML.includes('No replies yet')) {
     container.innerHTML = '';
@@ -171,12 +191,58 @@ TwitterApp --> Messaging
 
 @async @TwitterApp.retweet{tweetId: string, instanceId: number}: void
 @@TwitterApp.retweet.code
-  const res = await this.feed.retweetMessage(tweetId);
-  const btn = document.querySelector("#tweet-instance-" + instanceId + " .retweet-btn");
-  if (btn) {
-    const current = parseInt(btn.innerText.replace('🔄 ', '')) || 0;
-    btn.innerText = "🔄 " + (current + 1);
+  try {
+    const result = await this.feed.retweetMessage(tweetId);
+    
+    if (!result.ok) {
+      if (result.status === 409) {
+        this.showToast("You've already retweeted this", "error");
+      } else {
+        this.showToast(result.data.error || "Failed to retweet", "error");
+      }
+      return;
+    }
+
+    const retweet = result.data;
+    
+    // Prepend to timeline
+    const container = document.getElementById("timeline");
+    if (container && retweet) {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = this.renderSingleTweet(retweet);
+      if (tempDiv.firstElementChild) {
+        container.prepend(tempDiv.firstElementChild);
+        this.showToast("Retweeted successfully!", "success");
+      }
+    }
+
+    // Update original button count
+    const btnId = "retweet-btn-instance-" + instanceId;
+    const btn = document.getElementById(btnId);
+    if (btn) {
+      const current = parseInt(btn.innerText.replace('🔄 ', '')) || 0;
+      btn.innerText = "🔄 " + (current + 1);
+    }
+  } catch (e) {
+    this.showToast("Connection error", "error");
   }
 @@TwitterApp.retweet.end
+
+@TwitterApp.showToast{message: string, type: string}: void
+@@TwitterApp.showToast.code
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = "toast " + type;
+  toast.innerText = message;
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translate(-50%, 20px)';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+@@TwitterApp.showToast.end
 
 Rollup->{AuthFE.ts, Feed.ts, Messaging.ts, TwitterApp.ts}

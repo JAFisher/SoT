@@ -203,7 +203,9 @@ Server --> Auth
           const retweet = await this.auth.db.retweetMessage(user.username, originalId, Date.now());
           res.writeHead(200); res.end(JSON.stringify(retweet));
         } catch (e) {
-          res.writeHead(400); res.end(JSON.stringify({ error: e.message }));
+          const status = e.message.includes("already retweeted") ? 409 : 400;
+          res.writeHead(status); 
+          res.end(JSON.stringify({ error: e.message }));
         }
       });
       return;
