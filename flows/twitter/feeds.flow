@@ -1,0 +1,33 @@
+include->authfe.flow
+
+type->Tweet {id: string, authorUsername: string, content: string, timestamp: number}
+
+Feed[Feed.ts{tweets: Array}]
+Feed --> AuthFE
+
+@Feed.constructor{}
+@@Feed.constructor.code
+  this.tweets = [];
+@@Feed.constructor.end
+
+@Feed.postTweet{authorUsername: string, content: string}: Tweet
+@@Feed.postTweet.code
+  const tweet = {
+    id: Math.random().toString(36).substr(2, 9),
+    authorUsername,
+    content,
+    timestamp: Date.now()
+  };
+  this.tweets.unshift(tweet); // Add to beginning
+  return tweet;
+@@Feed.postTweet.end
+
+@Feed.getTimeline{}: any
+@@Feed.getTimeline.code
+  return this.tweets;
+@@Feed.getTimeline.end
+
+@Feed.getUserTweets{username: string}: any
+@@Feed.getUserTweets.code
+  return this.tweets.filter(t => t.authorUsername === username);
+@@Feed.getUserTweets.end

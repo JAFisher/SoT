@@ -1,0 +1,45 @@
+include->authfe.flow
+include->feeds.flow
+include->messages.flow
+
+cliscripts->start node -e "require('fs').copyFileSync('compiled.js', 'public/compiled.js')" && npx -y http-server public -p 3000
+
+TwitterApp[TwitterApp.ts{auth: any, feed: any, messaging: any, initialized: boolean}]
+TwitterApp --> AuthFE
+TwitterApp --> Feed
+TwitterApp --> Messaging
+
+@TwitterApp.constructor{}
+@@TwitterApp.constructor.code
+  this.auth = new AuthFE();
+  this.feed = new Feed();
+  this.messaging = new Messaging();
+  this.initialized = false;
+@@TwitterApp.constructor.end
+
+@async @TwitterApp.init{}: void
+@@TwitterApp.init.code
+  if (this.initialized) return;
+  this.initialized = true;
+@@TwitterApp.init.end
+
+@TwitterApp.renderTimeline{containerId: string}: void
+@@TwitterApp.renderTimeline.code
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  
+  const tweets = this.feed.getTimeline();
+  let html = '<h3 class="timeline-header">Timeline</h3>';
+  for (const t of tweets) {
+    const name = t.authorUsername;
+    html += '<div class="tweet"><div class="tweet-header"><span class="tweet-name">' + name + '</span><span class="tweet-username">@' + t.authorUsername + '</span></div><div class="tweet-content">' + t.content + '</div></div>';
+  }
+  container.innerHTML = html;
+@@TwitterApp.renderTimeline.end
+
+@TwitterApp.postNewTweet{authorUsername: string, content: string}: void
+@@TwitterApp.postNewTweet.code
+  this.feed.postTweet(authorUsername, content);
+@@TwitterApp.postNewTweet.end
+
+Rollup->{AuthFE.ts, Feed.ts, Messaging.ts, TwitterApp.ts}

@@ -1,0 +1,82 @@
+include->db.flow
+extern->jwt from "jsonwebtoken"
+extern->bcrypt from "bcrypt"
+
+type->User {id: string, username: string, name: string}
+type->AuthResponse {token: string, refreshToken: string, user: User}
+
+Auth[Auth.ts{db: any, jwtSecret: string, jwtRefreshSecret: string}]
+Auth --> Database
+
+@Auth.constructor{}
+@@Auth.constructor.code
+  this.db = new Database();
+  this.jwtSecret = "super-secret-key-change-me";
+  this.jwtRefreshSecret = "super-secret-refresh-key";
+@@Auth.constructor.end
+
+@async @Auth.init{}: void
+@@Auth.init.code
+  await this.db.init();
+@@Auth.init.end
+
+@async @Auth.register{username: string, name: string, pass: string}: AuthResponse
+@@Auth.register.code
+  const hash = await bcrypt.hash(pass, 10);
+  try {
+    const result = await this.db.query(
+      "INSERT INTO users (username, name, password_hash) VALUES ($1, $2, $3) RETURNING id, username, name",
+      [username, name, hash]
+    );
+    const user = result.rows[0];
+    return this.generateTokens(user);
+  } catch (error) {
+    throw new Error("User registration failed (possibly duplicate username)");
+  }
+@@Auth.register.end
+
+@async @Auth.login{username: string, pass: string}: AuthResponse
+@@Auth.login.code
+  const result = await this.db.query("SELECT * FROM users WHERE username = $1", [username]);
+  if (result.rows.length === 0) {
+    throw new Error("User not found");
+  }
+  const userRow = result.rows[0];
+  const valid = await bcrypt.compare(pass, userRow.password_hash);
+  if (!valid) {
+    throw new Error("Invalid password");
+  }
+  
+  const user = { id: userRow.id, username: userRow.username, name: userRow.name };
+  return this.generateTokens(user);
+@@Auth.login.end
+
+@Auth.generateTokens{user: User}: AuthResponse
+@@Auth.generateTokens.code
+  const token = jwt.sign(user, this.jwtSecret, { expiresIn: "1h" });
+  const refreshToken = jwt.sign(user, this.jwtRefreshSecret, { expiresIn: "7d" });
+  return { token, refreshToken, user };
+@@Auth.generateTokens.end
+
+@Auth.refresh{refreshToken: string}: AuthResponse
+@@Auth.refresh.code
+  try {
+    // Note: The prompt asks for 10 minute refresh via the client. This endpoint verifies
+    // the long-lived refresh token and returns a fresh 1h token. The client can call this
+    // every 10 mins.
+    const decoded = jwt.verify(refreshToken, this.jwtRefreshSecret);
+    const user = { id: decoded.id, username: decoded.username, name: decoded.name };
+    return this.generateTokens(user);
+  } catch (err) {
+    throw new Error("Invalid or expired refresh token");
+  }
+@@Auth.refresh.end
+
+@Auth.verifyToken{token: string}: User
+@@Auth.verifyToken.code
+  try {
+    return jwt.verify(token, this.jwtSecret);
+  } catch (err) {
+    throw new Error("Invalid or expired token");
+  }
+@@Auth.verifyToken.end

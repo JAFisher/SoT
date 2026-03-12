@@ -1,0 +1,59 @@
+cliscripts->build_docker docker build -t twitter-db .
+cliscripts->start_docker docker run -p 5432:5432 twitter-db
+
+docker->start
+FROM postgres:latest
+ENV POSTGRES_PASSWORD=mysecretpassword
+EXPOSE 5432
+docker->end
+
+extern->pg from "pg"
+
+Database[Database.ts{pool: any}]
+
+@Database.constructor{}
+@@Database.constructor.code
+  this.pool = new pg.Pool({
+    user: 'postgres',
+    host: 'localhost',
+    database: 'postgres',
+    password: 'mysecretpassword',
+    port: 5432,
+  });
+@@Database.constructor.end
+
+@async @Database.init{}: void
+@@Database.init.code
+  await this.pool.query("CREATE TABLE IF NOT EXISTS users (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), username VARCHAR(255) UNIQUE NOT NULL, name VARCHAR(255) NOT NULL, password_hash VARCHAR(255) NOT NULL);");
+  await this.pool.query("CREATE TABLE IF NOT EXISTS messages (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), sender_username VARCHAR(255) NOT NULL, receiver_username VARCHAR(255) NOT NULL, content TEXT NOT NULL, timestamp BIGINT NOT NULL);");
+  console.log("Database initialized.");
+@@Database.init.end
+
+@async @Database.insertMessage{senderUsername: string, receiverUsername: string, content: string, timestamp: number}: any
+@@Database.insertMessage.code
+  const res = await this.pool.query(
+    "INSERT INTO messages (sender_username, receiver_username, content, timestamp) VALUES ($1, $2, $3, $4) RETURNING *",
+    [senderUsername, receiverUsername, content, timestamp]
+  );
+  return res.rows[0];
+@@Database.insertMessage.end
+
+@async @Database.getMessagesBetween{user1: string, user2: string}: any
+@@Database.getMessagesBetween.code
+  const res = await this.pool.query(
+    "SELECT * FROM messages WHERE (sender_username = $1 AND receiver_username = $2) OR (sender_username = $2 AND receiver_username = $1) ORDER BY timestamp ASC",
+    [user1, user2]
+  );
+  return res.rows.map(row => ({
+    id: row.id,
+    senderUsername: row.sender_username,
+    receiverUsername: row.receiver_username,
+    content: row.content,
+    timestamp: Number(row.timestamp)
+  }));
+@@Database.getMessagesBetween.end
+
+@async @Database.query{text: string, params: any}: any
+@@Database.query.code
+  return await this.pool.query(text, params);
+@@Database.query.end

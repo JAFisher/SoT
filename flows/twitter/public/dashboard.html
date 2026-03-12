@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitter Clone Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Home</h2>
+            <button id="logoutBtn" class="btn btn-outline" style="width: auto; padding: 6px 12px; font-size: 14px; margin: 0;">Log out</button>
+        </div>
+
+        <div id="app-box">
+            <div class="post-box">
+                <textarea id="tweetContent" placeholder="What is happening?!"></textarea>
+                <div class="post-actions">
+                    <button id="postBtn" class="btn btn-primary">Post</button>
+                </div>
+            </div>
+            
+            <div id="timeline"></div>
+        </div>
+
+    </div>
+
+    <script type="module">
+        import { TwitterApp } from './compiled.js';
+
+        window.app = new TwitterApp();
+        await window.app.init();
+
+        if (!window.app.auth.currentUser) {
+            window.location.href = 'login.html';
+        } else {
+            window.app.renderTimeline('timeline');
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            window.app.auth.logout();
+            window.location.href = 'login.html';
+        });
+
+        document.getElementById('postBtn').addEventListener('click', () => {
+            const content = document.getElementById('tweetContent').value;
+            if (content.trim() && window.app.auth.currentUser) {
+                window.app.postNewTweet(window.app.auth.currentUser.username, content);
+                window.app.renderTimeline('timeline');
+                document.getElementById('tweetContent').value = '';
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,32 @@
+include->authfe.flow
+
+type->Message {id: string, senderUsername: string, receiverUsername: string, content: string, timestamp: number}
+
+Messaging[Messaging.ts{messages: Array}]
+Messaging --> AuthFE
+
+@Messaging.constructor{}
+@@Messaging.constructor.code
+  this.messages = [];
+@@Messaging.constructor.end
+
+@Messaging.sendMessage{senderUsername: string, receiverUsername: string, content: string}: Message
+@@Messaging.sendMessage.code
+  const msg = {
+    id: Math.random().toString(36).substr(2, 9),
+    senderUsername,
+    receiverUsername,
+    content,
+    timestamp: Date.now()
+  };
+  this.messages.push(msg);
+  return msg;
+@@Messaging.sendMessage.end
+
+@Messaging.getMessagesBetween{user1: string, user2: string}: any
+@@Messaging.getMessagesBetween.code
+  return this.messages.filter(m => 
+    (m.senderUsername === user1 && m.receiverUsername === user2) ||
+    (m.senderUsername === user2 && m.receiverUsername === user1)
+  ).sort((a, b) => a.timestamp - b.timestamp);
+@@Messaging.getMessagesBetween.end

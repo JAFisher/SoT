@@ -1,0 +1,88 @@
+type->User {id: string, username: string, name: string}
+type->AuthResponse {token: string, refreshToken: string, user: User}
+
+AuthFE[AuthFE.ts{currentUser: any, token: string, refreshToken: string, serverURL: string}]
+
+@AuthFE.constructor{}
+@@AuthFE.constructor.code
+  this.serverURL = "http://localhost:8080";
+  try {
+    this.currentUser = JSON.parse(localStorage.getItem('currentUser')) || null;
+    this.token = localStorage.getItem('token') || "";
+    this.refreshToken = localStorage.getItem('refreshToken') || "";
+  } catch(e) {
+    this.currentUser = null;
+    this.token = "";
+    this.refreshToken = "";
+  }
+@@AuthFE.constructor.end
+
+@async @AuthFE.register{username: string, name: string, pass: string}: AuthResponse
+@@AuthFE.register.code
+  const res = await fetch(this.serverURL + "/api/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, name, pass })
+  });
+  if (!res.ok) throw new Error("Registration failed");
+  const data = await res.json();
+  this.currentUser = data.user;
+  this.token = data.token;
+  this.refreshToken = data.refreshToken;
+  localStorage.setItem('currentUser', JSON.stringify(data.user));
+  localStorage.setItem('token', data.token);
+  localStorage.setItem('refreshToken', data.refreshToken);
+  return data;
+@@AuthFE.register.end
+
+@async @AuthFE.login{username: string, pass: string}: AuthResponse
+@@AuthFE.login.code
+  const res = await fetch(this.serverURL + "/api/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, pass })
+  });
+  if (!res.ok) throw new Error("Login failed");
+  const data = await res.json();
+  this.currentUser = data.user;
+  this.token = data.token;
+  this.refreshToken = data.refreshToken;
+  localStorage.setItem('currentUser', JSON.stringify(data.user));
+  localStorage.setItem('token', data.token);
+  localStorage.setItem('refreshToken', data.refreshToken);
+  return data;
+@@AuthFE.login.end
+
+@async @AuthFE.refresh{}: AuthResponse
+@@AuthFE.refresh.code
+  if (!this.refreshToken) throw new Error("No refresh token available");
+  const res = await fetch(this.serverURL + "/api/refresh", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refreshToken: this.refreshToken })
+  });
+  if (!res.ok) throw new Error("Token refresh failed");
+  const data = await res.json();
+  this.currentUser = data.user;
+  this.token = data.token;
+  this.refreshToken = data.refreshToken; // update refresh token too if rotated
+  localStorage.setItem('currentUser', JSON.stringify(data.user));
+  localStorage.setItem('token', data.token);
+  localStorage.setItem('refreshToken', data.refreshToken);
+  return data;
+@@AuthFE.refresh.end
+
+@AuthFE.logout{}: void
+@@AuthFE.logout.code
+  this.currentUser = null;
+  this.token = "";
+  this.refreshToken = "";
+  localStorage.removeItem('currentUser');
+  localStorage.removeItem('token');
+  localStorage.removeItem('refreshToken');
+@@AuthFE.logout.end
+
+@AuthFE.getCurrentUser{}: any
+@@AuthFE.getCurrentUser.code
+  return this.currentUser;
+@@AuthFE.getCurrentUser.end

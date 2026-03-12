@@ -1,0 +1,94 @@
+include->auth.flow
+
+extern->http from "node:http"
+
+Server[Server.ts{port: number, auth: any}]
+Server --> Auth
+
+@Server.constructor{}
+@@Server.constructor.code
+  this.port = 8080;
+  this.auth = new Auth();
+@@Server.constructor.end
+
+@async @Server.start{}: void
+@@Server.start.code
+  await this.auth.init();
+
+  const server = http.createServer((req, res) => {
+    // CORS headers just in case we hit it cross-origin, though we assume same-domain right now
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, POST, GET');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+
+    if (req.method === 'POST' && req.url === '/api/register') {
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', async () => {
+        try {
+          const { username, name, pass } = JSON.parse(body);
+          const result = await this.auth.register(username, name, pass);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(result));
+        } catch (e) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: e.message }));
+        }
+      });
+      return;
+    }
+
+    if (req.method === 'POST' && req.url === '/api/login') {
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', async () => {
+        try {
+          const { username, pass } = JSON.parse(body);
+          const result = await this.auth.login(username, pass);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(result));
+        } catch (e) {
+          res.writeHead(401, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: e.message }));
+        }
+      });
+      return;
+    }
+
+    if (req.method === 'POST' && req.url === '/api/refresh') {
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', async () => {
+        try {
+          const { refreshToken } = JSON.parse(body);
+          const result = await this.auth.refresh(refreshToken);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(result));
+        } catch (e) {
+          res.writeHead(401, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: e.message }));
+        }
+      });
+      return;
+    }
+
+    // Default fallback
+    res.writeHead(404);
+    res.end();
+  });
+
+  server.listen(this.port, () => {
+    console.log("[BACKEND] Validating on port " + this.port);
+  });
+@@Server.start.end
+
+@async @@main.code
+  const server = new Server();
+  await server.start();
+@@main.end

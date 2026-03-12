@@ -56,6 +56,12 @@ async function build() {
                     console.log(`   Copied assets from ${assetsPath} to ${outPath}/assets`);
                 }
 
+                const publicPath = path.join(folderPath, "public");
+                if (existsSync(publicPath)) {
+                    cpSync(publicPath, path.join(outPath, "public"), { recursive: true });
+                    console.log(`   Copied public from ${publicPath} to ${outPath}/public`);
+                }
+
                 results.success.push(`${folderName}/${serviceName}`);
             } catch (err) {
                 console.error("❌ Failed to build " + serviceName + " in " + folderName + ": " + err.message);

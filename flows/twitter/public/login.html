@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitter Clone Logic</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div class="container auth-wrapper">
+        <div class="auth-box">
+            <div class="auth-logo">Mini Twitter</div>
+            <h3>Join today.</h3>
+            
+            <input type="text" id="username" class="input-field" placeholder="Username">
+            <input type="password" id="password" class="input-field" placeholder="Password">
+            
+            <button id="loginBtn" class="btn btn-primary">Log in</button>
+            <button id="registerBtn" class="btn btn-outline">Sign up</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { TwitterApp } from './compiled.js';
+
+        window.app = new TwitterApp();
+        await window.app.init();
+
+        if (window.app.auth.currentUser) {
+            window.location.href = 'dashboard.html';
+        }
+
+        document.getElementById('loginBtn').addEventListener('click', async () => {
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            if (user && pass) {
+                try {
+                    await window.app.auth.login(user, pass);
+                    window.location.href = 'dashboard.html';
+                } catch (e) {
+                    alert("Login failed: " + e.message);
+                }
+            }
+        });
+
+        document.getElementById('registerBtn').addEventListener('click', async () => {
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+            if (user && pass) {
+                try {
+                    await window.app.auth.register(user, user, pass);
+                    window.location.href = 'dashboard.html';
+                } catch (e) {
+                    alert("Registration failed: " + e.message);
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
