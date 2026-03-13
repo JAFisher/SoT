@@ -111,7 +111,7 @@ TwitterApp --> Messaging
     const followBtn = (!isSelf && currentUser) ? 
       "<button class=\"tweet-btn follow-btn\" id=\"twitter-follow-" + t.authorUsername + "\" onclick=\"window.app.toggleFollow('" + t.authorUsername + "', " + (t.authorFollowerCount || 0) + ")\">" + (isFollowing ? "Unfollow" : "Follow") + "</button>" : "";
 
-    const highlightedContent = t.content.replace(/#(\w+)/g, '<span class="hashtag">#$1</span>');
+    const highlightedContent = t.content.replace(/#(\w+)/g, '<span class="hashtag" onclick="event.stopPropagation(); window.app.showHashtagTimeline(\'$1\')">#$1</span>');
 
     return "<div class=\"tweet\" id=\"tweet-instance-" + instanceId + "\">" +
     "<div class=\"tweet-header\">" +
@@ -150,7 +150,7 @@ TwitterApp --> Messaging
     const avatarHtml = "<img src=\"" + avatarUrl + "\" class=\"tweet-avatar\">";
     const imageHtml = r.imageUrl ? "<div class=\"tweet-image-container\"><img src=\"" + r.imageUrl + "\" class=\"tweet-image\"></div>" : "";
 
-    const highlightedContent = r.content.replace(/#(\w+)/g, '<span class="hashtag">#$1</span>');
+    const highlightedContent = r.content.replace(/#(\w+)/g, '<span class="hashtag" onclick="event.stopPropagation(); window.app.showHashtagTimeline(\'$1\')">#$1</span>');
 
     return "<div class=\"reply\" id=\"tweet-instance-" + rInstanceId + "\">" +
     "<div class=\"reply-header\"><div class=\"reply-header-info\">" + avatarHtml + "<span>@" + r.sender_username + "</span></div></div>" +
@@ -165,6 +165,65 @@ TwitterApp --> Messaging
     "<div id=\"replies-instance-" + rInstanceId + "\" class=\"replies-container\" style=\"display: none;\"></div>" +
   "</div>";
 @@TwitterApp.renderSingleReply.end
+
+@async @TwitterApp.showHashtagTimeline{tag: string}: void
+@@TwitterApp.showHashtagTimeline.code
+  this.currentTag = tag;
+  this.tweetsOffset = 0;
+  const container = document.getElementById('timeline');
+  if (container) {
+    container.innerHTML = '<h2>#' + tag + '</h2><div id="hashtag-timeline-content"></div>';
+    await this.loadHashtagTimeline(tag, false);
+    
+    // Update Load More button behavior
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+    if (loadMoreBtn) {
+       loadMoreBtn.onclick = () => window.app.loadHashtagTimeline(tag, true);
+    }
+  }
+@@TwitterApp.showHashtagTimeline.end
+
+@async @TwitterApp.loadHashtagTimeline{tag: string, append: boolean}: void
+@@TwitterApp.loadHashtagTimeline.code
+  const container = document.getElementById('hashtag-timeline-content');
+  if (!container) return;
+  
+  if (!append) {
+    this.tweetsOffset = 0;
+    container.innerHTML = '';
+  }
+  
+  const tweets = await this.feed.getHashtagFeed(tag, this.tweetsLimit, this.tweetsOffset);
+  
+  if (tweets.length === 0) {
+    if (!append) {
+      container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">No tweets found for #' + tag + '</div>';
+    } else {
+      this.showToast("No more tweets to load", "info");
+      const loadMoreBtn = document.getElementById('loadMoreBtn');
+      if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+    }
+    return;
+  }
+  
+  let html = '';
+  tweets.forEach(t => {
+    html += this.renderSingleTweet(t);
+  });
+  
+  if (append) {
+    container.innerHTML += html;
+  } else {
+    container.innerHTML = html;
+  }
+  
+  this.tweetsOffset += tweets.length;
+  
+  const loadMoreBtn = document.getElementById('loadMoreBtn');
+  if (loadMoreBtn) {
+    loadMoreBtn.style.display = tweets.length < this.tweetsLimit ? 'none' : 'block';
+  }
+@@TwitterApp.loadHashtagTimeline.end
 
 @async @TwitterApp.toggleReplies{tweetId: string, instanceId: number}: void
 @@TwitterApp.toggleReplies.code

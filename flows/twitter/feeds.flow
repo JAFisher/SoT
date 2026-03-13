@@ -73,6 +73,14 @@ Feed --> AuthFE
   const res = await fetch("http://localhost:8080/api/tweets?limit=" + l + "&offset=" + o);
   return await res.json();
 @@Feed.getTimeline.end
+ 
+ @async @Feed.getHashtagFeed{tag: string, limit: number, offset: number}: any
+ @@Feed.getHashtagFeed.code
+   const l = limit || 10;
+   const o = offset || 0;
+   const res = await fetch("http://localhost:8080/api/tweets/hashtag?tag=" + encodeURIComponent(tag) + "&limit=" + l + "&offset=" + o);
+   return await res.json();
+ @@Feed.getHashtagFeed.end
 
 @async @Feed.getUserTweets{username: string}: any
 @@Feed.getUserTweets.code

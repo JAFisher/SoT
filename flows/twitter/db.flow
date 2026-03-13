@@ -32,6 +32,7 @@ Database[Database.ts{pool: any}]
   await this.pool.query("CREATE TABLE IF NOT EXISTS likes ( id SERIAL PRIMARY KEY, message_id UUID NOT NULL REFERENCES messages(id), username VARCHAR(255) NOT NULL, UNIQUE(message_id, username));");
   await this.pool.query("CREATE TABLE IF NOT EXISTS follows (follower_username VARCHAR(255) NOT NULL, following_username VARCHAR(255) NOT NULL, UNIQUE(follower_username, following_username));");
   await this.pool.query("CREATE TABLE IF NOT EXISTS hashtags (tag VARCHAR(255) NOT NULL, message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE, PRIMARY KEY (tag, message_id));");
+  await this.pool.query("UPDATE hashtags SET tag = SUBSTR(tag, 2) WHERE tag LIKE '#%';");
   console.log("Database initialized.");
 @@Database.init.end
 
@@ -49,10 +50,11 @@ Database[Database.ts{pool: any}]
     // Extract hashtags
     const hashtags = content.match(/#(\w+)/g);
     if (hashtags) {
-      for (const tag of hashtags) {
+      for (const t of hashtags) {
+        const tag = t.substring(1).toLowerCase();
         await client.query(
           "INSERT INTO hashtags (tag, message_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
-          [tag.toLowerCase(), message.id]
+          [tag, message.id]
         );
       }
     }
@@ -187,11 +189,13 @@ Database[Database.ts{pool: any}]
     
     // 5. Create hashtags for retweet
     const hashtags = origRow.content.match(/#(\w+)/g);
+    const retweetRow = retweet.rows[0];
     if (hashtags) {
-      for (const tag of hashtags) {
+      for (const t of hashtags) {
+        const tag = t.substring(1).toLowerCase();
         await client.query(
           "INSERT INTO hashtags (tag, message_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
-          [tag.toLowerCase(), row.id]
+          [tag, retweetRow.id]
         );
       }
     }
@@ -247,8 +251,39 @@ Database[Database.ts{pool: any}]
   }));
 @@Database.getReplies.end
 
-@async @Database.followUser{follower: string, following: string}: void
-@@Database.followUser.code
+@async @Database.getMessagesByHashtag{tag: string, limit: number, offset: number}: any
+@@Database.getMessagesByHashtag.code
+  const l = limit || 10;
+  const o = offset || 0;
+  const res = await this.pool.query(
+    "SELECT m1.*, m2.sender_username as retweeted_author, u1.avatar_url as author_avatar, u1.follower_count as author_follower_count, " +
+    "(SELECT COUNT(*) FROM messages m3 WHERE m3.replied_to_id = m1.id) as reply_count " +
+    "FROM messages m1 " +
+    "JOIN hashtags h ON m1.id = h.message_id " +
+    "LEFT JOIN messages m2 ON m1.retweeted_id = m2.id " +
+    "LEFT JOIN users u1 ON m1.sender_username = u1.username " +
+    "WHERE h.tag = $1 AND m1.receiver_username = '' " +
+    "ORDER BY m1.timestamp DESC " +
+    "LIMIT $2 OFFSET $3",
+    [tag.toLowerCase(), l, o]
+  );
+  return res.rows.map(row => ({
+    id: row.id,
+    authorUsername: row.sender_username,
+    authorAvatar: row.author_avatar,
+    authorFollowerCount: row.author_follower_count || 0,
+    content: row.content,
+    timestamp: Number(row.timestamp),
+    repliedToId: row.replied_to_id,
+    retweetedId: row.retweeted_id,
+    retweetedAuthor: row.retweeted_author,
+    likedCount: row.liked_count,
+    retweetCount: row.retweet_count,
+    repliesCount: Number(row.reply_count),
+    imageUrl: row.image_url
+  }));
+@@Database.getMessagesByHashtag.end
+@async @@Database.followUser.code
   const client = await this.pool.connect();
   try {
     await client.query('BEGIN');

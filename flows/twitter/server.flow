@@ -77,6 +77,26 @@ Server --> Auth
       return;
     }
 
+    if (req.method === 'GET' && req.url.startsWith('/api/tweets/hashtag')) {
+      const url = new URL(req.url, "http://" + req.headers.host);
+      const tag = url.searchParams.get('tag');
+      const limit = parseInt(url.searchParams.get('limit') || '25');
+      const offset = parseInt(url.searchParams.get('offset') || '0');
+      if (!tag) {
+        res.writeHead(400); res.end(JSON.stringify({ error: "Missing tag" }));
+        return;
+      }
+      try {
+        const tweets = await this.auth.db.getMessagesByHashtag(tag, limit, offset);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(tweets));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+      return;
+    }
+
     if (req.method === 'GET' && req.url.startsWith('/api/tweets')) {
       const url = new URL(req.url, "http://" + req.headers.host);
       const limit = parseInt(url.searchParams.get('limit') || '25');
