@@ -111,6 +111,8 @@ TwitterApp --> Messaging
     const followBtn = (!isSelf && currentUser) ? 
       "<button class=\"tweet-btn follow-btn\" id=\"twitter-follow-" + t.authorUsername + "\" onclick=\"window.app.toggleFollow('" + t.authorUsername + "', " + (t.authorFollowerCount || 0) + ")\">" + (isFollowing ? "Unfollow" : "Follow") + "</button>" : "";
 
+    const highlightedContent = t.content.replace(/#(\w+)/g, '<span class="hashtag">#$1</span>');
+
     return "<div class=\"tweet\" id=\"tweet-instance-" + instanceId + "\">" +
     "<div class=\"tweet-header\">" +
     avatarHtml +
@@ -124,7 +126,7 @@ TwitterApp --> Messaging
     "</div>" +
     followBtn +
     "</div>" +
-    "<div class=\"tweet-content\">" + t.content + "</div>" +
+    "<div class=\"tweet-content\">" + highlightedContent + "</div>" +
     imageHtml +
     "<div class=\"tweet-footer\">" +
         "<button class=\"tweet-btn reply-btn\" onclick=\"window.app.startReply('" + t.id + "', '" + t.authorUsername + "', " + instanceId + ")\">💬 " + (t.repliesCount || 0) + "</button>" +
@@ -148,9 +150,11 @@ TwitterApp --> Messaging
     const avatarHtml = "<img src=\"" + avatarUrl + "\" class=\"tweet-avatar\">";
     const imageHtml = r.imageUrl ? "<div class=\"tweet-image-container\"><img src=\"" + r.imageUrl + "\" class=\"tweet-image\"></div>" : "";
 
+    const highlightedContent = r.content.replace(/#(\w+)/g, '<span class="hashtag">#$1</span>');
+
     return "<div class=\"reply\" id=\"tweet-instance-" + rInstanceId + "\">" +
     "<div class=\"reply-header\"><div class=\"reply-header-info\">" + avatarHtml + "<span>@" + r.sender_username + "</span></div></div>" +
-    "<div class=\"reply-content\">" + r.content + "</div>" +
+    "<div class=\"reply-content\">" + highlightedContent + "</div>" +
     imageHtml +
     "<div class=\"reply-footer\">" +
       "<button class=\"tweet-btn reply-btn btn-compact\" onclick=\"window.app.startReply('" + r.id + "', '" + r.sender_username + "', " + rInstanceId + ")\">💬 " + (r.repliesCount || 0) + "</button>" +

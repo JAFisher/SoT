@@ -534,6 +534,16 @@ h4 {
     opacity: 0.9;
 }
 
+.hashtag {
+    color: var(--accent-color);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.hashtag:hover {
+    text-decoration: underline;
+}
+
 .reply-header-info {
     display: flex;
     align-items: center;
