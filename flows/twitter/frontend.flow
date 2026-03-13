@@ -172,7 +172,13 @@ TwitterApp --> Messaging
   this.tweetsOffset = 0;
   const container = document.getElementById('timeline');
   if (container) {
-    container.innerHTML = '<h2>#' + tag + '</h2><div id="hashtag-timeline-content"></div>';
+    container.innerHTML = 
+      "<div class=\"trend-header\">" +
+        "<span>Watching trends: <span class=\"trend-tag\">#" + tag + "</span></span>" +
+        "<button class=\"tweet-btn back-btn\" onclick=\"window.app.goBackToTimeline()\">Go back to timeline</button>" +
+      "</div>" +
+      "<div id=\"hashtag-timeline-content\"></div>";
+    
     await this.loadHashtagTimeline(tag, false);
     
     // Update Load More button behavior
@@ -182,6 +188,22 @@ TwitterApp --> Messaging
     }
   }
 @@TwitterApp.showHashtagTimeline.end
+
+@async @TwitterApp.goBackToTimeline{}: void
+@@TwitterApp.goBackToTimeline.code
+  this.currentTag = null;
+  this.tweetsOffset = 0;
+  const container = document.getElementById('timeline');
+  if (container) {
+    container.innerHTML = '';
+    // Re-bind loadMoreBtn to default
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+    if (loadMoreBtn) {
+       loadMoreBtn.onclick = () => window.app.loadMore('timeline');
+    }
+    await this.renderTimeline('timeline');
+  }
+@@TwitterApp.goBackToTimeline.end
 
 @async @TwitterApp.loadHashtagTimeline{tag: string, append: boolean}: void
 @@TwitterApp.loadHashtagTimeline.code

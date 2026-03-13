@@ -32,7 +32,6 @@ Database[Database.ts{pool: any}]
   await this.pool.query("CREATE TABLE IF NOT EXISTS likes ( id SERIAL PRIMARY KEY, message_id UUID NOT NULL REFERENCES messages(id), username VARCHAR(255) NOT NULL, UNIQUE(message_id, username));");
   await this.pool.query("CREATE TABLE IF NOT EXISTS follows (follower_username VARCHAR(255) NOT NULL, following_username VARCHAR(255) NOT NULL, UNIQUE(follower_username, following_username));");
   await this.pool.query("CREATE TABLE IF NOT EXISTS hashtags (tag VARCHAR(255) NOT NULL, message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE, PRIMARY KEY (tag, message_id));");
-  await this.pool.query("UPDATE hashtags SET tag = SUBSTR(tag, 2) WHERE tag LIKE '#%';");
   console.log("Database initialized.");
 @@Database.init.end
 

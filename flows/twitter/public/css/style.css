@@ -544,6 +544,37 @@ h4 {
     text-decoration: underline;
 }
 
+.trend-header {
+    background-color: var(--surface-color);
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    margin-bottom: 12px;
+}
+
+.trend-header span {
+    font-size: 18px;
+    color: var(--text-secondary);
+}
+
+.trend-tag {
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+.back-btn {
+    background-color: transparent;
+    border: 1px solid var(--accent-color);
+    color: var(--accent-color);
+}
+
+.back-btn:hover {
+    background-color: rgba(29, 161, 242, 0.1);
+}
+
 .reply-header-info {
     display: flex;
     align-items: center;
