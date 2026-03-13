@@ -15,6 +15,10 @@
                 <img id="sidebar-avatar" src="https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png" class="profile-avatar-sm">
                 <div class="profile-info">
                     <span id="header-name" style="font-weight: bold;"></span>
+                    <div class="user-stats">
+                        <span><b id="header-following-count">0</b> Following</span>
+                        <span><b id="header-followers-count">0</b> Followers</span>
+                    </div>
                     <button id="updateAvatarBtn" class="btn-text">Update Avatar</button>
                     <input type="file" id="avatarInput" accept="image/png, image/jpeg" style="display: none;">
                 </div>
@@ -57,6 +61,8 @@
             window.location.href = 'login.html';
         } else {
             document.getElementById('header-name').innerText = window.app.auth.currentUser.name || window.app.auth.currentUser.username;
+            document.getElementById('header-following-count').innerText = window.app.auth.currentUser.followingCount || 0;
+            document.getElementById('header-followers-count').innerText = window.app.auth.currentUser.followerCount || 0;
             const user = window.app.auth.getCurrentUser();
             if (user && user.avatarUrl) {
                 document.getElementById('sidebar-avatar').src = user.avatarUrl;

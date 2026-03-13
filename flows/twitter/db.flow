@@ -26,8 +26,11 @@ Database[Database.ts{pool: any}]
 @@Database.init.code
 
   await this.pool.query("CREATE TABLE IF NOT EXISTS users (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), username VARCHAR(255) UNIQUE NOT NULL, name VARCHAR(255) NOT NULL, password_hash VARCHAR(255) NOT NULL, avatar_url TEXT);");
+  await this.pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS follower_count INT DEFAULT 0;");
+  await this.pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS following_count INT DEFAULT 0;");
   await this.pool.query("CREATE TABLE IF NOT EXISTS messages (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), sender_username VARCHAR(255) NOT NULL, receiver_username VARCHAR(255) NOT NULL,content TEXT NOT NULL,timestamp BIGINT NOT NULL,replied_to_id UUID,retweeted_id UUID,liked_count INT DEFAULT 0, retweet_count INT DEFAULT 0, image_url TEXT);");
   await this.pool.query("CREATE TABLE IF NOT EXISTS likes ( id SERIAL PRIMARY KEY, message_id UUID NOT NULL REFERENCES messages(id), username VARCHAR(255) NOT NULL, UNIQUE(message_id, username));");
+  await this.pool.query("CREATE TABLE IF NOT EXISTS follows (follower_username VARCHAR(255) NOT NULL, following_username VARCHAR(255) NOT NULL, UNIQUE(follower_username, following_username));");
   console.log("Database initialized.");
 @@Database.init.end
 
@@ -64,7 +67,7 @@ Database[Database.ts{pool: any}]
   const l = limit || 10;
   const o = offset || 0;
   const res = await this.pool.query(
-    "SELECT m1.*, m2.sender_username as retweeted_author, u1.avatar_url as author_avatar, " +
+    "SELECT m1.*, m2.sender_username as retweeted_author, u1.avatar_url as author_avatar, u1.follower_count as author_follower_count, " +
     "(SELECT COUNT(*) FROM messages m3 WHERE m3.replied_to_id = m1.id) as reply_count " +
     "FROM messages m1 " +
     "LEFT JOIN messages m2 ON m1.retweeted_id = m2.id " +
@@ -78,6 +81,7 @@ Database[Database.ts{pool: any}]
     id: row.id,
     authorUsername: row.sender_username,
     authorAvatar: row.author_avatar,
+    authorFollowerCount: row.author_follower_count || 0,
     content: row.content,
     timestamp: Number(row.timestamp),
     repliedToId: row.replied_to_id,
@@ -207,6 +211,60 @@ Database[Database.ts{pool: any}]
     imageUrl: row.image_url
   }));
 @@Database.getReplies.end
+
+@async @Database.followUser{follower: string, following: string}: void
+@@Database.followUser.code
+  const client = await this.pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('INSERT INTO follows (follower_username, following_username) VALUES ($1, $2)', [follower, following]);
+    await client.query('UPDATE users SET follower_count = follower_count + 1 WHERE username = $1', [following]);
+    await client.query('UPDATE users SET following_count = following_count + 1 WHERE username = $1', [follower]);
+    await client.query('COMMIT');
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+@@Database.followUser.end
+
+@async @Database.unfollowUser{follower: string, following: string}: void
+@@Database.unfollowUser.code
+  const client = await this.pool.connect();
+  try {
+    await client.query('BEGIN');
+    const res = await client.query('DELETE FROM follows WHERE follower_username = $1 AND following_username = $2', [follower, following]);
+    if (res.rowCount > 0) {
+      await client.query('UPDATE users SET follower_count = GREATEST(0, follower_count - 1) WHERE username = $1', [following]);
+      await client.query('UPDATE users SET following_count = GREATEST(0, following_count - 1) WHERE username = $1', [follower]);
+    }
+    await client.query('COMMIT');
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+@@Database.unfollowUser.end
+
+@async @Database.isFollowing{follower: string, following: string}: boolean
+@@Database.isFollowing.code
+  const res = await this.pool.query('SELECT 1 FROM follows WHERE follower_username = $1 AND following_username = $2', [follower, following]);
+  return res.rows.length > 0;
+@@Database.isFollowing.end
+
+@async @Database.getFollowing{username: string}: string[]
+@@Database.getFollowing.code
+  const res = await this.pool.query('SELECT following_username FROM follows WHERE follower_username = $1', [username]);
+  return res.rows.map(row => row.following_username);
+@@Database.getFollowing.end
+
+@async @Database.getUser{username: string}: any
+@@Database.getUser.code
+  const res = await this.pool.query("SELECT * FROM users WHERE username = $1", [username]);
+  return res.rows[0] || null;
+@@Database.getUser.end
 
 @async @Database.updateUserAvatar{username: string, avatarUrl: string}: void
 @@Database.updateUserAvatar.code

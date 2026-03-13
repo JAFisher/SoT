@@ -105,3 +105,41 @@ Feed --> AuthFE
   }
   return await response.json();
 @@Feed.uploadImage.end
+@async @Feed.followUser{username: string}: any
+@@Feed.followUser.code
+  const response = await fetch("http://localhost:8080/api/follow", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + window.app.auth.token
+    },
+    body: JSON.stringify({ username })
+  });
+  if (!response.ok) throw new Error("Failed to follow");
+  return await response.json();
+@@Feed.followUser.end
+
+@async @Feed.unfollowUser{username: string}: any
+@@Feed.unfollowUser.code
+  const response = await fetch("http://localhost:8080/api/unfollow", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + window.app.auth.token
+    },
+    body: JSON.stringify({ username })
+  });
+  if (!response.ok) throw new Error("Failed to unfollow");
+  return await response.json();
+@@Feed.unfollowUser.end
+
+@async @Feed.getFollowing{}: any
+@@Feed.getFollowing.code
+  const response = await fetch("http://localhost:8080/api/following", {
+    headers: {
+      "Authorization": "Bearer " + window.app.auth.token
+    }
+  });
+  if (!response.ok) throw new Error("Failed to fetch following list");
+  return await response.json();
+@@Feed.getFollowing.end

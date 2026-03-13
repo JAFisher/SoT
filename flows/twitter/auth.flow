@@ -2,7 +2,7 @@ include->db.flow
 extern->jwt from "jsonwebtoken"
 extern->bcrypt from "bcrypt"
 
-type->User {id: string, username: string, name: string, avatarUrl: string}
+type->User {id: string, username: string, name: string, avatarUrl: string, followerCount: number, followingCount: number}
 type->AuthResponse {token: string, refreshToken: string, user: User}
 
 Auth[Auth.ts{db: any, jwtSecret: string, jwtRefreshSecret: string}]
@@ -25,11 +25,11 @@ Auth --> Database
   const hash = await bcrypt.hash(pass, 10);
   try {
     const result = await this.db.query(
-      "INSERT INTO users (username, name, password_hash) VALUES ($1, $2, $3) RETURNING id, username, name, avatar_url",
+      "INSERT INTO users (username, name, password_hash) VALUES ($1, $2, $3) RETURNING id, username, name, avatar_url, follower_count, following_count",
       [username, name, hash]
     );
     const row = result.rows[0];
-    const user = { id: row.id, username: row.username, name: row.name, avatarUrl: row.avatar_url };
+    const user = { id: row.id, username: row.username, name: row.name, avatarUrl: row.avatar_url, followerCount: row.follower_count || 0, followingCount: row.following_count || 0 };
     return this.generateTokens(user);
   } catch (error) {
     throw new Error("User registration failed (possibly duplicate username)");
@@ -48,7 +48,7 @@ Auth --> Database
     throw new Error("Invalid password");
   }
   
-  const user = { id: userRow.id, username: userRow.username, name: userRow.name, avatarUrl: userRow.avatar_url };
+  const user = { id: userRow.id, username: userRow.username, name: userRow.name, avatarUrl: userRow.avatar_url, followerCount: userRow.follower_count || 0, followingCount: userRow.following_count || 0 };
   return this.generateTokens(user);
 @@Auth.login.end
 
@@ -66,7 +66,7 @@ Auth --> Database
     // the long-lived refresh token and returns a fresh 1h token. The client can call this
     // every 10 mins.
     const decoded = jwt.verify(refreshToken, this.jwtRefreshSecret);
-    const user = { id: decoded.id, username: decoded.username, name: decoded.name, avatarUrl: decoded.avatarUrl };
+    const user = { id: decoded.id, username: decoded.username, name: decoded.name, avatarUrl: decoded.avatarUrl, followerCount: decoded.followerCount || 0, followingCount: decoded.followingCount || 0 };
     return this.generateTokens(user);
   } catch (err) {
     throw new Error("Invalid or expired refresh token");
