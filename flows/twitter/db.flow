@@ -378,6 +378,24 @@ Database[Database.ts{pool: any}]
   await this.pool.query("UPDATE users SET avatar_url = $1 WHERE username = $2", [avatarUrl, username]);
 @@Database.updateUserAvatar.end
 
+@async @Database.getTrendingHashtags{last24HoursMs: number, limit: number}: any
+@@Database.getTrendingHashtags.code
+  const res = await this.pool.query(
+    "SELECT h.tag, COUNT(*) as count " +
+    "FROM hashtags h " +
+    "JOIN messages m ON h.message_id = m.id " +
+    "WHERE m.timestamp > $1 " +
+    "GROUP BY h.tag " +
+    "ORDER BY count DESC " +
+    "LIMIT $2",
+    [last24HoursMs, limit || 10]
+  );
+  return res.rows.map(row => ({
+    tag: row.tag,
+    count: Number(row.count)
+  }));
+@@Database.getTrendingHashtags.end
+
 @async @Database.query{text: string, params: any}: any
 @@Database.query.code
   return await this.pool.query(text, params);

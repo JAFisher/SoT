@@ -34,6 +34,12 @@ TwitterApp --> Messaging
   }
 
   if (this.auth.token) {
+    try {
+      await this.auth.refresh();
+    } catch (e) {
+      console.warn("Session expired or refresh failed:", e);
+      // Optional: redirect to login if refresh fails
+    }
     await this.fetchFollowing();
   }
 @@TwitterApp.init.end
@@ -87,6 +93,34 @@ TwitterApp --> Messaging
     if (!res.ok) throw new Error("User not found");
     return await res.json();
 @@TwitterApp.getUserInfo.end
+
+  @async @TwitterApp.renderTrending{containerId: string}: void
+  @@TwitterApp.renderTrending.code
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    try {
+      const trending = await this.feed.getTrending();
+      if (!trending || trending.length === 0) {
+        container.style.display = 'none';
+        return;
+      }
+
+      container.style.display = 'block';
+      let html = "<h3>Trends for you</h3>";
+      trending.forEach(t => {
+        html += 
+          "<div class='trending-item' onclick='window.app.showHashtagTimeline(\"" + t.tag + "\")'>" +
+            "<div class='trending-tag'>#" + t.tag + "</div>" +
+            "<div class='trending-count'>" + t.count + " Tweets</div>" +
+          "</div>";
+      });
+      container.innerHTML = html;
+    } catch (e) {
+      console.error("Failed to render trending:", e);
+      container.style.display = 'none';
+    }
+  @@TwitterApp.renderTrending.end
 
 @async @TwitterApp.loadTimeline{containerId: string, append: boolean}: void
 @@TwitterApp.loadTimeline.code
@@ -232,6 +266,9 @@ TwitterApp --> Messaging
     if (loadMoreBtn) {
        loadMoreBtn.onclick = () => window.app.loadHashtagTimeline(tag, true);
     }
+  } else {
+    // If not on dashboard, redirect to dashboard with hashtag param
+    window.location.href = 'dashboard.html?hashtag=' + encodeURIComponent(tag);
   }
 @@TwitterApp.showHashtagTimeline.end
 

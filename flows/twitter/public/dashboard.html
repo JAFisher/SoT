@@ -9,51 +9,56 @@
 </head>
 
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="profile-section">
-                <a id="profile-avatar-link" href="#"><img id="sidebar-avatar" src="http://localhost:8080/images/userprofiledefault.png"
-                    class="profile-avatar-sm"></a>
-                <div class="profile-info">
-                    <a id="profile-name-link" href="#" style="text-decoration: none; color: inherit;"><span id="header-name" style="font-weight: bold;"></span></a>
-                    <div class="user-stats">
-                        <span><b id="header-following-count">0</b> Following</span>
-                        <span><b id="header-followers-count">0</b> Followers</span>
+    <div class="layout-wrapper">
+        <div class="container">
+            <div class="header">
+                <div class="profile-section">
+                    <a id="profile-avatar-link" href="#"><img id="sidebar-avatar" src="http://localhost:8080/images/userprofiledefault.png"
+                        class="profile-avatar-sm"></a>
+                    <div class="profile-info">
+                        <a id="profile-name-link" href="#" style="text-decoration: none; color: inherit;"><span id="header-name" style="font-weight: bold;"></span></a>
+                        <div class="user-stats">
+                            <span><b id="header-following-count">0</b> Following</span>
+                            <span><b id="header-followers-count">0</b> Followers</span>
+                        </div>
+                        <button id="updateAvatarBtn" class="btn-text">Update Avatar</button>
+                        <input type="file" id="avatarInput" accept="image/png, image/jpeg" style="display: none;">
                     </div>
-                    <button id="updateAvatarBtn" class="btn-text">Update Avatar</button>
-                    <input type="file" id="avatarInput" accept="image/png, image/jpeg" style="display: none;">
+                </div>
+                <button id="logoutBtn" class="btn btn-outline"
+                    style="width: auto; padding: 6px 12px; font-size: 14px; margin: 0;">Log out</button>
+            </div>
+
+            <div id="app-box">
+                <div class="post-box">
+                    <div id="replyLabel"
+                        style="display: none; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;"></div>
+                    <textarea id="tweetContent" placeholder="What is happening?!" maxlength="300"></textarea>
+                    <div id="imagePreview" style="display: none; margin-bottom: 10px; position: relative;">
+                        <img id="previewImg" src="" style="max-width: 100%; border-radius: var(--radius-md);">
+                        <button id="removeImgBtn" class="btn"
+                            style="position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border-radius: 50%; padding: 0; background: rgba(0,0,0,0.6); color: white;">✕</button>
+                    </div>
+                    <div class="post-actions">
+                        <input type="file" id="imgInput" accept="image/png, image/jpeg" style="display: none;">
+                        <button id="addImgBtn" class="btn btn-outline"
+                            style="width: auto; padding: 6px 12px; margin-right: 10px;">🖼️ Image</button>
+                        <div id="charCount" class="char-counter">0 / 300</div>
+                        <button id="postBtn" class="btn btn-primary">Post</button>
+                    </div>
+                </div>
+                <h3 class="timeline-header">Timeline</h3>
+                <div id="timeline"></div>
+                <div class="load-more-container">
+                    <button id="loadMoreBtn" class="btn btn-outline" style="display: none;"
+                        onclick="window.app.loadMore('timeline')">Load More</button>
                 </div>
             </div>
-            <button id="logoutBtn" class="btn btn-outline"
-                style="width: auto; padding: 6px 12px; font-size: 14px; margin: 0;">Log out</button>
         </div>
 
-        <div id="app-box">
-            <div class="post-box">
-                <div id="replyLabel"
-                    style="display: none; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;"></div>
-                <textarea id="tweetContent" placeholder="What is happening?!" maxlength="300"></textarea>
-                <div id="imagePreview" style="display: none; margin-bottom: 10px; position: relative;">
-                    <img id="previewImg" src="" style="max-width: 100%; border-radius: var(--radius-md);">
-                    <button id="removeImgBtn" class="btn"
-                        style="position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border-radius: 50%; padding: 0; background: rgba(0,0,0,0.6); color: white;">✕</button>
-                </div>
-                <div class="post-actions">
-                    <input type="file" id="imgInput" accept="image/png, image/jpeg" style="display: none;">
-                    <button id="addImgBtn" class="btn btn-outline"
-                        style="width: auto; padding: 6px 12px; margin-right: 10px;">🖼️ Image</button>
-                    <div id="charCount" class="char-counter">0 / 300</div>
-                    <button id="postBtn" class="btn btn-primary">Post</button>
-                </div>
-            </div>
-            <h3 class="timeline-header">Timeline</h3>
-            <div id="timeline"></div>
-            <div class="load-more-container">
-                <button id="loadMoreBtn" class="btn btn-outline" style="display: none;"
-                    onclick="window.app.loadMore('timeline')">Load More</button>
-            </div>
+        <div class="right-sidebar">
+            <div id="trending-container" class="trending-box"></div>
         </div>
-
     </div>
 
     <script type="module">
@@ -91,6 +96,13 @@
                 document.getElementById('sidebar-avatar').src = user.avatarUrl;
             }
             await window.app.renderTimeline('timeline');
+            await window.app.renderTrending('trending-container');
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const tag = urlParams.get('hashtag');
+            if (tag) {
+                await window.app.showHashtagTimeline(tag);
+            }
         }
 
         document.getElementById('logoutBtn').addEventListener('click', () => {

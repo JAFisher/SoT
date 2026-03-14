@@ -151,3 +151,9 @@ Feed --> AuthFE
   if (!response.ok) throw new Error("Failed to fetch following list");
   return await response.json();
 @@Feed.getFollowing.end
+@async @Feed.getTrending{}: any
+@@Feed.getTrending.code
+  const response = await fetch("http://localhost:8080/api/trending");
+  if (!response.ok) throw new Error("Failed to fetch trending tags");
+  return await response.json();
+@@Feed.getTrending.end
