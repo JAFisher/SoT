@@ -39,6 +39,9 @@ Database[Database.ts{pool: any}]
 
 @async @Database.insertMessage{senderUsername: string, receiverUsername: string, content: string, timestamp: number, repliedToId: string, retweetedId: string, imageUrl: string}: any
 @@Database.insertMessage.code
+  if (content && content.length > 300) {
+    throw new Error("Message content exceeds 300 characters");
+  }
   const client = await this.pool.connect();
   try {
     await client.query('BEGIN');

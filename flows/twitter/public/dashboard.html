@@ -31,7 +31,7 @@
             <div class="post-box">
                 <div id="replyLabel"
                     style="display: none; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;"></div>
-                <textarea id="tweetContent" placeholder="What is happening?!"></textarea>
+                <textarea id="tweetContent" placeholder="What is happening?!" maxlength="300"></textarea>
                 <div id="imagePreview" style="display: none; margin-bottom: 10px; position: relative;">
                     <img id="previewImg" src="" style="max-width: 100%; border-radius: var(--radius-md);">
                     <button id="removeImgBtn" class="btn" style="position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border-radius: 50%; padding: 0; background: rgba(0,0,0,0.6); color: white;">✕</button>
@@ -39,6 +39,7 @@
                 <div class="post-actions">
                     <input type="file" id="imgInput" accept="image/png, image/jpeg" style="display: none;">
                     <button id="addImgBtn" class="btn btn-outline" style="width: auto; padding: 6px 12px; margin-right: 10px;">🖼️ Image</button>
+                    <div id="charCount" class="char-counter">0 / 300</div>
                     <button id="postBtn" class="btn btn-primary">Post</button>
                 </div>
             </div>
@@ -121,8 +122,21 @@
             document.getElementById('imagePreview').style.display = 'none';
         });
 
+        // --- Post Button & Character Limit Logic ---
+        const box = document.getElementById('tweetContent');
+        const charCountElem = document.getElementById('charCount');
+
+        box.addEventListener('input', () => {
+            const len = box.value.length;
+            charCountElem.innerText = len + " / 300";
+            if (len >= 300) {
+                charCountElem.classList.add('limit-reached');
+            } else {
+                charCountElem.classList.remove('limit-reached');
+            }
+        });
+
         document.getElementById('postBtn').addEventListener('click', async () => {
-            const box = document.getElementById('tweetContent');
             const content = box.value;
             const repliedToId = box.dataset.repliedToId || '';
 
@@ -143,6 +157,8 @@
                 
                 // Reset
                 box.value = '';
+                charCountElem.innerText = "0 / 300";
+                charCountElem.classList.remove('limit-reached');
                 box.dataset.repliedToId = '';
                 selectedImageBase64 = null;
                 document.getElementById('imgInput').value = '';

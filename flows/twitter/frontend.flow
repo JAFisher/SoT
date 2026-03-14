@@ -340,12 +340,23 @@ TwitterApp --> Messaging
     inputDiv.id = inputId;
     inputDiv.className = "inline-reply-div";
     inputDiv.innerHTML = 
-      "<textarea id=\"input-instance-" + instanceId + "\" class=\"inline-reply-textarea\" placeholder=\"Replying to @" + author + "...\"></textarea>" +
+      "<textarea id=\"input-instance-" + instanceId + "\" class=\"inline-reply-textarea\" placeholder=\"Replying to @" + author + "...\" maxlength=\"300\"></textarea>" +
       "<div class=\"inline-reply-actions\">" +
+        "<div id=\"reply-char-count-" + instanceId + "\" class=\"char-counter\">0 / 300</div>" +
         "<button class=\"btn btn-primary\" onclick=\"window.app.postInlineReply('" + tweetId + "', " + instanceId + ", '" + author + "')\">Reply</button>" +
       "</div>";
     container.prepend(inputDiv);
-    document.getElementById("input-instance-" + instanceId).focus();
+    
+    const replyInput = document.getElementById("input-instance-" + instanceId);
+    const replyCounter = document.getElementById("reply-char-count-" + instanceId);
+    replyInput.addEventListener('input', () => {
+      const len = replyInput.value.length;
+      replyCounter.innerText = len + " / 300";
+      if (len >= 300) replyCounter.classList.add('limit-reached');
+      else replyCounter.classList.remove('limit-reached');
+    });
+    
+    replyInput.focus();
   } else {
     document.getElementById("input-instance-" + instanceId).focus();
   }

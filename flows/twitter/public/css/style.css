@@ -183,6 +183,7 @@ h4 {
 .post-actions {
     display: flex;
     justify-content: flex-end;
+    align-items: center;
     margin-top: 10px;
     border-top: 1px solid var(--border-color);
     padding-top: 10px;
@@ -289,8 +290,15 @@ h4 {
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-5px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .reply {
@@ -351,6 +359,7 @@ h4 {
 .inline-reply-actions {
     display: flex;
     justify-content: flex-end;
+    align-items: center;
 }
 
 .inline-reply-actions .btn {
@@ -387,8 +396,15 @@ h4 {
 }
 
 @keyframes toastIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .toast.error {
@@ -406,9 +422,17 @@ h4 {
 }
 
 @keyframes heartPop {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.4); }
-    100% { transform: scale(1); }
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.4);
+    }
+
+    100% {
+        transform: scale(1);
+    }
 }
 
 .heart-pop {
@@ -579,4 +603,8 @@ h4 {
     display: flex;
     align-items: center;
     gap: 8px;
+}
+
+.char-counter {
+    padding-right: 10px;
 }
