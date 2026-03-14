@@ -4,6 +4,8 @@ extern->fs from "node:fs"
 extern->path from "node:path"
 extern->http from "node:http"
 
+cliscripts->start npx tsx main.ts
+
 Server[Server.ts{port: number, auth: any}]
 Server --> Auth
 
@@ -316,9 +318,11 @@ Server --> Auth
       req.on('end', async () => {
         try {
           const { username } = JSON.parse(body);
+          console.log(user.username, username);
           await this.auth.db.followUser(user.username, username);
           res.writeHead(200); res.end(JSON.stringify({ success: true }));
         } catch (e) {
+          console.log(e.message);
           res.writeHead(400); res.end(JSON.stringify({ error: e.message }));
         }
       });

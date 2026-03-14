@@ -282,7 +282,8 @@ Database[Database.ts{pool: any}]
     imageUrl: row.image_url
   }));
 @@Database.getMessagesByHashtag.end
-@async @@Database.followUser.code
+@async @Database.followUser{follower: string, following: string}: void
+@@Database.followUser.code
   const client = await this.pool.connect();
   try {
     await client.query('BEGIN');
