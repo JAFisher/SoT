@@ -323,6 +323,12 @@ h4 {
     color: var(--text-primary);
 }
 
+
+.reply-header-info a {
+    text-decoration: none;
+    color: var(--text-primary);
+}
+
 .reply-footer {
     display: flex;
     gap: 16px;
@@ -622,6 +628,10 @@ h4 {
 .profile-header {
     padding: 16px;
     border-bottom: 1px solid var(--border-color);
+}
+
+#profile-title {
+    padding: 16px;
 }
 
 .profile-banner-placeholder {

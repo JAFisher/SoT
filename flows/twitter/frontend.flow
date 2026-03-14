@@ -295,8 +295,10 @@ TwitterApp --> Messaging
 
 @TwitterApp.formatRelativeTime{timestamp: number}: string
 @@TwitterApp.formatRelativeTime.code
+  if (!timestamp) return "just now";
   const now = Date.now();
   const diff = now - timestamp;
+  if (diff < 0) return "just now";
   
   const seconds = Math.floor(diff / 1000);
   const minutes = Math.floor(seconds / 60);
@@ -424,6 +426,7 @@ TwitterApp --> Messaging
     id: res.id,
     sender_username: author,
     content: content,
+    timestamp: Date.now(),
     repliesCount: 0,
     retweetCount: 0,
     likedCount: 0
