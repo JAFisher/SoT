@@ -160,7 +160,7 @@ Database[Database.ts{pool: any}]
     await client.query('BEGIN');
     
     // 1. Get original tweet info (need sender_username for return object)
-    const origRes = await client.query('SELECT sender_username, content FROM messages WHERE id = $1', [originalId]);
+    const origRes = await client.query('SELECT sender_username, content, image_url FROM messages WHERE id = $1', [originalId]);
     if (origRes.rows.length === 0) {
       throw new Error("Original tweet not found (" + originalId + ")");
     }
@@ -182,8 +182,8 @@ Database[Database.ts{pool: any}]
 
     // 4. Create retweet record
     const retweet = await client.query(
-      "INSERT INTO messages (sender_username, receiver_username, content, timestamp, retweeted_id) VALUES ($1, '', $2, $3, $4) RETURNING *",
-      [sender, origRow.content, ts, originalId]
+      "INSERT INTO messages (sender_username, receiver_username, content, timestamp, retweeted_id, image_url) VALUES ($1, '', $2, $3, $4, $5) RETURNING *",
+      [sender, origRow.content, ts, originalId, origRow.image_url]
     );
     
     // 5. Create hashtags for retweet
@@ -215,7 +215,7 @@ Database[Database.ts{pool: any}]
       likedCount: 0,
       retweetCount: 0,
       repliesCount: 0,
-      imageUrl: null
+      imageUrl: row.image_url
     };
   } catch (e) {
     if (client) await client.query('ROLLBACK');
