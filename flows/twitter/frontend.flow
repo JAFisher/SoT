@@ -102,7 +102,7 @@ TwitterApp --> Messaging
     const retweetBtn = canRetweet ?
     "<button class=\"tweet-btn retweet-btn\" id=\"retweet-btn-instance-" + instanceId + "\" onclick=\"window.app.retweet('" + t.id + "', " + instanceId + ")\">🔄 " + (t.retweetCount || 0) + "</button>" : "";
     
-    const avatarUrl = t.authorAvatar || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
+    const avatarUrl = t.authorAvatar || 'http://localhost:8080/images/userprofiledefault.png';
     const avatarHtml = "<img src=\"" + avatarUrl + "\" class=\"tweet-avatar\">";
     const imageHtml = t.imageUrl ? "<div class=\"tweet-image-container\"><img src=\"" + t.imageUrl + "\" class=\"tweet-image\"></div>" : "";
 
@@ -147,7 +147,7 @@ TwitterApp --> Messaging
     const retweetBtn = canRetweet ?
     "<button class=\"tweet-btn retweet-btn btn-compact\" onclick=\"window.app.retweet('" + r.id + "', " + rInstanceId + ")\">🔄 " + (r.retweetCount || 0) + "</button>" : "";
 
-    const avatarUrl = r.authorAvatar || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png';
+    const avatarUrl = r.authorAvatar || 'http://localhost:8080/images/userprofiledefault.png';
     const avatarHtml = "<img src=\"" + avatarUrl + "\" class=\"tweet-avatar\">";
     const imageHtml = r.imageUrl ? "<div class=\"tweet-image-container\"><img src=\"" + r.imageUrl + "\" class=\"tweet-image\"></div>" : "";
 
