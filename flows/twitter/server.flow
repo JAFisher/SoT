@@ -318,7 +318,6 @@ Server --> Auth
       req.on('end', async () => {
         try {
           const { username } = JSON.parse(body);
-          console.log(user.username, username);
           await this.auth.db.followUser(user.username, username);
           res.writeHead(200); res.end(JSON.stringify({ success: true }));
         } catch (e) {
