@@ -66,10 +66,23 @@
             window.location.href = 'login.html';
         } else {
             const currentUsername = window.app.auth.currentUser.username;
-            document.getElementById('header-name').innerText = window.app.auth.currentUser.name || currentUsername;
-            document.getElementById('header-following-count').innerText = window.app.auth.currentUser.followingCount || 0;
-            document.getElementById('header-followers-count').innerText = window.app.auth.currentUser.followerCount || 0;
             
+            // Initial UI sync with cached data
+            document.getElementById('header-name').innerText = window.app.auth.currentUser.name || currentUsername;
+            document.getElementById('header-following-count').innerText = window.app.auth.currentUser.followingCount || window.app.auth.currentUser.following_count || 0;
+            document.getElementById('header-followers-count').innerText = window.app.auth.currentUser.followerCount || window.app.auth.currentUser.follower_count || 0;
+            
+            // Asynchronously fetch fresh data
+            window.app.getUserInfo(currentUsername).then(user => {
+                window.app.auth.updateCurrentUser(user);
+                document.getElementById('header-name').innerText = user.name || currentUsername;
+                document.getElementById('header-following-count').innerText = user.following_count || 0;
+                document.getElementById('header-followers-count').innerText = user.follower_count || 0;
+                if (user.avatar_url) {
+                    document.getElementById('sidebar-avatar').src = user.avatar_url;
+                }
+            }).catch(e => console.error("Failed to refresh user stats:", e));
+
             document.getElementById('profile-avatar-link').href = 'profile.html?username=' + currentUsername;
             document.getElementById('profile-name-link').href = 'profile.html?username=' + currentUsername;
 

@@ -72,6 +72,12 @@ AuthFE[AuthFE.ts{currentUser: any, token: string, refreshToken: string, serverUR
   return data;
 @@AuthFE.refresh.end
 
+@AuthFE.updateCurrentUser{user: any}: void
+@@AuthFE.updateCurrentUser.code
+  this.currentUser = { ...this.currentUser, ...user };
+  localStorage.setItem('currentUser', JSON.stringify(this.currentUser));
+@@AuthFE.updateCurrentUser.end
+
 @AuthFE.logout{}: void
 @@AuthFE.logout.code
   this.currentUser = null;
