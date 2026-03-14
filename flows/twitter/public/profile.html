@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - Twitter Clone</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="btn btn-outline back-btn" onclick="window.location.href='dashboard.html'" style="width: auto; padding: 6px 12px;">← Back</button>
+            <h2 id="profile-title">Profile</h2>
+            <div style="flex-grow: 1;"></div>
+        </div>
+
+        <div id="app-box">
+            <div class="profile-header">
+                <div class="profile-banner-placeholder"></div>
+                <img id="profile-avatar" src="http://localhost:8080/images/userprofiledefault.png" class="profile-avatar-large">
+                <div style="padding: 16px; margin-top: 8px;">
+                    <h2 id="profile-name" style="margin-bottom: 4px;"></h2>
+                    <div id="profile-username" style="color: var(--text-secondary); margin-bottom: 12px;"></div>
+                    <div class="profile-stats-large">
+                        <span><b id="profile-following">0</b> Following</span>
+                        <span><b id="profile-followers">0</b> Followers</span>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="timeline-header">Tweets</h3>
+            <div id="user-timeline"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { TwitterApp } from './compiled.js';
+
+        window.app = new TwitterApp();
+        await window.app.init();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const username = urlParams.get('username');
+
+        if (!username) {
+            window.location.href = 'dashboard.html';
+        } else {
+            try {
+                const user = await window.app.getUserInfo(username);
+                document.getElementById('profile-name').innerText = user.name || user.username;
+                document.getElementById('profile-username').innerText = '@' + user.username;
+                document.getElementById('profile-followers').innerText = user.follower_count || 0;
+                document.getElementById('profile-following').innerText = user.following_count || 0;
+                if (user.avatar_url) {
+                    document.getElementById('profile-avatar').src = user.avatar_url;
+                }
+                document.getElementById('profile-title').innerText = user.name || user.username;
+                
+                await window.app.renderUserTimeline('user-timeline', username, 0);
+            } catch (err) {
+                window.app.showToast("User not found", 'error');
+                setTimeout(() => window.location.href = 'dashboard.html', 2000);
+            }
+        }
+    </script>
+</body>
+
+</html>

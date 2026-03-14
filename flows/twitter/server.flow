@@ -103,8 +103,14 @@ Server --> Auth
       const url = new URL(req.url, "http://" + req.headers.host);
       const limit = parseInt(url.searchParams.get('limit') || '25');
       const offset = parseInt(url.searchParams.get('offset') || '0');
+      const username = url.searchParams.get('username');
       try {
-        const tweets = await this.auth.db.getPublicTweets(limit, offset);
+        let tweets;
+        if (username) {
+          tweets = await this.auth.db.getUserTweets(username, limit, offset);
+        } else {
+          tweets = await this.auth.db.getPublicTweets(limit, offset);
+        }
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(tweets));
       } catch (e) {
@@ -368,6 +374,29 @@ Server --> Auth
         const replies = await this.auth.db.getReplies(tweetId);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(replies));
+      } catch (e) {
+        res.writeHead(500); res.end(JSON.stringify({ error: e.message }));
+      }
+      return;
+    }
+
+    if (req.method === 'GET' && req.url.startsWith('/api/user')) {
+      const url = new URL(req.url, "http://" + req.headers.host);
+      const username = url.searchParams.get('username');
+      if (!username) {
+        res.writeHead(400); res.end(JSON.stringify({ error: "Missing username" }));
+        return;
+      }
+      try {
+        const user = await this.auth.db.getUser(username);
+        if (!user) {
+          res.writeHead(404); res.end(JSON.stringify({ error: "User not found" }));
+          return;
+        }
+        // Don't send password hash
+        const { password_hash, ...safeUser } = user;
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(safeUser));
       } catch (e) {
         res.writeHead(500); res.end(JSON.stringify({ error: e.message }));
       }

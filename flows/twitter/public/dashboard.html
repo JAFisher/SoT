@@ -12,10 +12,10 @@
     <div class="container">
         <div class="header">
             <div class="profile-section">
-                <img id="sidebar-avatar" src="http://localhost:8080/images/userprofiledefault.png"
-                    class="profile-avatar-sm">
+                <a id="profile-avatar-link" href="#"><img id="sidebar-avatar" src="http://localhost:8080/images/userprofiledefault.png"
+                    class="profile-avatar-sm"></a>
                 <div class="profile-info">
-                    <span id="header-name" style="font-weight: bold;"></span>
+                    <a id="profile-name-link" href="#" style="text-decoration: none; color: inherit;"><span id="header-name" style="font-weight: bold;"></span></a>
                     <div class="user-stats">
                         <span><b id="header-following-count">0</b> Following</span>
                         <span><b id="header-followers-count">0</b> Followers</span>
@@ -65,9 +65,14 @@
         if (!window.app.auth.currentUser) {
             window.location.href = 'login.html';
         } else {
-            document.getElementById('header-name').innerText = window.app.auth.currentUser.name || window.app.auth.currentUser.username;
+            const currentUsername = window.app.auth.currentUser.username;
+            document.getElementById('header-name').innerText = window.app.auth.currentUser.name || currentUsername;
             document.getElementById('header-following-count').innerText = window.app.auth.currentUser.followingCount || 0;
             document.getElementById('header-followers-count').innerText = window.app.auth.currentUser.followerCount || 0;
+            
+            document.getElementById('profile-avatar-link').href = 'profile.html?username=' + currentUsername;
+            document.getElementById('profile-name-link').href = 'profile.html?username=' + currentUsername;
+
             const user = window.app.auth.getCurrentUser();
             if (user && user.avatarUrl) {
                 document.getElementById('sidebar-avatar').src = user.avatarUrl;

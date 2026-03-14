@@ -609,3 +609,50 @@ h4 {
     width: 90px;
     font-size: 14px;
 }
+
+.tweet-name-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.tweet-name-link:hover .tweet-name {
+    text-decoration: underline;
+}
+
+.profile-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.profile-banner-placeholder {
+    height: 150px;
+    background-color: var(--border-color);
+    border-radius: var(--radius-md);
+    margin-bottom: -40px;
+}
+
+.profile-avatar-large {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 4px solid var(--bg-color);
+    background-color: var(--surface-color);
+    object-fit: cover;
+    margin-left: 16px;
+    position: relative;
+}
+
+.profile-stats-large {
+    display: flex;
+    gap: 20px;
+    margin-top: 12px;
+}
+
+.profile-stats-large span {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.profile-stats-large b {
+    color: var(--text-primary);
+}

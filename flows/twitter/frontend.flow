@@ -43,6 +43,51 @@ TwitterApp --> Messaging
   await this.loadTimeline(containerId, false);
 @@TwitterApp.renderTimeline.end
 
+@async @TwitterApp.renderUserTimeline{containerId: string, username: string, offset: number}: void
+@@TwitterApp.renderUserTimeline.code
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    // Initial fetch
+    if (offset === 0) {
+      container.innerHTML = "<div class='loading'>Loading timeline...</div>";
+      this.currentTimelineOffset = 0;
+    }
+
+    try {
+      const tweets = await this.feed.getUserTweets(username); 
+      // Actually getUserTweets in feeds.flow doesn't support offset/limit yet, 
+      // let's update getUserTweets in feeds.flow or use it as is if it's fine for now.
+      // Wait, getUserTweets in feeds.flow:
+      // const response = await fetch('http://localhost:8080/api/tweets?username=' + username);
+      // Let's stick with that for now or update it.
+      
+      if (offset === 0) container.innerHTML = "";
+      
+      if (tweets.length === 0 && offset === 0) {
+        container.innerHTML = "<div class='empty-timeline'>No tweets yet.</div>";
+        return;
+      }
+
+      let html = "";
+      for (const t of tweets) {
+        html += this.renderSingleTweet(t);
+      }
+      container.innerHTML = html;
+      
+      // Handle Load More logic if we add it later for profile
+    } catch (e) {
+      this.showToast(e.message, 'error');
+    }
+@@TwitterApp.renderUserTimeline.end
+
+@async @TwitterApp.getUserInfo{username: string}: any
+@@TwitterApp.getUserInfo.code
+    const res = await fetch("http://localhost:8080/api/user?username=" + username);
+    if (!res.ok) throw new Error("User not found");
+    return await res.json();
+@@TwitterApp.getUserInfo.end
+
 @async @TwitterApp.loadTimeline{containerId: string, append: boolean}: void
 @@TwitterApp.loadTimeline.code
   const container = document.getElementById(containerId);
@@ -103,7 +148,7 @@ TwitterApp --> Messaging
     "<button class=\"tweet-btn retweet-btn\" id=\"retweet-btn-instance-" + instanceId + "\" onclick=\"window.app.retweet('" + t.id + "', " + instanceId + ")\">🔄 " + (t.retweetCount || 0) + "</button>" : "";
     
     const avatarUrl = t.authorAvatar || 'http://localhost:8080/images/userprofiledefault.png';
-    const avatarHtml = "<img src=\"" + avatarUrl + "\" class=\"tweet-avatar\">";
+    const avatarHtml = "<a href=\"profile.html?username=" + t.authorUsername + "\"><img src=\"" + avatarUrl + "\" class=\"tweet-avatar\"></a>";
     const imageHtml = t.imageUrl ? "<div class=\"tweet-image-container\"><img src=\"" + t.imageUrl + "\" class=\"tweet-image\"></div>" : "";
 
     const isFollowing = this.followedUsers.has(t.authorUsername);
@@ -118,9 +163,9 @@ TwitterApp --> Messaging
     avatarHtml +
     "<div class=\"tweet-header-info\">" +
     "<div class=\"tweet-header-top\">" +
-    "<span class=\"tweet-name\">" + name + "</span>" +
-    "<span class=\"tweet-username\">@" + t.authorUsername + "</span>" +
-    "<span class=\"tweet-date\">· " + this.formatRelativeTime(t.timestamp) + "</span>" +
+    "<a href=\"profile.html?username=" + t.authorUsername + "\" class=\"tweet-name-link\"><span class=\"tweet-name\">" + name + "</span></a>" +
+    "<a href=\"profile.html?username=" + t.authorUsername + "\" style=\"text-decoration:none; color:inherit;\"><span class=\"tweet-username\">@" + t.authorUsername + "</span></a>" +
+    "<span class=\"tweet-username\">· " + this.formatRelativeTime(t.timestamp) + "</span>" +
     "<span class=\"tweet-followers\" id=\"followers-count-" + instanceId + "\">👤 " + (t.authorFollowerCount || 0) + "</span>" +
     "</div>" +
     retweetTag +
@@ -148,13 +193,13 @@ TwitterApp --> Messaging
     "<button class=\"tweet-btn retweet-btn btn-compact\" onclick=\"window.app.retweet('" + r.id + "', " + rInstanceId + ")\">🔄 " + (r.retweetCount || 0) + "</button>" : "";
 
     const avatarUrl = r.authorAvatar || 'http://localhost:8080/images/userprofiledefault.png';
-    const avatarHtml = "<img src=\"" + avatarUrl + "\" class=\"tweet-avatar\">";
+    const avatarHtml = "<a href=\"profile.html?username=" + r.sender_username + "\"><img src=\"" + avatarUrl + "\" class=\"tweet-avatar\"></a>";
     const imageHtml = r.imageUrl ? "<div class=\"tweet-image-container\"><img src=\"" + r.imageUrl + "\" class=\"tweet-image\"></div>" : "";
 
     const highlightedContent = r.content.replace(/#(\w+)/g, '<span class="hashtag" onclick="event.stopPropagation(); window.app.showHashtagTimeline(\'$1\')">#$1</span>');
 
     return "<div class=\"reply\" id=\"tweet-instance-" + rInstanceId + "\">" +
-    "<div class=\"reply-header\"><div class=\"reply-header-info\">" + avatarHtml + "<span>@" + r.sender_username + "</span><span class=\"tweet-date\">· " + this.formatRelativeTime(r.timestamp) + "</span></div></div>" +
+    "<div class=\"reply-header\"><div class=\"reply-header-info\">" + avatarHtml + "<a href=\"profile.html?username=" + r.sender_username + "\"><span>@" + r.sender_username + "</span></a><span class=\"tweet-date\">· " + this.formatRelativeTime(r.timestamp) + "</span></div></div>" +
     "<div class=\"reply-content\">" + highlightedContent + "</div>" +
     imageHtml +
     "<div class=\"reply-footer\">" +
