@@ -22,11 +22,12 @@ Auth --> Database
 
 @async @Auth.register{username: string, name: string, pass: string}: AuthResponse
 @@Auth.register.code
+  const lowerUsername = username.toLowerCase();
   const hash = await bcrypt.hash(pass, 10);
   try {
     const result = await this.db.query(
       "INSERT INTO users (username, name, password_hash) VALUES ($1, $2, $3) RETURNING id, username, name, avatar_url, follower_count, following_count",
-      [username, name, hash]
+      [lowerUsername, name, hash]
     );
     const row = result.rows[0];
     const user = { id: row.id, username: row.username, name: row.name, avatarUrl: row.avatar_url, followerCount: row.follower_count || 0, followingCount: row.following_count || 0 };
@@ -38,7 +39,8 @@ Auth --> Database
 
 @async @Auth.login{username: string, pass: string}: AuthResponse
 @@Auth.login.code
-  const result = await this.db.query("SELECT * FROM users WHERE username = $1", [username]);
+  const lowerUsername = username.toLowerCase();
+  const result = await this.db.query("SELECT * FROM users WHERE username = $1", [lowerUsername]);
   if (result.rows.length === 0) {
     throw new Error("User not found");
   }

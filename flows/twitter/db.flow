@@ -25,6 +25,7 @@ Database[Database.ts{pool: any}]
 @async @Database.init{}: void
 @@Database.init.code
 
+
   await this.pool.query("CREATE TABLE IF NOT EXISTS users (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), username VARCHAR(255) UNIQUE NOT NULL, name VARCHAR(255) NOT NULL, password_hash VARCHAR(255) NOT NULL, avatar_url TEXT);");
   await this.pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS follower_count INT DEFAULT 0;");
   await this.pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS following_count INT DEFAULT 0;");
@@ -32,7 +33,8 @@ Database[Database.ts{pool: any}]
   await this.pool.query("CREATE TABLE IF NOT EXISTS likes ( id SERIAL PRIMARY KEY, message_id UUID NOT NULL REFERENCES messages(id), username VARCHAR(255) NOT NULL, UNIQUE(message_id, username));");
   await this.pool.query("CREATE TABLE IF NOT EXISTS follows (follower_username VARCHAR(255) NOT NULL, following_username VARCHAR(255) NOT NULL, UNIQUE(follower_username, following_username));");
   await this.pool.query("CREATE TABLE IF NOT EXISTS hashtags (tag VARCHAR(255) NOT NULL, message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE, PRIMARY KEY (tag, message_id));");
-  console.log("Database initialized.");
+
+  console.log("Database initialized (Fresh start).");
 @@Database.init.end
 
 @async @Database.insertMessage{senderUsername: string, receiverUsername: string, content: string, timestamp: number, repliedToId: string, retweetedId: string, imageUrl: string}: any
