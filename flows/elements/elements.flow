@@ -1,5 +1,9 @@
 graph TD
-  ElementData[ElementData.ts { elements: any }]
+  
+  interface->Element {number: number, symbol: string, name: string, category: string, mass: number, group: number, period: number, discoveredBy: string, year: number | string}
+
+  ElementData[ElementData.ts { elements: Element[] }]
+
 
   @@ElementData.constructor.code
     this.elements = [
