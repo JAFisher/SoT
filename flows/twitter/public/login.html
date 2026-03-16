@@ -49,6 +49,10 @@
             const user = document.getElementById('username').value;
             const pass = document.getElementById('password').value;
             if (user && pass) {
+                if (user.includes('@')) {
+                    alert("Username cannot contain the '@' symbol.");
+                    return;
+                }
                 try {
                     await window.app.auth.register(user, user, pass);
                     window.location.href = 'dashboard.html';

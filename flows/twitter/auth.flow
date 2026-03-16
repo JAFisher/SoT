@@ -23,6 +23,11 @@ Auth --> Database
 @async @Auth.register{username: string, name: string, pass: string}: AuthResponse
 @@Auth.register.code
   const lowerUsername = username.toLowerCase();
+  
+  if (lowerUsername.includes('@')) {
+    throw new Error("Username cannot contain '@' symbol");
+  }
+
   const hash = await bcrypt.hash(pass, 10);
   try {
     const result = await this.db.query(

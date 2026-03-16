@@ -71,7 +71,7 @@ TwitterApp --> Messaging
       if (offset === 0) container.innerHTML = "";
       
       if (tweets.length === 0 && offset === 0) {
-        container.innerHTML = "<div class='empty-timeline'>No tweets yet.</div>";
+        container.innerHTML = "<div class='empty-timeline'>No messages yet.</div>";
         return;
       }
 
