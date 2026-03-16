@@ -259,6 +259,12 @@ TwitterApp --> Messaging
       "<button class=\"tweet-btn follow-btn\" id=\"twitter-follow-" + t.authorUsername + "\" onclick=\"window.app.toggleFollow('" + t.authorUsername + "', " + (t.authorFollowerCount || 0) + ")\">" + (isFollowing ? "Unfollow" : "Follow") + "</button>" : "";
 
     const highlightedContent = t.content.replace(/#(\w+)/g, '<span class="hashtag" onclick="event.stopPropagation(); window.app.showHashtagTimeline(\'$1\')">#$1</span>');
+    const replyContextHtml = t.repliedToUsername ? 
+      "<div class='tweet-reply-context' style='margin-bottom: 8px; font-size: 0.9em;'>" +
+        "<span style='color: var(--text-secondary);'>Replying to </span>" +
+        "<a href='profile.html?username=" + t.repliedToUsername + "' class='tweet-name-link' style='color: var(--primary-color); font-weight: bold;'>@" + t.repliedToUsername + "</a>" +
+        (t.parentContent ? "<div class='tweet-parent-preview' style='opacity: 0.6; padding-left: 10px; border-left: 2px solid var(--border-color); margin-top: 4px; font-style: italic;'>\"" + t.parentContent + "\"</div>" : "") +
+      "</div>" : "";
 
     return "<div class=\"tweet\" id=\"tweet-instance-" + instanceId + "\">" +
     "<div class=\"tweet-header\">" +
@@ -274,7 +280,7 @@ TwitterApp --> Messaging
     "</div>" +
     followBtn +
     "</div>" +
-    "<div class=\"tweet-content\">" + highlightedContent + "</div>" +
+    "<div class=\"tweet-content\">" + replyContextHtml + highlightedContent + "</div>" +
     imageHtml +
     "<div class=\"tweet-footer\">" +
         "<button class=\"tweet-btn reply-btn\" onclick=\"window.app.startReply('" + t.id + "', '" + t.authorUsername + "', " + instanceId + ")\">💬 " + (t.repliesCount || 0) + "</button>" +
@@ -299,10 +305,16 @@ TwitterApp --> Messaging
     const imageHtml = r.imageUrl ? "<div class=\"tweet-image-container\"><img src=\"" + r.imageUrl + "\" class=\"tweet-image\"></div>" : "";
 
     const highlightedContent = r.content.replace(/#(\w+)/g, '<span class="hashtag" onclick="event.stopPropagation(); window.app.showHashtagTimeline(\'$1\')">#$1</span>');
+    const replyContextHtml = r.repliedToUsername ? 
+      "<div class='tweet-reply-context' style='margin-bottom: 5px; font-size: 0.8em; opacity: 0.8;'>" +
+        "<span>Replying to </span>" +
+        "<a href='profile.html?username=" + r.repliedToUsername + "' style='color: var(--primary-color); text-decoration: none;'>@" + r.repliedToUsername + "</a>" +
+        (r.parentContent ? "<div style='opacity: 0.6; padding-left: 8px; border-left: 1px solid var(--border-color); margin-top: 2px;'>\"" + r.parentContent + "\"</div>" : "") +
+      "</div>" : "";
 
     return "<div class=\"reply\" id=\"tweet-instance-" + rInstanceId + "\">" +
     "<div class=\"reply-header\"><div class=\"reply-header-info\">" + avatarHtml + "<a href=\"profile.html?username=" + r.sender_username + "\"><span>@" + r.sender_username + "</span></a><span class=\"tweet-date\">· " + this.formatRelativeTime(r.timestamp) + "</span></div></div>" +
-    "<div class=\"reply-content\">" + highlightedContent + "</div>" +
+    "<div class=\"reply-content\">" + replyContextHtml + highlightedContent + "</div>" +
     imageHtml +
     "<div class=\"reply-footer\">" +
       "<button class=\"tweet-btn reply-btn btn-compact\" onclick=\"window.app.startReply('" + r.id + "', '" + r.sender_username + "', " + rInstanceId + ")\">💬 " + (r.repliesCount || 0) + "</button>" +
@@ -532,6 +544,8 @@ TwitterApp --> Messaging
     sender_username: author,
     content: content,
     timestamp: Date.now(),
+    repliedToUsername: parentAuthor, // Add parent author for context
+    parentContent: '', // We don't have parent content here, but it's good to include the field
     repliesCount: 0,
     retweetCount: 0,
     likedCount: 0
