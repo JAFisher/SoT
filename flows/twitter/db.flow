@@ -364,11 +364,26 @@ Database[Database.ts{pool: any}]
     await client.query('UPDATE users SET follower_count = follower_count + 1 WHERE username = $1', [following]);
     await client.query('UPDATE users SET following_count = following_count + 1 WHERE username = $1', [follower]);
     
-    // Notification for follow
-    await client.query(
-      "INSERT INTO notifications (sender_username, receiver_username, action, timestamp) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING",
-      [follower, following, 'follow', Date.now()]
+    // Notification for follow: Check if one already exists to avoid spam
+    const existingNotif = await client.query(
+      "SELECT id FROM notifications WHERE sender_username = $1 AND receiver_username = $2 AND action = 'follow'",
+      [follower, following]
     );
+
+    console.log("existingNotif", existingNotif);
+    
+    if (existingNotif.rows.length === 0) {
+      await client.query(
+        "INSERT INTO notifications (sender_username, receiver_username, action, timestamp) VALUES ($1, $2, $3, $4)",
+        [follower, following, 'follow', Date.now()]
+      );
+    } else {
+      // Optional: Just update the timestamp and mark as unread to "bump" it
+      await client.query(
+        "UPDATE notifications SET timestamp = $1, is_read = FALSE WHERE id = $2",
+        [Date.now(), existingNotif.rows[0].id]
+      );
+    }
 
     await client.query('COMMIT');
   } catch (e) {
