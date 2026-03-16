@@ -383,7 +383,7 @@ async function main() {
             const diagram = toMermaidDiagram(parsed);
             const metadata = collectMetadata(parsed);
 
-            result[`${folderName}/${name}`] = { diagram, metadata };
+            result[`${folderName}/${name}`] = { diagram, metadata, rawSource: content };
         }
     }
 

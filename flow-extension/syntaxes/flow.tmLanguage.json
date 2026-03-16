@@ -1,0 +1,145 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "SoT Flow",
+  "scopeName": "source.flow",
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#relationships"
+    },
+    {
+      "include": "#method-blocks"
+    },
+    {
+      "include": "#method-signatures"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#constants"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.percentage.flow",
+          "match": "%%.*$"
+        },
+        {
+          "name": "comment.line.double-slash.flow",
+          "match": "//.*$"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.flow",
+          "match": "\\b(include|extern|type|interface|web|docker|Rollup|cliscripts|pkg|main)\\b"
+        },
+        {
+          "name": "keyword.operator.flow",
+          "match": "->"
+        },
+        {
+          "name": "storage.modifier.async.flow",
+          "match": "@async\\b"
+        }
+      ]
+    },
+    "relationships": {
+      "patterns": [
+        {
+          "comment": "Inheritance",
+          "match": "---\\|>",
+          "name": "keyword.operator.inheritance.flow"
+        },
+        {
+          "comment": "Composition",
+          "match": "-->",
+          "name": "keyword.operator.composition.flow"
+        }
+      ]
+    },
+    "method-signatures": {
+      "patterns": [
+        {
+          "match": "(@)(\\w+)\\.([^{:]+)",
+          "captures": {
+            "1": { "name": "punctuation.definition.method.flow" },
+            "2": { "name": "entity.name.class.flow" },
+            "3": { "name": "entity.name.function.flow" }
+          }
+        }
+      ]
+    },
+    "method-blocks": {
+      "patterns": [
+        {
+          "begin": "@@{1,2}([\\w.]+)\\.code",
+          "beginCaptures": {
+            "0": { "name": "keyword.control.block.flow" }
+          },
+          "end": "@@{1,2}([\\w.]+)\\.end",
+          "endCaptures": {
+            "0": { "name": "keyword.control.block.flow" }
+          },
+          "contentName": "source.js",
+          "patterns": [
+             { "include": "source.js" }
+          ]
+        },
+        {
+          "begin": "web->(.+)\\.code",
+          "beginCaptures": {
+            "0": { "name": "keyword.control.block.flow" }
+          },
+          "end": "web->(.+)\\.end",
+          "endCaptures": {
+            "0": { "name": "keyword.control.block.flow" }
+          },
+          "contentName": "source.html"
+        },
+        {
+          "begin": "docker->start",
+          "beginCaptures": {
+            "0": { "name": "keyword.control.block.flow" }
+          },
+          "end": "docker->end",
+          "endCaptures": {
+            "0": { "name": "keyword.control.block.flow" }
+          }
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.flow",
+          "begin": "\"",
+          "end": "\""
+        },
+        {
+          "name": "string.quoted.single.flow",
+          "begin": "'",
+          "end": "'"
+        }
+      ]
+    },
+    "constants": {
+      "patterns": [
+        {
+          "name": "constant.numeric.flow",
+          "match": "\\b\\d+\\b"
+        }
+      ]
+    }
+  }
+}

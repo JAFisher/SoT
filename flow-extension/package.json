@@ -1,0 +1,39 @@
+{
+  "name": "flow-syntax",
+  "displayName": "SoT Flow Syntax",
+  "description": "Syntax highlighting for .flow files",
+  "version": "0.0.1",
+  "publisher": "sot-engine",
+  "engines": {
+    "vscode": "^1.50.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "flow",
+        "aliases": [
+          "Flow",
+          "flow"
+        ],
+        "extensions": [
+          ".flow"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "flow",
+        "scopeName": "source.flow",
+        "path": "./syntaxes/flow.tmLanguage.json",
+        "embeddedLanguages": {
+          "source.js": "javascript",
+          "source.html": "html"
+        }
+      }
+    ]
+  }
+}

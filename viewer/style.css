@@ -344,6 +344,72 @@ body {
   font-family: 'JetBrains Mono', monospace;
 }
 
+/* ── Flow Tabs ── */
+.flow-tabs {
+  display: flex;
+  gap: 2px;
+  background: var(--bg-deep);
+  padding: 0 32px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 12px 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  border-bottom: 2px solid transparent;
+}
+
+.tab-btn:hover {
+  color: var(--text);
+  background: var(--bg-surface);
+}
+
+.tab-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  background: var(--bg-surface);
+}
+
+/* ── Tab Content ── */
+.tab-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Source View ── */
+.source-container {
+  flex: 1;
+  background: var(--bg-deep);
+  overflow: auto;
+  padding: 32px;
+}
+
+.source-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--text-dim);
+  white-space: pre;
+}
+
+/* ── Syntax Highlighting ── */
+.flow-comment { color: #6a9955; font-style: italic; }
+.flow-keyword { color: #569cd6; font-weight: bold; }
+.flow-operator { color: #d4d4d4; }
+.flow-modifier { color: #c586c0; }
+.flow-block-marker { color: #dcdcaa; font-weight: bold; border-bottom: 1px solid rgba(220, 218, 170, 0.2); }
+.flow-method-sig { color: #4ec9b0; }
+.flow-punctuation { color: #808080; }
+.flow-string { color: #ce9178; }
+.flow-number { color: #b5cea8; }
+
 /* ── Diagram ── */
 .diagram-container {
   flex: 1;

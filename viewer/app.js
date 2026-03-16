@@ -26,6 +26,9 @@
   const methodsContent   = document.getElementById("methodsContent");
   const externalsPanel   = document.getElementById("externalsPanel");
   const externalsContent = document.getElementById("externalsContent");
+  const sourceCode       = document.getElementById("sourceCode");
+  const tabBtns          = document.querySelectorAll(".tab-btn");
+  const tabContents      = document.querySelectorAll(".tab-content");
 
   // ── Initialize Mermaid ──
   mermaid.initialize({
@@ -106,6 +109,17 @@
     });
   });
 
+  // ── Tab Switching ──
+  tabBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const tab = btn.dataset.tab;
+      tabBtns.forEach(b => b.classList.toggle("active", b === btn));
+      tabContents.forEach(c => {
+        c.classList.toggle("hidden", c.id !== `tab-${tab}`);
+      });
+    });
+  });
+
   globalStats.textContent = `${flowNames.length} flows · ${totalNodes} total nodes`;
 
   // ── Select a Flow ──
@@ -135,11 +149,23 @@
     // Render Mermaid Diagram
     await renderDiagram(data.diagram);
 
+    // Render Source Code
+    renderSource(data.rawSource || "");
+
     // Detail panels
     renderTypes(meta.types);
     renderInterfaces(meta.interfaces);
     renderMethods(meta.methods);
     renderExternals(meta.externals);
+  }
+
+  // ── Render Source ──
+  function renderSource(code) {
+    if (window.FlowHighlighter) {
+      sourceCode.innerHTML = window.FlowHighlighter.highlight(code);
+    } else {
+      sourceCode.textContent = code;
+    }
   }
 
   // ── Render Mermaid ──

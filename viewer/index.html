@@ -60,9 +60,24 @@
         </div>
       </header>
 
+      <!-- View Selector -->
+      <nav class="flow-tabs">
+        <button class="tab-btn active" data-tab="diagram">Diagram</button>
+        <button class="tab-btn" data-tab="source">Source Code</button>
+      </nav>
+
       <!-- Diagram -->
-      <div class="diagram-container" id="diagramContainer">
-        <div class="diagram" id="diagram"></div>
+      <div class="tab-content" id="tab-diagram">
+        <div class="diagram-container" id="diagramContainer">
+          <div class="diagram" id="diagram"></div>
+        </div>
+      </div>
+
+      <!-- Source View -->
+      <div class="tab-content hidden" id="tab-source">
+        <div class="source-container">
+          <pre id="sourceCode" class="source-code"></pre>
+        </div>
       </div>
 
       <!-- Detail Panels -->
@@ -96,6 +111,7 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script src="highlighter.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
