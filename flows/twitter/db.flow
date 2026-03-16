@@ -33,6 +33,7 @@ Database[Database.ts{pool: any}]
   await this.pool.query("CREATE TABLE IF NOT EXISTS likes ( id SERIAL PRIMARY KEY, message_id UUID NOT NULL REFERENCES messages(id), username VARCHAR(255) NOT NULL, UNIQUE(message_id, username));");
   await this.pool.query("CREATE TABLE IF NOT EXISTS follows (follower_username VARCHAR(255) NOT NULL, following_username VARCHAR(255) NOT NULL, UNIQUE(follower_username, following_username));");
   await this.pool.query("CREATE TABLE IF NOT EXISTS hashtags (tag VARCHAR(255) NOT NULL, message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE, PRIMARY KEY (tag, message_id));");
+  await this.pool.query("CREATE TABLE IF NOT EXISTS notifications (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), sender_username VARCHAR(255) NOT NULL, receiver_username VARCHAR(255) NOT NULL, action VARCHAR(255) NOT NULL, message_id UUID, timestamp BIGINT NOT NULL, is_read BOOLEAN DEFAULT FALSE, UNIQUE(sender_username, receiver_username, action, message_id));");
 
   console.log("Database initialized (Fresh start).");
 @@Database.init.end
@@ -60,6 +61,20 @@ Database[Database.ts{pool: any}]
           "INSERT INTO hashtags (tag, message_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
           [tag, message.id]
         );
+      }
+    }
+    
+    // Notification for replies
+    if (repliedToId) {
+      const parentRes = await client.query("SELECT sender_username FROM messages WHERE id = $1", [repliedToId]);
+      if (parentRes.rows.length > 0) {
+        const parentOwner = parentRes.rows[0].sender_username;
+        if (parentOwner !== senderUsername) {
+           await client.query(
+             "INSERT INTO notifications (sender_username, receiver_username, action, message_id, timestamp) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING",
+             [senderUsername, parentOwner, 'reply', repliedToId, timestamp]
+           );
+        }
       }
     }
     
@@ -163,6 +178,19 @@ Database[Database.ts{pool: any}]
     await client.query('BEGIN');
     await client.query('INSERT INTO likes (message_id, username) VALUES ($1, $2)', [messageId, username]);
     await client.query('UPDATE messages SET liked_count = liked_count + 1 WHERE id = $1', [messageId]);
+    
+    // Notification for like
+    const msgRes = await client.query("SELECT sender_username FROM messages WHERE id = $1", [messageId]);
+    if (msgRes.rows.length > 0) {
+      const owner = msgRes.rows[0].sender_username;
+      if (owner !== username) {
+        await client.query(
+          "INSERT INTO notifications (sender_username, receiver_username, action, message_id, timestamp) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING",
+          [username, owner, 'like', messageId, Date.now()]
+        );
+      }
+    }
+
     await client.query('COMMIT');
   } catch (e) {
     await client.query('ROLLBACK');
@@ -239,6 +267,14 @@ Database[Database.ts{pool: any}]
     // 6. Increment original retweet count
     await client.query('UPDATE messages SET retweet_count = retweet_count + 1 WHERE id = $1', [originalId]);
     
+    // Notification for retweet
+    if (origRow.sender_username !== sender) {
+       await client.query(
+         "INSERT INTO notifications (sender_username, receiver_username, action, message_id, timestamp) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING",
+         [sender, origRow.sender_username, 'retweet', originalId, ts]
+       );
+    }
+
     await client.query('COMMIT');
     
     const row = retweet.rows[0];
@@ -327,6 +363,13 @@ Database[Database.ts{pool: any}]
     await client.query('INSERT INTO follows (follower_username, following_username) VALUES ($1, $2)', [follower, following]);
     await client.query('UPDATE users SET follower_count = follower_count + 1 WHERE username = $1', [following]);
     await client.query('UPDATE users SET following_count = following_count + 1 WHERE username = $1', [follower]);
+    
+    // Notification for follow
+    await client.query(
+      "INSERT INTO notifications (sender_username, receiver_username, action, timestamp) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING",
+      [follower, following, 'follow', Date.now()]
+    );
+
     await client.query('COMMIT');
   } catch (e) {
     await client.query('ROLLBACK');
@@ -395,6 +438,34 @@ Database[Database.ts{pool: any}]
     count: Number(row.count)
   }));
 @@Database.getTrendingHashtags.end
+
+@async @Database.getNotifications{username: string}: any
+@@Database.getNotifications.code
+  const res = await this.pool.query(
+    "SELECT n.*, u.avatar_url as sender_avatar, u.name as sender_name " +
+    "FROM notifications n " +
+    "JOIN users u ON n.sender_username = u.username " +
+    "WHERE n.receiver_username = $1 " +
+    "ORDER BY n.timestamp DESC LIMIT 50",
+    [username]
+  );
+  return res.rows.map(row => ({
+    id: row.id,
+    from: row.sender_username,
+    fromName: row.sender_name,
+    fromAvatar: row.sender_avatar,
+    to: row.receiver_username,
+    action: row.action,
+    messageId: row.message_id,
+    timestamp: Number(row.timestamp),
+    isRead: row.is_read
+  }));
+@@Database.getNotifications.end
+
+@async @Database.markNotificationsRead{username: string}: void
+@@Database.markNotificationsRead.code
+  await this.pool.query("UPDATE notifications SET is_read = TRUE WHERE receiver_username = $1", [username]);
+@@Database.markNotificationsRead.end
 
 @async @Database.query{text: string, params: any}: any
 @@Database.query.code

@@ -157,3 +157,25 @@ Feed --> AuthFE
   if (!response.ok) throw new Error("Failed to fetch trending tags");
   return await response.json();
 @@Feed.getTrending.end
+
+@async @Feed.getNotifications{}: any
+@@Feed.getNotifications.code
+  const response = await fetch("http://localhost:8080/api/notifications", {
+    headers: {
+      "Authorization": "Bearer " + window.app.auth.token
+    }
+  });
+  if (!response.ok) throw new Error("Failed to fetch notifications");
+  return await response.json();
+@@Feed.getNotifications.end
+
+@async @Feed.markNotificationsRead{}: any
+@@Feed.markNotificationsRead.code
+  const response = await fetch("http://localhost:8080/api/notifications/read", {
+    method: "POST",
+    headers: {
+      "Authorization": "Bearer " + window.app.auth.token
+    }
+  });
+  return await response.json();
+@@Feed.markNotificationsRead.end

@@ -433,6 +433,31 @@ Server --> Auth
       return;
     }
 
+    if (req.method === 'GET' && req.url === '/api/notifications') {
+      const user = getAuthUser(req);
+      if (!user) { res.writeHead(401); res.end(); return; }
+      try {
+        const notes = await this.auth.db.getNotifications(user.username);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(notes));
+      } catch (e) {
+        res.writeHead(500); res.end(JSON.stringify({ error: e.message }));
+      }
+      return;
+    }
+
+    if (req.method === 'POST' && req.url === '/api/notifications/read') {
+      const user = getAuthUser(req);
+      if (!user) { res.writeHead(401); res.end(); return; }
+      try {
+        await this.auth.db.markNotificationsRead(user.username);
+        res.writeHead(200); res.end(JSON.stringify({ success: true }));
+      } catch (e) {
+        res.writeHead(500); res.end(JSON.stringify({ error: e.message }));
+      }
+      return;
+    }
+
     // Default fallback
     res.writeHead(404);
     res.end();

@@ -61,7 +61,8 @@ h4 {
 
 @media (min-width: 1000px) {
     .container {
-        max-width: none; /* Let grid control width */
+        max-width: none;
+        /* Let grid control width */
         margin-left: 0;
     }
 }
@@ -692,7 +693,8 @@ h4 {
 /* Trending Sidebar */
 .right-sidebar {
     padding: 16px 0;
-    display: none; /* Hidden on small screens */
+    display: none;
+    /* Hidden on small screens */
 }
 
 @media (min-width: 1000px) {
@@ -739,4 +741,87 @@ h4 {
 .trending-count {
     color: var(--text-secondary);
     font-size: 13px;
+}
+
+/* Notifications Support */
+.badge {
+    background: #ff0000;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 10px;
+    margin-left: 5px;
+    min-width: 18px;
+    text-align: center;
+    line-height: 1;
+    font-family: inherit;
+}
+
+.notification-item {
+    display: flex;
+    padding: 15px;
+    border-bottom: 1px solid var(--border-color);
+    align-items: center;
+    transition: background 0.2s;
+}
+
+.notification-item.unread {
+    background: rgba(29, 155, 240, 0.1);
+    /* Light blue highlight for unread */
+}
+
+.notification-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 12px;
+    object-fit: cover;
+}
+
+.notification-content {
+    flex: 1;
+}
+
+.notification-user {
+    font-weight: bold;
+    color: var(--text-primary);
+}
+
+.notification-time {
+    font-size: 0.8em;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.empty-notifications {
+    padding: 40px;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+#notifications-list h3 {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    margin: 0;
+}
+
+#notifications-badge {
+    padding: 10px;
+    background-color: var(--accent-color);
+    color: var(--text-primary);
+    border-radius: var(--radius-full);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: opacity 0.2s;
+    flex-shrink: 0;
+    position: absolute;
+    top: -12px;
+    right: -15px;
+}
+
+#backToHomeBtn {
+    margin: 12px;
+    width: auto;
 }

@@ -13,10 +13,11 @@
         <div class="container">
             <div class="header">
                 <div class="profile-section">
-                    <a id="profile-avatar-link" href="#"><img id="sidebar-avatar" src="http://localhost:8080/images/userprofiledefault.png"
-                        class="profile-avatar-sm"></a>
+                    <a id="profile-avatar-link" href="#"><img id="sidebar-avatar"
+                            src="http://localhost:8080/images/userprofiledefault.png" class="profile-avatar-sm"></a>
                     <div class="profile-info">
-                        <a id="profile-name-link" href="#" style="text-decoration: none; color: inherit;"><span id="header-name" style="font-weight: bold;"></span></a>
+                        <a id="profile-name-link" href="#" style="text-decoration: none; color: inherit;"><span
+                                id="header-name" style="font-weight: bold;"></span></a>
                         <div class="user-stats">
                             <span><b id="header-following-count">0</b> Following</span>
                             <span><b id="header-followers-count">0</b> Followers</span>
@@ -25,8 +26,12 @@
                         <input type="file" id="avatarInput" accept="image/png, image/jpeg" style="display: none;">
                     </div>
                 </div>
-                <button id="logoutBtn" class="btn btn-outline"
-                    style="width: auto; padding: 6px 12px; font-size: 14px; margin: 0;">Log out</button>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button id="notificationsBtn" class="btn btn-outline" style="position: relative;">Notifications
+                        <span id="notifications-badge" class="badge" style="display: none;">0</span>
+                    </button>
+                    <button id="logoutBtn" class="btn btn-outline">Log out</button>
+                </div>
             </div>
 
             <div id="app-box">
@@ -47,11 +52,20 @@
                         <button id="postBtn" class="btn btn-primary">Post</button>
                     </div>
                 </div>
-                <h3 class="timeline-header">Timeline</h3>
-                <div id="timeline"></div>
-                <div class="load-more-container">
-                    <button id="loadMoreBtn" class="btn btn-outline" style="display: none;"
-                        onclick="window.app.loadMore('timeline')">Load More</button>
+                <div id="timeline-container">
+                    <h3 class="timeline-header">Timeline</h3>
+                    <div id="timeline"></div>
+                    <div class="load-more-container">
+                        <button id="loadMoreBtn" class="btn btn-outline" style="display: none;"
+                            onclick="window.app.loadMore('timeline')">Load More</button>
+                    </div>
+                </div>
+
+                <div id="notifications-container" style="display: none;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                        <button id="backToHomeBtn" class="btn btn-outline">Back</button>
+                    </div>
+                    <div id="notifications-list"></div>
                 </div>
             </div>
         </div>
@@ -71,12 +85,12 @@
             window.location.href = 'login.html';
         } else {
             const currentUsername = window.app.auth.currentUser.username;
-            
+
             // Initial UI sync with cached data
             document.getElementById('header-name').innerText = window.app.auth.currentUser.name || currentUsername;
             document.getElementById('header-following-count').innerText = window.app.auth.currentUser.followingCount || window.app.auth.currentUser.following_count || 0;
             document.getElementById('header-followers-count').innerText = window.app.auth.currentUser.followerCount || window.app.auth.currentUser.follower_count || 0;
-            
+
             // Asynchronously fetch fresh data
             window.app.getUserInfo(currentUsername).then(user => {
                 window.app.auth.updateCurrentUser(user);
@@ -103,7 +117,23 @@
             if (tag) {
                 await window.app.showHashtagTimeline(tag);
             }
+
+            // Periodic notification check
+            window.app.checkNotifications();
+            setInterval(() => window.app.checkNotifications(), 30000);
         }
+
+        document.getElementById('notificationsBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('timeline-container').style.display = 'none';
+            document.getElementById('notifications-container').style.display = 'block';
+            window.app.renderNotifications('notifications-list');
+        });
+
+        document.getElementById('backToHomeBtn').addEventListener('click', () => {
+            document.getElementById('notifications-container').style.display = 'none';
+            document.getElementById('timeline-container').style.display = 'block';
+        });
 
         document.getElementById('logoutBtn').addEventListener('click', () => {
             window.app.auth.logout();

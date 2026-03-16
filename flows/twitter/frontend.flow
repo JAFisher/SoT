@@ -122,6 +122,67 @@ TwitterApp --> Messaging
     }
   @@TwitterApp.renderTrending.end
 
+  @async @TwitterApp.renderNotifications{containerId: string}: void
+  @@TwitterApp.renderNotifications.code
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    try {
+      const notifications = await this.feed.getNotifications();
+      if (!notifications || notifications.length === 0) {
+        container.innerHTML = "<div class='empty-notifications'>No notifications yet.</div>";
+        return;
+      }
+
+      let html = "<h3>Notifications</h3>";
+      notifications.forEach(n => {
+        const time = this.formatRelativeTime(n.timestamp);
+        let actionText = "";
+        let icon = "";
+        if (n.action === 'like') { actionText = "liked your tweet"; icon = "❤️"; }
+        else if (n.action === 'follow') { actionText = "followed you"; icon = "👤"; }
+        else if (n.action === 'retweet') { actionText = "retweeted your tweet"; icon = "🔄"; }
+        else if (n.action === 'reply') { actionText = "replied to your tweet"; icon = "💬"; }
+
+        html += 
+          "<div class='notification-item " + (n.isRead ? "" : "unread") + "'>" +
+            "<img src='" + (n.fromAvatar || 'http://localhost:8080/images/userprofiledefault.png') + "' class='notification-avatar'>" +
+            "<div class='notification-content'>" +
+              "<div><span class='notification-user'>@" + n.from + "</span> " + actionText + " " + icon + "</div>" +
+              "<div class='notification-time'>" + time + "</div>" +
+            "</div>" +
+          "</div>";
+      });
+      container.innerHTML = html;
+      
+      // Mark as read immediately when viewed
+      this.feed.markNotificationsRead();
+      const navBadge = document.getElementById('notifications-badge');
+      if (navBadge) navBadge.style.display = 'none';
+    } catch (e) {
+      console.error("Failed to render notifications:", e);
+    }
+  @@TwitterApp.renderNotifications.end
+
+  @async @TwitterApp.checkNotifications{}: void
+  @@TwitterApp.checkNotifications.code
+    try {
+      const notifications = await this.feed.getNotifications();
+      const unreadCount = notifications.filter(n => !n.isRead).length;
+      const navBadge = document.getElementById('notifications-badge');
+      if (navBadge) {
+        if (unreadCount > 0) {
+          navBadge.innerText = unreadCount > 9 ? "9+" : unreadCount;
+          navBadge.style.display = 'block';
+        } else {
+          navBadge.style.display = 'none';
+        }
+      }
+    } catch (e) {
+      console.error("Failed to check notifications:", e);
+    }
+  @@TwitterApp.checkNotifications.end
+
 @async @TwitterApp.loadTimeline{containerId: string, append: boolean}: void
 @@TwitterApp.loadTimeline.code
   const container = document.getElementById(containerId);
