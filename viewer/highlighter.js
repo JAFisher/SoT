@@ -16,29 +16,29 @@ window.FlowHighlighter = {
 
     const rules = [
       // Comments (%% or //)
-      { pattern: /(%%.*$|\/\/.*$)/gm, class: "flow-comment" },
+      { pattern: /%%.*$|\/\/.*$/gm, class: "flow-comment" },
       
       // Keywords
       { pattern: /\b(include|extern|type|interface|web|docker|Rollup|cliscripts|pkg|main)\b/g, class: "flow-keyword" },
       
       // Arrows/Operators
-      { pattern: /(-&gt;|---&gt;|---\|&gt;)/g, class: "flow-operator" },
+      { pattern: /-&gt;|---&gt;|---\|&gt;/g, class: "flow-operator" },
       
       // Decorators/Modifiers
-      { pattern: /(@async)\b/g, class: "flow-modifier" },
+      { pattern: /@async\b/g, class: "flow-modifier" },
       
       // Class/Method markers
-      { pattern: /(@{1,2})([\w.]+)(\.code|\.end)/g, class: "flow-block-marker" },
-      { pattern: /(@)(\w+)\.([\w]+)/g, class: "flow-method-sig" },
+      { pattern: /@{1,2}[\w.]+(\.code|\.end)/g, class: "flow-block-marker" },
+      { pattern: /@\w+\.[\w]+/g, class: "flow-method-sig" },
       
       // Parentheses/Braces
-      { pattern: /([{}()\[\]])/g, class: "flow-punctuation" },
+      { pattern: /[{}()\[\]]/g, class: "flow-punctuation" },
       
       // Strings
-      { pattern: /(&quot;.*?&quot;|&#039;.*?&#039;)/g, class: "flow-string" },
+      { pattern: /&quot;.*?&quot;|&#039;.*?&#039;/g, class: "flow-string" },
       
       // Numbers
-      { pattern: /\b(\d+)\b/g, class: "flow-number" }
+      { pattern: /\b\d+\b/g, class: "flow-number" }
     ];
 
     let highlighted = escaped;
@@ -47,9 +47,10 @@ window.FlowHighlighter = {
     // For a simple highlighter, we'll use a placeholder technique or just order them.
     // Order matters: comments first, then blocks, keywords, etc.
     
-    // Actually, simple regex replacement in order can work if we use spans
+    // Apply rules. We use $& (or $0 in some contexts, but $& is the standard for "entire match")
+    // to wrap the entire matched string in a span.
     rules.forEach(rule => {
-      highlighted = highlighted.replace(rule.pattern, `<span class="${rule.class}">$1</span>`);
+      highlighted = highlighted.replace(rule.pattern, `<span class="${rule.class}">$&</span>`);
     });
 
     return highlighted;
