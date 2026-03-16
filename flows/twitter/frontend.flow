@@ -145,11 +145,18 @@ TwitterApp --> Messaging
         else if (n.action === 'reply') { actionText = "replied to your tweet"; icon = "💬"; }
 
         html += 
-          "<div class='notification-item " + (n.isRead ? "" : "unread") + "'>" +
+          "<div class='notification-item " + (n.isRead ? "" : "unread") + "' id='notification-" + n.id + "'>" +
             "<img src='" + (n.fromAvatar || 'http://localhost:8080/images/userprofiledefault.png') + "' class='notification-avatar'>" +
             "<div class='notification-content'>" +
               "<div><span class='notification-user'>@" + n.from + "</span> " + actionText + " " + icon + "</div>" +
+              (n.parentContent ? "<div class='notification-parent-preview' style='font-size: 0.85em; opacity: 0.6; margin: 4px 0; padding-left: 8px; border-left: 2px solid var(--border-color);'>Replying to: \"" + n.parentContent + "\"</div>" : "") +
+              (n.messageContent ? "<div class='notification-message-preview'>\"" + n.messageContent + "\"</div>" : "") +
               "<div class='notification-time'>" + time + "</div>" +
+              "<div class='notification-actions' style='margin-top: 8px; display: flex; gap: 10px;'>" +
+                (n.action === 'reply' ? "<button class='btn btn-outline btn-compact' onclick=\"window.app.startReply('" + n.messageId + "', '" + n.from + "', 'notif-" + n.id + "')\"> Reply Back</button>" : "") +
+                (n.action === 'follow' && !this.followedUsers.has(n.from) ? "<button class='btn btn-primary btn-compact' id='follow-back-" + n.from + "' style='width:auto;' onclick=\"window.app.toggleFollow('" + n.from + "', 0)\">👤 Follow Back</button>" : "") +
+              "</div>" +
+              "<div id='replies-instance-notif-" + n.id + "' class='replies-container' style='display: none;'></div>" +
             "</div>" +
           "</div>";
       });
@@ -652,6 +659,12 @@ TwitterApp --> Messaging
     buttons.forEach((btn: any) => {
       btn.innerText = isFollowing ? "Follow" : "Unfollow";
     });
+
+    // If we just followed, remove any 'Follow Back' buttons for this user
+    if (!isFollowing) {
+      const followBackBtns = document.querySelectorAll("[id='follow-back-" + username + "']");
+      followBackBtns.forEach((btn: any) => btn.remove());
+    }
     
     // Update local following count
     if (this.auth.currentUser) {

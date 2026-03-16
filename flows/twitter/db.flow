@@ -72,7 +72,7 @@ Database[Database.ts{pool: any}]
         if (parentOwner !== senderUsername) {
            await client.query(
              "INSERT INTO notifications (sender_username, receiver_username, action, message_id, timestamp) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING",
-             [senderUsername, parentOwner, 'reply', repliedToId, timestamp]
+             [senderUsername, parentOwner, 'reply', message.id, timestamp]
            );
         }
       }
@@ -442,9 +442,11 @@ Database[Database.ts{pool: any}]
 @async @Database.getNotifications{username: string}: any
 @@Database.getNotifications.code
   const res = await this.pool.query(
-    "SELECT n.*, u.avatar_url as sender_avatar, u.name as sender_name " +
+    "SELECT n.*, u.avatar_url as sender_avatar, u.name as sender_name, m.content as message_content, " +
+    "(SELECT content FROM messages WHERE id = m.replied_to_id) as parent_content " +
     "FROM notifications n " +
     "JOIN users u ON n.sender_username = u.username " +
+    "LEFT JOIN messages m ON n.message_id = m.id " +
     "WHERE n.receiver_username = $1 " +
     "ORDER BY n.timestamp DESC LIMIT 50",
     [username]
@@ -457,6 +459,8 @@ Database[Database.ts{pool: any}]
     to: row.receiver_username,
     action: row.action,
     messageId: row.message_id,
+    messageContent: row.message_content,
+    parentContent: row.parent_content,
     timestamp: Number(row.timestamp),
     isRead: row.is_read
   }));

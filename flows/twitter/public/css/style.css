@@ -825,3 +825,7 @@ h4 {
     margin: 12px;
     width: auto;
 }
+
+.btn-compact {
+    width: auto
+}
