@@ -50,16 +50,30 @@ async function build() {
                 mkdirSync(outPath, { recursive: true });
                 generateFromFlowchart(content, outPath, folderPath);
 
-                const assetsPath = path.join(folderPath, "assets");
-                if (existsSync(assetsPath)) {
-                    cpSync(assetsPath, path.join(outPath, "assets"), { recursive: true });
-                    console.log(`   Copied assets from ${assetsPath} to ${outPath}/assets`);
+                // Tier 1: Shared Tier (category level)
+                // e.g., flows/twitter/public/ -> src/twitter/server/public/
+                const sharedAssets = path.join(folderPath, "assets");
+                if (existsSync(sharedAssets)) {
+                    cpSync(sharedAssets, path.join(outPath, "assets"), { recursive: true });
+                    console.log(`   Copied shared assets: ${sharedAssets}`);
+                }
+                const sharedPublic = path.join(folderPath, "public");
+                if (existsSync(sharedPublic)) {
+                    cpSync(sharedPublic, path.join(outPath, "public"), { recursive: true });
+                    console.log(`   Copied shared public: ${sharedPublic}`);
                 }
 
-                const publicPath = path.join(folderPath, "public");
-                if (existsSync(publicPath)) {
-                    cpSync(publicPath, path.join(outPath, "public"), { recursive: true });
-                    console.log(`   Copied public from ${publicPath} to ${outPath}/public`);
+                // Tier 2: Specific Tier (flow-namespaced level)
+                // e.g., if serviceName is "server", looks in flows/twitter/server/public/
+                const specificAssets = path.join(folderPath, serviceName, "assets");
+                if (existsSync(specificAssets)) {
+                    cpSync(specificAssets, path.join(outPath, "assets"), { recursive: true });
+                    console.log(`   Copied specific assets: ${specificAssets}`);
+                }
+                const specificPublic = path.join(folderPath, serviceName, "public");
+                if (existsSync(specificPublic)) {
+                    cpSync(specificPublic, path.join(outPath, "public"), { recursive: true });
+                    console.log(`   Copied specific public: ${specificPublic}`);
                 }
 
                 results.success.push(`${folderName}/${serviceName}`);

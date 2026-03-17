@@ -1,5 +1,5 @@
 graph TD
-  include->web_core.flow
+  include->../chat/web_core.flow
 
   DashboardData[DashboardData.ts { metrics: any }]
 
