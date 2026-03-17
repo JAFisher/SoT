@@ -8,8 +8,8 @@
     "chart:build": "node flowToMermaid.js",
     "chart": "node flowToMermaid.js && npx -y serve viewer"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Jamie Andrew Fisher",
+  "license": "MIT",
   "description": "",
   "dependencies": {
     "@mermaid-js/parser": "^0.6.2",
