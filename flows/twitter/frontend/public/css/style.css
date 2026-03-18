@@ -690,6 +690,10 @@ h4 {
     color: var(--text-primary);
 }
 
+.profile-stats-large a:hover span, .user-stats a:hover span {
+    text-decoration: underline;
+}
+
 /* Trending Sidebar */
 .right-sidebar {
     padding: 16px 0;
@@ -798,8 +802,83 @@ h4 {
 .empty-notifications {
     padding: 40px;
     text-align: center;
+}
+
+/* Social List Styles */
+.user-item {
+    display: flex;
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    align-items: center;
+    justify-content: space-between;
+    transition: background-color 0.2s;
+}
+
+.user-item:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.user-item-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: inherit;
+    flex: 1;
+}
+
+.user-item-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 12px;
+}
+
+.user-item-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-item-name {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.user-item-username {
     color: var(--text-secondary);
-    font-size: 16px;
+    font-size: 14px;
+}
+
+.user-item-actions {
+    margin-left: 16px;
+}
+
+.social-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.social-tab {
+    flex: 1;
+    text-align: center;
+    padding: 16px;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-secondary);
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.social-tab:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.social-tab.active {
+    color: var(--accent-color);
+    border-bottom: 4px solid var(--accent-color);
+}
+
+#notifications-list {
+    padding: 20px;
 }
 
 #notifications-list h3 {

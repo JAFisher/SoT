@@ -27,8 +27,8 @@
                         <h2 id="profile-name" style="margin-bottom: 4px;"></h2>
                         <div id="profile-username" style="color: var(--text-secondary); margin-bottom: 12px;"></div>
                         <div class="profile-stats-large">
-                            <span><b id="profile-following">0</b> Following</span>
-                            <span><b id="profile-followers">0</b> Followers</span>
+                            <a id="profile-following-link" href="#" style="text-decoration: none; color: inherit;"><span><b id="profile-following">0</b> Following</span></a>
+                            <a id="profile-followers-link" href="#" style="text-decoration: none; color: inherit;"><span><b id="profile-followers">0</b> Followers</span></a>
                         </div>
                     </div>
                 </div>
@@ -68,6 +68,8 @@
                     document.getElementById('profile-avatar').src = user.avatar_url;
                 }
                 document.getElementById('profile-title').innerText = user.name || user.username;
+                document.getElementById('profile-following-link').href = 'social.html?username=' + username + '&tab=following';
+                document.getElementById('profile-followers-link').href = 'social.html?username=' + username + '&tab=followers';
 
                 await window.app.renderUserTimeline('user-timeline', username, false);
                 await window.app.renderTrending('trending-container');

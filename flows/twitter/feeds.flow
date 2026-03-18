@@ -153,6 +153,20 @@ Feed --> AuthFE
   if (!response.ok) throw new Error("Failed to fetch following list");
   return await response.json();
 @@Feed.getFollowing.end
+
+@async @Feed.getFollowers{username: string}: any
+@@Feed.getFollowers.code
+  const response = await fetch("http://localhost:8080/api/followers?username=" + username);
+  if (!response.ok) throw new Error("Failed to fetch followers");
+  return await response.json();
+@@Feed.getFollowers.end
+
+@async @Feed.getFollowingList{username: string}: any
+@@Feed.getFollowingList.code
+  const response = await fetch("http://localhost:8080/api/following?username=" + username);
+  if (!response.ok) throw new Error("Failed to fetch following list");
+  return await response.json();
+@@Feed.getFollowingList.end
 @async @Feed.getTrending{}: any
 @@Feed.getTrending.code
   const response = await fetch("http://localhost:8080/api/trending");

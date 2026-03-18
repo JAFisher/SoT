@@ -440,6 +440,38 @@ Database[Database.ts{pool: any}]
   return res.rows.map(row => row.following_username);
 @@Database.getFollowing.end
 
+@async @Database.getFollowersDetails{username: string}: any[]
+@@Database.getFollowersDetails.code
+  const res = await this.pool.query(
+    "SELECT u.username, u.name, u.avatar_url " +
+    "FROM users u " +
+    "JOIN follows f ON u.username = f.follower_username " +
+    "WHERE f.following_username = $1",
+    [username]
+  );
+  return res.rows.map(row => ({
+    username: row.username,
+    name: row.name,
+    avatarUrl: row.avatar_url
+  }));
+@@Database.getFollowersDetails.end
+
+@async @Database.getFollowingDetails{username: string}: any[]
+@@Database.getFollowingDetails.code
+  const res = await this.pool.query(
+    "SELECT u.username, u.name, u.avatar_url " +
+    "FROM users u " +
+    "JOIN follows f ON u.username = f.following_username " +
+    "WHERE f.follower_username = $1",
+    [username]
+  );
+  return res.rows.map(row => ({
+    username: row.username,
+    name: row.name,
+    avatarUrl: row.avatar_url
+  }));
+@@Database.getFollowingDetails.end
+
 @async @Database.getUser{username: string}: any
 @@Database.getUser.code
   const res = await this.pool.query("SELECT * FROM users WHERE username = $1", [username]);

@@ -720,4 +720,58 @@ TwitterApp --> Messaging
   }
 @@TwitterApp.toggleFollow.end
 
+@async @TwitterApp.renderSocialList{containerId: string, username: string, type: string}: void
+@@TwitterApp.renderSocialList.code
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    container.innerHTML = "<div class='loading'>Loading list...</div>";
+
+    try {
+      let users = [];
+      if (type === 'followers') {
+        users = await this.feed.getFollowers(username);
+      } else {
+        users = await this.feed.getFollowingList(username);
+      }
+
+      if (users.length === 0) {
+        container.innerHTML = "<div class='empty-timeline'>No users found.</div>";
+        return;
+      }
+
+      let html = "";
+      users.forEach(u => {
+        html += this.renderUserItem(u);
+      });
+      container.innerHTML = html;
+    } catch (e) {
+      this.showToast(e.message, 'error');
+      container.innerHTML = "<div class='error'>Error loading list.</div>";
+    }
+@@TwitterApp.renderSocialList.end
+
+@TwitterApp.renderUserItem{user: any}: string
+@@TwitterApp.renderUserItem.code
+    const avatarUrl = user.avatarUrl || 'http://localhost:8080/images/userprofiledefault.png';
+    const isFollowing = this.followedUsers.has(user.username);
+    const currentUser = this.auth.getCurrentUser();
+    const isSelf = currentUser && currentUser.username === user.username;
+    
+    // We add a unique ID for each list item if needed, but for now just standard
+    const followBtn = (!isSelf && currentUser) ? 
+      "<button class=\"btn " + (isFollowing ? "btn-outline" : "btn-primary") + " btn-compact\" style=\"width:auto;\" onclick=\"window.app.toggleFollow('" + user.username + "', 0)\">" + (isFollowing ? "Unfollow" : "Follow") + "</button>" : "";
+
+    return "<div class='user-item'>" +
+             "<a href='profile.html?username=" + user.username + "' class='user-item-link'>" +
+               "<img src='" + avatarUrl + "' class='user-item-avatar'>" +
+               "<div class='user-item-info'>" +
+                 "<div class='user-item-name'>" + (user.name || user.username) + "</div>" +
+                 "<div class='user-item-username'>@" + user.username + "</div>" +
+               "</div>" +
+             "</a>" +
+             "<div class='user-item-actions'>" + followBtn + "</div>" +
+           "</div>";
+@@TwitterApp.renderUserItem.end
+
 Rollup->{AuthFE.ts, Feed.ts, Messaging.ts, TwitterApp.ts}

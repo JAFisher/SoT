@@ -368,17 +368,36 @@ Server --> Auth
       return;
     }
 
-    if (req.method === 'GET' && req.url === '/api/following') {
+    if (req.method === 'GET' && req.url.startsWith('/api/following')) {
       const user = getAuthUser(req);
-      if (!user) { res.writeHead(401); res.end(); return; }
+      const url = new URL(req.url, "http://" + req.headers.host);
+      const username = url.searchParams.get('username') || (user ? user.username : null);
+      
+      if (!username) { res.writeHead(400); res.end(JSON.stringify({ error: "Missing username" })); return; }
+      
       try {
-        const following = await this.auth.db.getFollowing(user.username);
+        const following = await this.auth.db.getFollowingDetails(username);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(following));
       } catch (e) {
         res.writeHead(500); res.end(JSON.stringify({ error: e.message }));
       }
       return;
+    }
+
+    if (req.method === 'GET' && req.url.startsWith('/api/followers')) {
+       const url = new URL(req.url, "http://" + req.headers.host);
+       const username = url.searchParams.get('username');
+       if (!username) { res.writeHead(400); res.end(JSON.stringify({ error: "Missing username" })); return; }
+       
+       try {
+         const followers = await this.auth.db.getFollowersDetails(username);
+         res.writeHead(200, { 'Content-Type': 'application/json' });
+         res.end(JSON.stringify(followers));
+       } catch (e) {
+         res.writeHead(500); res.end(JSON.stringify({ error: e.message }));
+       }
+       return;
     }
 
     if (req.method === 'GET' && req.url.startsWith('/api/replies')) {
