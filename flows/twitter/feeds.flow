@@ -82,9 +82,11 @@ Feed --> AuthFE
    return await res.json();
  @@Feed.getHashtagFeed.end
 
-@async @Feed.getUserTweets{username: string}: any
+@async @Feed.getUserTweets{username: string, limit: number, offset: number}: any
 @@Feed.getUserTweets.code
-  const response = await fetch('http://localhost:8080/api/tweets?username=' + username);
+  const l = limit || 10;
+  const o = offset || 0;
+  const response = await fetch('http://localhost:8080/api/tweets?username=' + username + '&limit=' + l + '&offset=' + o);
   if (!response.ok) throw new Error("Failed to fetch user tweets");
   return await response.json();
 @@Feed.getUserTweets.end

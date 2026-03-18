@@ -35,6 +35,9 @@
 
                 <h3 class="timeline-header">Messages</h3>
                 <div id="user-timeline"></div>
+                <div class="load-more-container">
+                    <button id="loadMoreBtn" class="btn btn-outline" style="display: none;">Load More</button>
+                </div>
             </div>
         </div>
 
@@ -66,7 +69,7 @@
                 }
                 document.getElementById('profile-title').innerText = user.name || user.username;
 
-                await window.app.renderUserTimeline('user-timeline', username, 0);
+                await window.app.renderUserTimeline('user-timeline', username, false);
                 await window.app.renderTrending('trending-container');
             } catch (err) {
                 window.app.showToast("User not found", 'error');

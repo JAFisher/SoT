@@ -17,6 +17,7 @@ TwitterApp --> Messaging
   this.initialized = false;
   this.renderCount = 0;
   this.tweetsOffset = 0;
+  this.profileTweetsOffset = 0;
   this.tweetsLimit = 25;
   this.followedUsers = new Set();
 @@TwitterApp.constructor.end
@@ -49,29 +50,29 @@ TwitterApp --> Messaging
   await this.loadTimeline(containerId, false);
 @@TwitterApp.renderTimeline.end
 
-@async @TwitterApp.renderUserTimeline{containerId: string, username: string, offset: number}: void
+@async @TwitterApp.renderUserTimeline{containerId: string, username: string, append: boolean}: void
 @@TwitterApp.renderUserTimeline.code
     const container = document.getElementById(containerId);
     if (!container) return;
     
-    // Initial fetch
-    if (offset === 0) {
+    if (!append) {
+      this.profileTweetsOffset = 0;
       container.innerHTML = "<div class='loading'>Loading timeline...</div>";
-      this.currentTimelineOffset = 0;
     }
 
     try {
-      const tweets = await this.feed.getUserTweets(username); 
-      // Actually getUserTweets in feeds.flow doesn't support offset/limit yet, 
-      // let's update getUserTweets in feeds.flow or use it as is if it's fine for now.
-      // Wait, getUserTweets in feeds.flow:
-      // const response = await fetch('http://localhost:8080/api/tweets?username=' + username);
-      // Let's stick with that for now or update it.
+      const tweets = await this.feed.getUserTweets(username, this.tweetsLimit, this.profileTweetsOffset); 
       
-      if (offset === 0) container.innerHTML = "";
+      if (!append) container.innerHTML = "";
       
-      if (tweets.length === 0 && offset === 0) {
-        container.innerHTML = "<div class='empty-timeline'>No messages yet.</div>";
+      if (tweets.length === 0) {
+        if (!append) {
+          container.innerHTML = "<div class='empty-timeline'>No messages yet.</div>";
+        } else {
+          this.showToast("No more messages", "info");
+        }
+        const loadMoreBtn = document.getElementById('loadMoreBtn');
+        if (loadMoreBtn) loadMoreBtn.style.display = 'none';
         return;
       }
 
@@ -79,9 +80,21 @@ TwitterApp --> Messaging
       for (const t of tweets) {
         html += this.renderSingleTweet(t);
       }
-      container.innerHTML = html;
       
-      // Handle Load More logic if we add it later for profile
+      if (append) {
+        container.innerHTML += html;
+      } else {
+        container.innerHTML = html;
+      }
+      
+      this.profileTweetsOffset += tweets.length;
+      
+      // Update Load More button
+      const loadMoreBtn = document.getElementById('loadMoreBtn');
+      if (loadMoreBtn) {
+        loadMoreBtn.style.display = tweets.length < this.tweetsLimit ? 'none' : 'block';
+        loadMoreBtn.onclick = () => this.renderUserTimeline(containerId, username, true);
+      }
     } catch (e) {
       this.showToast(e.message, 'error');
     }
