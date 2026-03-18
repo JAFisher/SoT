@@ -4,7 +4,7 @@ include->messages.flow
 
 cliscripts->start node -e "require('fs').copyFileSync('compiled.js', 'public/compiled.js')" && npx -y http-server public -p 3000
 
-TwitterApp[TwitterApp.ts{auth: any, feed: any, messaging: any, initialized: boolean, followedUsers: Set<string>}]
+TwitterApp[TwitterApp.ts{auth: any, feed: any, messaging: any, initialized: boolean, followedUsers: Set<string>, currentSocialUser: string, currentSocialType: string}]
 TwitterApp --> AuthFE
 TwitterApp --> Feed
 TwitterApp --> Messaging
@@ -20,6 +20,8 @@ TwitterApp --> Messaging
   this.profileTweetsOffset = 0;
   this.tweetsLimit = 25;
   this.followedUsers = new Set();
+  this.currentSocialUser = "";
+  this.currentSocialType = "";
 @@TwitterApp.constructor.end
 
 @async @TwitterApp.init{}: void
@@ -660,7 +662,7 @@ TwitterApp --> Messaging
 @@TwitterApp.fetchFollowing.code
   try {
     const list = await this.feed.getFollowing();
-    this.followedUsers = new Set(list);
+    this.followedUsers = new Set(list.map((u: any) => u.username));
   } catch (e) {
     console.error("Failed to fetch following list", e);
   }
@@ -714,6 +716,11 @@ TwitterApp --> Messaging
         }
       }
     });
+ 
+    // If on social.html, refresh the list to show updated states and potentially new items
+    if (window.location.pathname.includes('social.html') && this.currentSocialUser) {
+        await this.renderSocialList('social-list', this.currentSocialUser, this.currentSocialType);
+    }
 
   } catch (e) {
     this.showToast("Action failed: " + e.message, "error");
@@ -724,8 +731,10 @@ TwitterApp --> Messaging
 @@TwitterApp.renderSocialList.code
     const container = document.getElementById(containerId);
     if (!container) return;
+ 
+    this.currentSocialUser = username;
+    this.currentSocialType = type;
 
-    container.innerHTML = "<div class='loading'>Loading list...</div>";
 
     try {
       let users = [];
@@ -742,7 +751,7 @@ TwitterApp --> Messaging
 
       let html = "";
       users.forEach(u => {
-        html += this.renderUserItem(u);
+        html += this.renderUserItem(u, type);
       });
       container.innerHTML = html;
     } catch (e) {
@@ -751,16 +760,20 @@ TwitterApp --> Messaging
     }
 @@TwitterApp.renderSocialList.end
 
-@TwitterApp.renderUserItem{user: any}: string
+@TwitterApp.renderUserItem{user: any, listType: string}: string
 @@TwitterApp.renderUserItem.code
     const avatarUrl = user.avatarUrl || 'http://localhost:8080/images/userprofiledefault.png';
     const isFollowing = this.followedUsers.has(user.username);
     const currentUser = this.auth.getCurrentUser();
     const isSelf = currentUser && currentUser.username === user.username;
     
-    // We add a unique ID for each list item if needed, but for now just standard
+    let btnText = isFollowing ? "Unfollow" : "Follow";
+    if (listType === 'followers' && !isFollowing) {
+        btnText = "Follow Back";
+    }
+
     const followBtn = (!isSelf && currentUser) ? 
-      "<button class=\"btn " + (isFollowing ? "btn-outline" : "btn-primary") + " btn-compact\" style=\"width:auto;\" onclick=\"window.app.toggleFollow('" + user.username + "', 0)\">" + (isFollowing ? "Unfollow" : "Follow") + "</button>" : "";
+      "<button class=\"btn " + (isFollowing ? "btn-outline" : "btn-primary") + " btn-compact\" style=\"width:auto;\" onclick=\"window.app.toggleFollow('" + user.username + "', 0)\">" + btnText + "</button>" : "";
 
     return "<div class='user-item'>" +
              "<a href='profile.html?username=" + user.username + "' class='user-item-link'>" +
