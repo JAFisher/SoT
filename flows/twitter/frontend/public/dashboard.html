@@ -19,8 +19,12 @@
                         <a id="profile-name-link" href="#" style="text-decoration: none; color: inherit;"><span
                                 id="header-name" style="font-weight: bold;"></span></a>
                         <div class="user-stats">
-                            <a id="header-following-link" href="#" style="text-decoration: none; color: inherit;"><span><b id="header-following-count">0</b> Following</span></a>
-                            <a id="header-followers-link" href="#" style="text-decoration: none; color: inherit;"><span><b id="header-followers-count">0</b> Followers</span></a>
+                            <a id="header-following-link" href="#"
+                                style="text-decoration: none; color: inherit;"><span><b
+                                        id="header-following-count">0</b> Following</span></a>
+                            <a id="header-followers-link" href="#"
+                                style="text-decoration: none; color: inherit;"><span><b
+                                        id="header-followers-count">0</b> Followers</span></a>
                         </div>
                         <button id="updateAvatarBtn" class="btn-text">Update Avatar</button>
                         <input type="file" id="avatarInput" accept="image/png, image/jpeg" style="display: none;">
@@ -125,7 +129,6 @@
 
             // Periodic notification check
             window.app.checkNotifications();
-            setInterval(() => window.app.checkNotifications(), 30000);
         }
 
         document.getElementById('notificationsBtn').addEventListener('click', (e) => {
