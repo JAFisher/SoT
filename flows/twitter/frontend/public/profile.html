@@ -20,15 +20,23 @@
 
             <div id="app-box">
                 <div class="profile-header">
-                    <div class="profile-banner-placeholder"></div>
+                    <div id="profile-banner" class="profile-banner-placeholder" style="position: relative;">
+                        <button id="updateBannerBtn" class="btn btn-outline" style="display: none;">Update
+                            Banner</button>
+                        <input type="file" id="bannerInput" accept="image/png, image/jpeg" style="display: none;">
+                    </div>
                     <img id="profile-avatar" src="http://localhost:8080/images/userprofiledefault.png"
                         class="profile-avatar-large">
-                    <div style="padding: 16px; margin-top: 8px;">
+                    <div class="profile-info-profile">
                         <h2 id="profile-name" style="margin-bottom: 4px;"></h2>
                         <div id="profile-username" style="color: var(--text-secondary); margin-bottom: 12px;"></div>
                         <div class="profile-stats-large">
-                            <a id="profile-following-link" href="#" style="text-decoration: none; color: inherit;"><span><b id="profile-following">0</b> Following</span></a>
-                            <a id="profile-followers-link" href="#" style="text-decoration: none; color: inherit;"><span><b id="profile-followers">0</b> Followers</span></a>
+                            <a id="profile-following-link" href="#"
+                                style="text-decoration: none; color: inherit;"><span><b id="profile-following">0</b>
+                                    Following</span></a>
+                            <a id="profile-followers-link" href="#"
+                                style="text-decoration: none; color: inherit;"><span><b id="profile-followers">0</b>
+                                    Followers</span></a>
                         </div>
                     </div>
                 </div>
@@ -70,6 +78,36 @@
                 document.getElementById('profile-title').innerText = user.name || user.username;
                 document.getElementById('profile-following-link').href = 'social.html?username=' + username + '&tab=following';
                 document.getElementById('profile-followers-link').href = 'social.html?username=' + username + '&tab=followers';
+
+                if (user.banner_url) {
+                    const bannerElem = document.getElementById('profile-banner');
+                    bannerElem.style.backgroundImage = "url('" + user.banner_url + "')";
+                    bannerElem.classList.remove('profile-banner-placeholder');
+                }
+
+                // Show update button if viewing own profile
+                const currentUser = window.app.auth.getCurrentUser();
+                if (currentUser && currentUser.username === username) {
+                    const upBtn = document.getElementById('updateBannerBtn');
+                    upBtn.style.display = 'block';
+                    upBtn.onclick = () => document.getElementById('bannerInput').click();
+
+                    document.getElementById('bannerInput').onchange = async (e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onload = async (re) => {
+                                try {
+                                    const uploadRes = await window.app.feed.uploadImage(re.target.result);
+                                    await window.app.updateBanner(uploadRes.url);
+                                } catch (err) {
+                                    window.app.showToast(err.message, 'error');
+                                }
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    };
+                }
 
                 await window.app.renderUserTimeline('user-timeline', username, false);
                 await window.app.renderTrending('trending-container');

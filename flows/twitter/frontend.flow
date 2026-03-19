@@ -504,6 +504,34 @@ TwitterApp --> Messaging
   }
 @@TwitterApp.updateAvatar.end
 
+@async @TwitterApp.updateBanner{bannerUrl: string}: void
+@@TwitterApp.updateBanner.code
+  const response = await fetch("http://localhost:8080/api/user/banner", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + this.auth.token
+    },
+    body: JSON.stringify({ bannerUrl })
+  });
+  if (response.ok) {
+    this.showToast("Banner updated!", "success");
+    // Update local user object
+    const user = this.auth.getCurrentUser();
+    if (user) {
+        user.banner_url = bannerUrl;
+        localStorage.setItem('currentUser', JSON.stringify(user));
+    }
+    const bannerElem = document.getElementById('profile-banner');
+    if (bannerElem) {
+        bannerElem.style.backgroundImage = "url('" + bannerUrl + "')";
+        bannerElem.classList.remove('profile-banner-placeholder');
+    }
+  } else {
+    this.showToast("Failed to update banner", "error");
+  }
+@@TwitterApp.updateBanner.end
+
 @TwitterApp.startReply{tweetId: string, author: string, instanceId: number}: void
 @@TwitterApp.startReply.code
   const container = document.getElementById("replies-instance-" + instanceId);

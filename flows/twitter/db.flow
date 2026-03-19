@@ -29,6 +29,7 @@ Database[Database.ts{pool: any}]
   await this.pool.query("CREATE TABLE IF NOT EXISTS users (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), username VARCHAR(255) UNIQUE NOT NULL, name VARCHAR(255) NOT NULL, password_hash VARCHAR(255) NOT NULL, avatar_url TEXT);");
   await this.pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS follower_count INT DEFAULT 0;");
   await this.pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS following_count INT DEFAULT 0;");
+  await this.pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS banner_url TEXT;");
   await this.pool.query("CREATE TABLE IF NOT EXISTS messages (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), sender_username VARCHAR(255) NOT NULL, receiver_username VARCHAR(255) NOT NULL,content TEXT NOT NULL,timestamp BIGINT NOT NULL,replied_to_id UUID,retweeted_id UUID,liked_count INT DEFAULT 0, retweet_count INT DEFAULT 0, image_url TEXT);");
   await this.pool.query("CREATE TABLE IF NOT EXISTS likes ( id SERIAL PRIMARY KEY, message_id UUID NOT NULL REFERENCES messages(id), username VARCHAR(255) NOT NULL, UNIQUE(message_id, username));");
   await this.pool.query("CREATE TABLE IF NOT EXISTS follows (follower_username VARCHAR(255) NOT NULL, following_username VARCHAR(255) NOT NULL, UNIQUE(follower_username, following_username));");
@@ -524,6 +525,11 @@ Database[Database.ts{pool: any}]
 @@Database.updateUserAvatar.code
   await this.pool.query("UPDATE users SET avatar_url = $1 WHERE username = $2", [avatarUrl, username]);
 @@Database.updateUserAvatar.end
+
+@async @Database.updateUserBanner{username: string, bannerUrl: string}: void
+@@Database.updateUserBanner.code
+  await this.pool.query("UPDATE users SET banner_url = $1 WHERE username = $2", [bannerUrl, username]);
+@@Database.updateUserBanner.end
 
 @async @Database.getTrendingHashtags{last24HoursMs: number, limit: number}: any
 @@Database.getTrendingHashtags.code

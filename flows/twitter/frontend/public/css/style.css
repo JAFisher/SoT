@@ -622,6 +622,7 @@ h4 {
     background-color: transparent;
     border: 1px solid var(--accent-color);
     color: var(--accent-color);
+    margin-bottom: unset;
 }
 
 .back-btn:hover {
@@ -650,6 +651,7 @@ h4 {
 
 .profile-header {
     padding: 16px;
+    position: relative;
     border-bottom: 1px solid var(--border-color);
 }
 
@@ -672,7 +674,8 @@ h4 {
     background-color: var(--surface-color);
     object-fit: cover;
     margin-left: 16px;
-    position: relative;
+    position: absolute;
+    bottom: 110px;
 }
 
 .profile-stats-large {
@@ -690,7 +693,8 @@ h4 {
     color: var(--text-primary);
 }
 
-.profile-stats-large a:hover span, .user-stats a:hover span {
+.profile-stats-large a:hover span,
+.user-stats a:hover span {
     text-decoration: underline;
 }
 
@@ -910,4 +914,39 @@ h4 {
 
 .btn-compact {
     width: auto
+}
+
+#updateBannerBtn {
+    display: block;
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: 1px solid white;
+    width: auto;
+    font-size: 12px;
+    border: none;
+    border-radius: 10px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#updateBannerBtn:hover {
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+#profile-banner {
+    width: 100%;
+    height: 200px;
+    background-size: cover;
+    border-radius: var(--radius-md)
+}
+
+.profile-info-profile {
+    margin-top: 55px;
+    z-index: 2;
+    position: relative;
+    padding-left: 16px;
 }
