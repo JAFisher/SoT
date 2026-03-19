@@ -70,7 +70,11 @@ Feed --> AuthFE
 @@Feed.getTimeline.code
   const l = limit || 10;
   const o = offset || 0;
-  const res = await fetch("http://localhost:8080/api/tweets?limit=" + l + "&offset=" + o);
+  const res = await fetch("http://localhost:8080/api/tweets?limit=" + l + "&offset=" + o, {
+    headers: {
+      "Authorization": "Bearer " + (window.app.auth ? window.app.auth.token : "")
+    }
+  });
   return await res.json();
 @@Feed.getTimeline.end
  

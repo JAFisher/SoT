@@ -121,10 +121,14 @@ Server --> Auth
       const limit = parseInt(url.searchParams.get('limit') || '25');
       const offset = parseInt(url.searchParams.get('offset') || '0');
       const username = url.searchParams.get('username');
+      const authUser = getAuthUser(req);
+
       try {
         let tweets;
         if (username) {
           tweets = await this.auth.db.getUserTweets(username, limit, offset);
+        } else if (authUser) {
+          tweets = await this.auth.db.getPersonalizedTweets(authUser.username, limit, offset);
         } else {
           tweets = await this.auth.db.getPublicTweets(limit, offset);
         }

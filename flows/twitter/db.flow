@@ -143,6 +143,48 @@ Database[Database.ts{pool: any}]
   }));
 @@Database.getPublicTweets.end
 
+@async @Database.getPersonalizedTweets{currentUser: string, limit: number, offset: number}: any
+@@Database.getPersonalizedTweets.code
+  const l = limit || 10;
+  const o = offset || 0;
+  // Weighting logic:
+  // 1. Followed users get 3x higher base weight
+  // 2. Higher follower count increases weight (logarithmic scale)
+  // 3. Score = weight * timestamp (keeps it chronological-ish but allows important content to bubble up)
+  const res = await this.pool.query(
+    "SELECT m1.*, m2.sender_username as retweeted_author, u1.avatar_url as author_avatar, u1.follower_count as author_follower_count, " +
+    "m4.sender_username as parent_author, m4.content as parent_content, " +
+    "(SELECT COUNT(*) FROM messages m3 WHERE m3.replied_to_id = m1.id) as reply_count, " +
+    "((CASE WHEN f.follower_username IS NOT NULL THEN 172800000.0 ELSE 0.0 END) + (ln(COALESCE(u1.follower_count, 0) + 1.0) * 3600000.0)) as weight_bonus " +
+    "FROM messages m1 " +
+    "LEFT JOIN messages m2 ON m1.retweeted_id = m2.id " +
+    "LEFT JOIN users u1 ON m1.sender_username = u1.username " +
+    "LEFT JOIN messages m4 ON m1.replied_to_id = m4.id " +
+    "LEFT JOIN follows f ON f.follower_username = $1 AND f.following_username = u1.username " +
+    "WHERE m1.receiver_username = '' " +
+    "ORDER BY (m1.timestamp + (CASE WHEN f.follower_username IS NOT NULL THEN 172800000.0 ELSE 0.0 END) + (ln(COALESCE(u1.follower_count, 0) + 1.0) * 3600000.0)) DESC " +
+    "LIMIT $2 OFFSET $3",
+    [currentUser, l, o]
+  );
+  return res.rows.map(row => ({
+    id: row.id,
+    authorUsername: row.sender_username,
+    authorAvatar: row.author_avatar,
+    authorFollowerCount: row.author_follower_count || 0,
+    content: row.content,
+    timestamp: Number(row.timestamp),
+    repliedToId: row.replied_to_id,
+    repliedToUsername: row.parent_author,
+    parentContent: row.parent_content,
+    retweetedId: row.retweeted_id,
+    retweetedAuthor: row.retweeted_author,
+    likedCount: row.liked_count,
+    retweetCount: row.retweet_count,
+    repliesCount: Number(row.reply_count),
+    imageUrl: row.image_url
+  }));
+@@Database.getPersonalizedTweets.end
+
 @async @Database.getUserTweets{username: string, limit: number, offset: number}: any
 @@Database.getUserTweets.code
   const l = limit || 10;
