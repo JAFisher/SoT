@@ -161,7 +161,7 @@ TwitterApp --> Messaging
 
         html += 
           "<div class='notification-item " + (n.isRead ? "" : "unread") + "' id='notification-" + n.id + "'>" +
-            "<img src='" + (n.fromAvatar || 'http://localhost:8080/images/userprofiledefault.png') + "' class='notification-avatar'>" +
+            "<img src='" + (n.fromAvatar || 'http://localhost:8080/images/userprofiledefault.png') + "' alt='Notification avatar' class='notification-avatar'>" +
             "<div class='notification-content'>" +
               "<div><span class='notification-user'>@" + n.from + "</span> " + actionText + " " + icon + "</div>" +
               (n.parentContent ? "<div class='notification-parent-preview' style='font-size: 0.85em; opacity: 0.6; margin: 4px 0; padding-left: 8px; border-left: 2px solid var(--border-color);'>Replying to: \"" + n.parentContent + "\"</div>" : "") +
@@ -265,8 +265,8 @@ TwitterApp --> Messaging
     "<button class=\"tweet-btn retweet-btn\" id=\"retweet-btn-instance-" + instanceId + "\" onclick=\"window.app.retweet('" + t.id + "', " + instanceId + ")\">🔄 " + (t.retweetCount || 0) + "</button>" : "";
     
     const avatarUrl = t.authorAvatar || 'http://localhost:8080/images/userprofiledefault.png';
-    const avatarHtml = "<a href=\"profile.html?username=" + t.authorUsername + "\"><img src=\"" + avatarUrl + "\" class=\"tweet-avatar\"></a>";
-    const imageHtml = t.imageUrl ? "<div class=\"tweet-image-container\"><img src=\"" + t.imageUrl + "\" class=\"tweet-image\"></div>" : "";
+    const avatarHtml = "<a href=\"profile.html?username=" + t.authorUsername + "\"><img src=\"" + avatarUrl + "\" alt=\"" + t.authorUsername + "'s avatar\" class=\"tweet-avatar\"></a>";
+    const imageHtml = t.imageUrl ? "<div class=\"tweet-image-container\"><img src=\"" + t.imageUrl + "\" alt=\"Tweet image\" class=\"tweet-image\"></div>" : "";
 
     const isFollowing = this.followedUsers.has(t.authorUsername);
     const isSelf = currentUser && currentUser.username === t.authorUsername;
@@ -316,8 +316,8 @@ TwitterApp --> Messaging
     "<button class=\"tweet-btn retweet-btn btn-compact\" onclick=\"window.app.retweet('" + r.id + "', " + rInstanceId + ")\">🔄 " + (r.retweetCount || 0) + "</button>" : "";
 
     const avatarUrl = r.authorAvatar || 'http://localhost:8080/images/userprofiledefault.png';
-    const avatarHtml = "<a href=\"profile.html?username=" + r.sender_username + "\"><img src=\"" + avatarUrl + "\" class=\"tweet-avatar\"></a>";
-    const imageHtml = r.imageUrl ? "<div class=\"tweet-image-container\"><img src=\"" + r.imageUrl + "\" class=\"tweet-image\"></div>" : "";
+    const avatarHtml = "<a href=\"profile.html?username=" + r.sender_username + "\"><img src=\"" + avatarUrl + "\" alt=\"" + r.sender_username + "'s avatar\" class=\"tweet-avatar\"></a>";
+    const imageHtml = r.imageUrl ? "<div class=\"tweet-image-container\"><img src=\"" + r.imageUrl + "\" alt=\"Reply image\" class=\"tweet-image\"></div>" : "";
 
     const highlightedContent = r.content.replace(/#(\w+)/g, '<span class="hashtag" onclick="event.stopPropagation(); window.app.showHashtagTimeline(\'$1\')">#$1</span>');
     const replyContextHtml = r.repliedToUsername ? 
@@ -805,7 +805,7 @@ TwitterApp --> Messaging
 
     return "<div class='user-item'>" +
              "<a href='profile.html?username=" + user.username + "' class='user-item-link'>" +
-               "<img src='" + avatarUrl + "' class='user-item-avatar'>" +
+               "<img src='" + avatarUrl + "' alt='" + user.username + "\\'s avatar' class='user-item-avatar'>" +
                "<div class='user-item-info'>" +
                  "<div class='user-item-name'>" + (user.name || user.username) + "</div>" +
                  "<div class='user-item-username'>@" + user.username + "</div>" +
