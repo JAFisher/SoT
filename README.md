@@ -24,6 +24,10 @@ Tool Agnostic: Use tsx, bun, deno, or ts-node by overriding the CLI execution la
 - **Custom Logic**: Inject real code blocks directly into your generated methods and constructors.
 - **Automated Constructors**: Automatically generates constructors based on class properties.
 
+## Live Flow Visualizer (Beta)
+Interactive dashboard to browse and diagram your .flow files:  
+https://jafisher.github.io/SoT/
+
 ## Getting Started
 
 ### Installation
