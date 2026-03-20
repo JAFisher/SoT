@@ -11,8 +11,7 @@ window.FlowHighlighter = {
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
+      .replace(/"/g, "&quot;");
 
     const rules = [
       // Comments (%% or //)
@@ -35,7 +34,7 @@ window.FlowHighlighter = {
       { pattern: /[{}()\[\]]/g, class: "flow-punctuation" },
       
       // Strings
-      { pattern: /&quot;.*?&quot;|&#039;.*?&#039;/g, class: "flow-string" },
+      { pattern: /&quot;.*?&quot;|'.*?'/g, class: "flow-string" },
       
       // Numbers
       { pattern: /\b\d+\b/g, class: "flow-number" }

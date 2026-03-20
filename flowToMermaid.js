@@ -228,6 +228,15 @@ async function parseFlowchart(definition, sourceDir = "./flows") {
     return { nodes, compositionEdges, extendsEdges, methods, types, interfaces, mainBlocks, externals };
 }
 
+function escapeHtml(str) {
+    if (!str) return "";
+    return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+}
+
 // ── Convert parsed flow to Mermaid diagram string ──
 
 function toMermaidDiagram(parsed) {
@@ -237,13 +246,13 @@ function toMermaidDiagram(parsed) {
     // Build node labels: ClassName with properties & methods
     for (const [id, node] of Object.entries(nodes)) {
         const className = node.file || id;
-        const sections = [className];
+        const sections = [escapeHtml(className)];
 
         // Properties
         if (node.props && node.props.length > 0) {
             sections.push("─────────────────");
             for (const p of node.props) {
-                sections.push(`${p.name}: ${p.type}`);
+                sections.push(`${escapeHtml(p.name)}: ${escapeHtml(p.type)}`);
             }
         }
 
@@ -254,17 +263,16 @@ function toMermaidDiagram(parsed) {
             sections.push("─────────────────");
             for (const m of methodNames) {
                 const md = classMethods[m];
-                const paramStr = (md.params || []).map(p => `${p.name}: ${p.type}`).join(", ");
+                const paramStr = (md.params || []).map(p => `${escapeHtml(p.name)}: ${escapeHtml(p.type)}`).join(", ");
                 const ret = md.returnType || "void";
                 const prefix = md.async ? "⚡ " : "";
-                sections.push(`${prefix}${m}(${paramStr}): ${ret}`);
+                sections.push(`${prefix}${escapeHtml(m)}(${paramStr}): ${escapeHtml(ret)}`);
             }
         }
 
-        const label = sections.join("\n");
+        const label = sections.join("<br/>");
         // Use the Mermaid box syntax with quotes for multi-line
-        const escapedLabel = label.replace(/"/g, "#quot;");
-        lines.push(`  ${id}["${escapedLabel}"]`);
+        lines.push(`  ${id}["${label}"]`);
     }
 
     // Inheritance edges
@@ -283,10 +291,9 @@ function toMermaidDiagram(parsed) {
         lines.push("  subgraph Types");
         lines.push("    direction TB");
         for (const [name, props] of Object.entries(types)) {
-            const fields = props.map(p => `${p.name}: ${p.type}`).join("\n");
-            const label = `«type»\n${name}\n─────────────────\n${fields}`;
-            const esc = label.replace(/"/g, "#quot;");
-            lines.push(`    T_${name}["${esc}"]`);
+            const fields = props.map(p => `${escapeHtml(p.name)}: ${escapeHtml(p.type)}`).join("<br/>");
+            const label = `«type»<br/>${escapeHtml(name)}<br/>─────────────────<br/>${fields}`;
+            lines.push(`    T_${name}["${label}"]`);
         }
         lines.push("  end");
     }
@@ -297,10 +304,9 @@ function toMermaidDiagram(parsed) {
         lines.push("  subgraph Interfaces");
         lines.push("    direction TB");
         for (const [name, props] of Object.entries(interfaces)) {
-            const fields = props.map(p => `${p.name}: ${p.type}`).join("\n");
-            const label = `«interface»\n${name}\n─────────────────\n${fields}`;
-            const esc = label.replace(/"/g, "#quot;");
-            lines.push(`    I_${name}["${esc}"]`);
+            const fields = props.map(p => `${escapeHtml(p.name)}: ${escapeHtml(p.type)}`).join("<br/>");
+            const label = `«interface»<br/>${escapeHtml(name)}<br/>─────────────────<br/>${fields}`;
+            lines.push(`    I_${name}["${label}"]`);
         }
         lines.push("  end");
     }
