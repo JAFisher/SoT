@@ -178,9 +178,11 @@ Feed --> AuthFE
   return await response.json();
 @@Feed.getTrending.end
 
-@async @Feed.getNotifications{}: any
+@async @Feed.getNotifications{limit: number, offset: number}: any
 @@Feed.getNotifications.code
-  const response = await fetch("http://localhost:8080/api/notifications", {
+  const l = limit || 25;
+  const o = offset || 0;
+  const response = await fetch("http://localhost:8080/api/notifications?limit=" + l + "&offset=" + o, {
     headers: {
       "Authorization": "Bearer " + window.app.auth.token
     }

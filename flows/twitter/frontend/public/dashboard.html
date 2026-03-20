@@ -62,10 +62,6 @@
                 <div id="timeline-container" role="main">
                     <h3 class="timeline-header">Messages</h3>
                     <div id="timeline"></div>
-                    <div class="load-more-container">
-                        <button id="loadMoreBtn" class="btn btn-outline" style="display: none;"
-                            onclick="window.app.loadMore('timeline')">Load More</button>
-                    </div>
                 </div>
 
                 <div id="notifications-container" style="display: none;">
@@ -73,6 +69,10 @@
                         <button id="backToHomeBtn" class="btn btn-outline">Back</button>
                     </div>
                     <div id="notifications-list"></div>
+                </div>
+
+                <div class="load-more-container">
+                    <button id="loadMoreBtn" class="btn btn-outline" style="display: none;">Load More</button>
                 </div>
             </div>
         </div>
@@ -144,6 +144,8 @@
         document.getElementById('backToHomeBtn').addEventListener('click', () => {
             document.getElementById('notifications-container').style.display = 'none';
             document.getElementById('timeline-container').style.display = 'block';
+            // Re-bind load more button for timeline
+            window.app.loadTimeline('timeline', false); 
         });
 
         document.getElementById('logoutBtn').addEventListener('click', () => {

@@ -549,8 +549,10 @@ Database[Database.ts{pool: any}]
   }));
 @@Database.getTrendingHashtags.end
 
-@async @Database.getNotifications{username: string}: any
+@async @Database.getNotifications{username: string, limit: number, offset: number}: any
 @@Database.getNotifications.code
+  const l = limit || 25;
+  const o = offset || 0;
   const res = await this.pool.query(
     "SELECT n.*, u.avatar_url as sender_avatar, u.name as sender_name, m.content as message_content, " +
     "(SELECT content FROM messages WHERE id = m.replied_to_id) as parent_content " +
@@ -558,8 +560,8 @@ Database[Database.ts{pool: any}]
     "JOIN users u ON n.sender_username = u.username " +
     "LEFT JOIN messages m ON n.message_id = m.id " +
     "WHERE n.receiver_username = $1 " +
-    "ORDER BY n.timestamp DESC LIMIT 50",
-    [username]
+    "ORDER BY n.timestamp DESC LIMIT $2 OFFSET $3",
+    [username, l, o]
   );
   return res.rows.map(row => ({
     id: row.id,

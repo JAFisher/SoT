@@ -18,6 +18,7 @@ TwitterApp --> Messaging
   this.renderCount = 0;
   this.tweetsOffset = 0;
   this.profileTweetsOffset = 0;
+  this.notificationsOffset = 0;
   this.tweetsLimit = 25;
   this.followedUsers = new Set();
   this.currentSocialUser = "";
@@ -137,19 +138,33 @@ TwitterApp --> Messaging
     }
   @@TwitterApp.renderTrending.end
 
-  @async @TwitterApp.renderNotifications{containerId: string}: void
+  @async @TwitterApp.renderNotifications{containerId: string, append: boolean}: void
   @@TwitterApp.renderNotifications.code
     const container = document.getElementById(containerId);
     if (!container) return;
 
+    if (!append) {
+      this.notificationsOffset = 0;
+      container.innerHTML = "<div class='loading'>Loading notifications...</div>";
+    }
+
     try {
-      const notifications = await this.feed.getNotifications();
+      const notifications = await this.feed.getNotifications(this.tweetsLimit, this.notificationsOffset);
+      
+      if (!append) container.innerHTML = "";
+
       if (!notifications || notifications.length === 0) {
-        container.innerHTML = "<div class='empty-notifications'>No notifications yet.</div>";
+        if (!append) {
+          container.innerHTML = "<div class='empty-notifications'>No notifications yet.</div>";
+        } else {
+          this.showToast("No more notifications", "info");
+        }
+        const loadMoreBtn = document.getElementById('loadMoreBtn');
+        if (loadMoreBtn) loadMoreBtn.style.display = 'none';
         return;
       }
 
-      let html = "<h3>Notifications</h3>";
+      let html = (!append ? "<h3>Notifications</h3>" : "");
       notifications.forEach(n => {
         const time = this.formatRelativeTime(n.timestamp);
         let actionText = "";
@@ -164,7 +179,7 @@ TwitterApp --> Messaging
             "<img src='" + (n.fromAvatar || 'http://localhost:8080/images/userprofiledefault.png') + "' alt='Notification avatar' class='notification-avatar'>" +
             "<div class='notification-content'>" +
               "<div><span class='notification-user'>@" + n.from + "</span> " + actionText + " " + icon + "</div>" +
-              (n.parentContent ? "<div class='notification-parent-preview' style='font-size: 0.85em; opacity: 0.6; margin: 4px 0; padding-left: 8px; border-left: 2px solid var(--border-color);'>Replying to: \"" + n.parentContent + "\"</div>" : "") +
+              (n.parentContent ? "<div class='notification-parent-preview' style='font-size: 0.85em; opacity: 0.6; margin: 4px 0; padding-left: 8px; border-left: 2px solid var(--border-color); margin-top: 4px; font-style: italic;'>Replying to: \"" + n.parentContent + "\"</div>" : "") +
               (n.messageContent ? "<div class='notification-message-preview'>\"" + n.messageContent + "\"</div>" : "") +
               "<div class='notification-time'>" + time + "</div>" +
               "<div class='notification-actions' style='margin-top: 8px; display: flex; gap: 10px;'>" +
@@ -175,14 +190,28 @@ TwitterApp --> Messaging
             "</div>" +
           "</div>";
       });
-      container.innerHTML = html;
       
-      // Mark as read immediately when viewed
-      this.feed.markNotificationsRead();
-      const navBadge = document.getElementById('notifications-badge');
-      if (navBadge) navBadge.style.display = 'none';
+      if (append) {
+        container.innerHTML += html;
+      } else {
+        container.innerHTML = html;
+        // Mark as read immediately when viewed (only on initial load)
+        this.feed.markNotificationsRead();
+        const navBadge = document.getElementById('notifications-badge');
+        if (navBadge) navBadge.style.display = 'none';
+      }
+
+      this.notificationsOffset += notifications.length;
+      
+      // Update Load More button
+      const loadMoreBtn = document.getElementById('loadMoreBtn');
+      if (loadMoreBtn) {
+        loadMoreBtn.style.display = notifications.length < this.tweetsLimit ? 'none' : 'block';
+        loadMoreBtn.onclick = () => this.renderNotifications(containerId, true);
+      }
     } catch (e) {
       console.error("Failed to render notifications:", e);
+      this.showToast("Error loading notifications", "error");
     }
   @@TwitterApp.renderNotifications.end
 
@@ -245,6 +274,7 @@ TwitterApp --> Messaging
   const loadMoreBtn = document.getElementById('loadMoreBtn');
   if (loadMoreBtn) {
     loadMoreBtn.style.display = tweets.length < this.tweetsLimit ? 'none' : 'block';
+    loadMoreBtn.onclick = () => this.loadMore(containerId);
   }
 @@TwitterApp.loadTimeline.end
 
@@ -422,6 +452,7 @@ TwitterApp --> Messaging
   const loadMoreBtn = document.getElementById('loadMoreBtn');
   if (loadMoreBtn) {
     loadMoreBtn.style.display = tweets.length < this.tweetsLimit ? 'none' : 'block';
+    loadMoreBtn.onclick = () => this.loadHashtagTimeline(tag, true);
   }
 @@TwitterApp.loadHashtagTimeline.end
 

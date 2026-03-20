@@ -473,11 +473,14 @@ Server --> Auth
       return;
     }
 
-    if (req.method === 'GET' && req.url === '/api/notifications') {
+    if (req.method === 'GET' && req.url.startsWith('/api/notifications')) {
+      const url = new URL(req.url, "http://" + req.headers.host);
+      const limit = parseInt(url.searchParams.get('limit') || '25');
+      const offset = parseInt(url.searchParams.get('offset') || '0');
       const user = getAuthUser(req);
       if (!user) { res.writeHead(401); res.end(); return; }
       try {
-        const notes = await this.auth.db.getNotifications(user.username);
+        const notes = await this.auth.db.getNotifications(user.username, limit, offset);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(notes));
       } catch (e) {
