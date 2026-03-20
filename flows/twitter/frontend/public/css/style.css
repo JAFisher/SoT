@@ -153,31 +153,32 @@ h4 {
 
 .btn-primary {
     background-color: var(--accent-color);
-    color: white;
+    color: #000000;
 }
 
 .btn-primary:hover {
     background-color: var(--accent-hover);
+    color: #000000;
 }
 
 .btn-outline {
     background-color: transparent;
-    color: var(--accent-color);
-    border: 1px solid var(--border-color);
+    color: #6bbcf0;
+    border: 1px solid #6bbcf0;
 }
 
 .btn-outline:hover {
-    background-color: rgba(29, 161, 242, 0.1);
+    background-color: rgba(107, 188, 240, 0.1);
 }
 
 .btn-danger {
     background-color: transparent;
-    color: var(--danger-color);
-    border: 1px solid var(--danger-color);
+    color: #ff6b95;
+    border: 1px solid #ff6b95;
 }
 
 .btn-danger:hover {
-    background-color: rgba(224, 36, 94, 0.1);
+    background-color: rgba(255, 107, 149, 0.1);
 }
 
 /* Dashboard Specifics */
@@ -548,7 +549,7 @@ h4 {
 .btn-text {
     background: transparent;
     border: none;
-    color: var(--accent-color);
+    color: #6bbcf0;
     font-size: 13px;
     cursor: pointer;
     padding: 0;
@@ -968,4 +969,11 @@ h4 {
     z-index: 2;
     position: relative;
     padding-left: 16px;
+}
+
+#updateAvatarBtn,
+#profile-name-link,
+#header-followers-link,
+#header-following-link {
+    padding: 5px;
 }
