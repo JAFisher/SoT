@@ -70,9 +70,9 @@ async function build() {
                     cpSync(specificAssets, path.join(outPath, "assets"), { recursive: true });
                     console.log(`   Copied specific assets: ${specificAssets}`);
                 }
-                const specificPublic = path.join(folderPath, serviceName, "public");
+                const specificPublic = path.join(folderPath, serviceName, "/");
                 if (existsSync(specificPublic)) {
-                    cpSync(specificPublic, path.join(outPath, "public"), { recursive: true });
+                    cpSync(specificPublic, path.join(outPath, "/"), { recursive: true });
                     console.log(`   Copied specific public: ${specificPublic}`);
                 }
 

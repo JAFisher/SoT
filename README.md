@@ -249,19 +249,16 @@ Will make a compiled.js file in the same directory with the files that are compi
 
 ## Static Files and Assets
 
-The `build.js` microservices runner supports a **Cascading Asset Pipeline** for `public` and `assets` folders. This allows you to define shared resources for a whole category or specific overrides for a single flow.
+The `build.js` microservices runner supports a **Cascading Asset Pipeline** 
 
-### 1. Shared (Category) Tier
-Place a `public/` or `assets/` folder directly inside a category directory (e.g., `flows/twitter/public/`). 
-- **Effect**: These files will be copied to **every** service generated in that category (e.g., to both `src/twitter/frontend` and `src/twitter/server`).
-- **Use Case**: Shared CSS, logos, or global scripts.
-
-### 2. Specific (Flow) Tier
-Place a folder named after your `.flow` file containing its own `public/` or `assets/` subdirectory (e.g., for `server.flow`, use `flows/twitter/server/public/`).
+### Specific (Flow) Tier
+Place a folder named after your `.flow` file containing its own `[flowFolder]/` subdirectory (e.g., for `server.flow`, use `flows/twitter/server/`).
 - **Effect**: These files will be copied **only** to that specific service.
 - **Precedence**: Specific files will **override** shared ones if they share the same filename.
 
-The final output will be merged into `src/[category]/[service-name]/public/` and `src/[category]/[service-name]/assets/` during the build process.
+The final output will be merged into `src/[category]/[service-name]/` during the build process.
+
+This will allow you put to .env variables in `src/[category]/[service-name]/.env` and they will be loaded into the environment when the service is run.
 
 ---
 ## License
