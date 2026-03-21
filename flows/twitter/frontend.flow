@@ -580,8 +580,14 @@ TwitterApp --> Messaging
     inputDiv.className = "inline-reply-div";
     inputDiv.innerHTML = 
       "<textarea id=\"input-instance-" + instanceId + "\" class=\"inline-reply-textarea\" placeholder=\"Replying to @" + author + "...\" maxlength=\"300\"></textarea>" +
+      "<div id=\"image-preview-instance-" + instanceId + "\" style=\"display: none; margin-bottom: 10px; position: relative;\">" +
+        "<img id=\"preview-img-instance-" + instanceId + "\" src=\"\" alt=\"Image Preview\" style=\"max-width: 100%; border-radius: var(--radius-md);\">" +
+        "<button id=\"remove-img-btn-instance-" + instanceId + "\" class=\"btn\" style=\"position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border-radius: 50%; padding: 0; background: rgba(0,0,0,0.6); color: white;\">✕</button>" +
+      "</div>" +
       "<div class=\"inline-reply-actions\">" +
+        "<input type=\"file\" id=\"img-input-instance-" + instanceId + "\" accept=\"image/png, image/jpeg\" style=\"display: none;\">" +
         "<div id=\"reply-char-count-" + instanceId + "\" class=\"char-counter\">0 / 300</div>" +
+        "<button id=\"add-img-btn-instance-" + instanceId + "\" class=\"add-image-btn btn btn-outline\">🖼️ Image</button>" +
         "<button class=\"btn btn-primary\" onclick=\"window.app.postInlineReply('" + tweetId + "', '" + instanceId + "', '" + author + "')\">Reply</button>" +
       "</div>";
     container.prepend(inputDiv);
@@ -595,6 +601,33 @@ TwitterApp --> Messaging
       else replyCounter.classList.remove('limit-reached');
     });
     
+    const imgInput = document.getElementById("img-input-instance-" + instanceId);
+    const addImgBtn = document.getElementById("add-img-btn-instance-" + instanceId);
+    const previewContainer = document.getElementById("image-preview-instance-" + instanceId);
+    const previewImg = document.getElementById("preview-img-instance-" + instanceId);
+    const removeImgBtn = document.getElementById("remove-img-btn-instance-" + instanceId);
+
+    addImgBtn.addEventListener("click", () => imgInput.click());
+
+    imgInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (re) => {
+          window.app["_inlineImg_" + instanceId] = re.target.result;
+          previewImg.src = re.target.result;
+          previewContainer.style.display = "block";
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    removeImgBtn.addEventListener("click", () => {
+      window.app["_inlineImg_" + instanceId] = null;
+      imgInput.value = "";
+      previewContainer.style.display = "none";
+    });
+    
     replyInput.focus();
   } else {
     document.getElementById("input-instance-" + instanceId).focus();
@@ -605,10 +638,24 @@ TwitterApp --> Messaging
 @@TwitterApp.postInlineReply.code
   const textarea = document.getElementById("input-instance-" + instanceId);
   const content = textarea.value;
-  if (!content) return;
+  const base64Img = window.app["_inlineImg_" + instanceId];
+
+  if (!content && !base64Img) return;
   
   const author = this.auth.currentUser.username;
-  const res = await this.feed.postTweet(author, content, parentTweetId, '', '');
+  let imageUrl = '';
+  if (base64Img) {
+    try {
+      const uploadRes = await this.feed.uploadImage(base64Img);
+      imageUrl = uploadRes.url;
+    } catch (e) {
+      this.showToast(e.message, 'error');
+      return;
+    }
+  }
+
+  const res = await this.feed.postTweet(author, content, parentTweetId, '', imageUrl);
+  window.app["_inlineImg_" + instanceId] = null;
   
   const inputDiv = document.getElementById("reply-input-instance-" + instanceId);
   if (inputDiv) inputDiv.remove();
@@ -623,7 +670,9 @@ TwitterApp --> Messaging
     parentContent: '', // We don't have parent content here, but it's good to include the field
     repliesCount: 0,
     retweetCount: 0,
-    likedCount: 0
+    likedCount: 0,
+    imageUrl: imageUrl,
+    videoUrl: ''
   });
   
   if (container.innerHTML.includes('No replies yet')) {

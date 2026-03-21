@@ -415,6 +415,7 @@ h4 {
     width: auto;
     padding: 6px 16px;
     font-size: 14px;
+    margin-bottom: unset;
 }
 
 /* Toast Notifications */
@@ -656,8 +657,9 @@ h4 {
 }
 
 .char-counter {
-    width: 90px;
+    width: 80px;
     font-size: 14px;
+    text-align: center;
 }
 
 .tweet-name-link {
@@ -976,4 +978,11 @@ h4 {
 #header-followers-link,
 #header-following-link {
     padding: 5px;
+}
+
+.add-image-btn {
+    width: auto;
+    padding: 6px 12px;
+    margin-right: 10px;
+    margin-bottom: unset;
 }
