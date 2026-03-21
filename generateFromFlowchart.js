@@ -33,7 +33,7 @@ function parseFlowchart(definition, sourceDir = "./flows") {
     const interfacePattern = /interface->(\w+)\s*\{([^}]*)\}/;
     const mainCodeStartPattern = /(@async\s+)?@{1,2}main\.code/;
     const mainCodeEndPattern = /@{1,2}main\.end/;
-    const externPattern = /extern->(\w+)\s*from\s*['"]([^'"]+)['"]/;
+    const externPattern = /extern->(\w+)\s*from\s*['"]([^'"]+)['"]\s*(?:@([\w.-]+))?/;
     const includePattern = /include->([^ \n]+)/;
     const cliScriptPattern = /cliscripts->(\w+)\s+(.+)/;
     const pkgOverridePattern = /pkg->(\w+)\s+(.+)/;
@@ -88,8 +88,8 @@ function parseFlowchart(definition, sourceDir = "./flows") {
             // 2. Externals
             const externMatch = line.match(externPattern);
             if (externMatch) {
-                const [, libName, libPath] = externMatch;
-                externals[libName] = libPath;
+                const [, libName, libPath, libVersion] = externMatch;
+                externals[libName] = { path: libPath, version: libVersion || "latest" };
                 continue;
             }
 
@@ -499,9 +499,9 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
                         else if (allClassNames.has(name)) customImports.add("__class__" + name);
                     }
                 }
-                for (const [libName, libPath] of Object.entries(externals)) {
+                for (const [libName, libData] of Object.entries(externals)) {
                     if (new RegExp(`\\b${libName}\\b`).test(methodData.code)) {
-                        externalImportLines.add(`import * as ${libName} from "${libPath}";`);
+                        externalImportLines.add(`import * as ${libName} from "${libData.path}";`);
                     }
                 }
             }
@@ -546,11 +546,11 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
     // === 5. Package.json Generator ===
     const pkgPath = path.join(baseDir, "package.json");
     const dependencies = {};
-    for (const [libName, libPath] of Object.entries(externals)) {
-        const cleanPath = libPath.replace(/^node:/, "");
+    for (const [libName, libData] of Object.entries(externals)) {
+        const cleanPath = libData.path.replace(/^node:/, "");
         const builtIns = ["http", "https", "fs", "path", "os", "readline", "crypto", "events", "util", "buffer", "child_process"];
-        if (!builtIns.includes(cleanPath) && !libPath.startsWith(".") && !libPath.startsWith("/")) {
-            dependencies[cleanPath] = "latest";
+        if (!builtIns.includes(cleanPath) && !libData.path.startsWith(".") && !libData.path.startsWith("/")) {
+            dependencies[cleanPath] = libData.version;
         }
     }
 
@@ -640,9 +640,9 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
                 }
             }
         }
-        for (const [libName, libPath] of Object.entries(externals)) {
+        for (const [libName, libData] of Object.entries(externals)) {
             if (new RegExp(`\\b${libName}\\b`).test(fullMainCode)) {
-                mainImports.add(`import * as ${libName} from "${libPath}";`);
+                mainImports.add(`import * as ${libName} from "${libData.path}";`);
             }
         }
         const finalMainContent = `${Array.from(mainImports).sort().join("\n")}\n\n${mainContent}\n`;

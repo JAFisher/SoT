@@ -58,7 +58,7 @@ async function parseFlowchart(definition, sourceDir = "./flows") {
     const interfacePattern = /interface->(\w+)\s*\{([^}]*)\}/;
     const mainCodeStartPattern = /@{1,2}main\.code/;
     const mainCodeEndPattern = /@{1,2}main\.end/;
-    const externPattern = /extern->(\w+)\s*from\s*['"]([^'"]+)['"]/;
+    const externPattern = /extern->(\w+)\s*from\s*['"]([^'"]+)['"]\s*(?:@([\w.-]+))?/;
     const webStartPattern = /web->(.+)\.code/;
     const webEndPattern = /web->(.+)\.end/;
     const includePattern = /include->([^ \n]+)/;
@@ -96,7 +96,7 @@ async function parseFlowchart(definition, sourceDir = "./flows") {
             // Skip externals
             if (externPattern.test(line)) {
                 const m = line.match(externPattern);
-                externals[m[1]] = m[2];
+                externals[m[1]] = { path: m[2], version: m[3] || "latest" };
                 continue;
             }
 

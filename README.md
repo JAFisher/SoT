@@ -121,17 +121,18 @@ You can define standalone TypeScript types and interfaces.
 - `interface->InterfaceName{prop: type, ...}`
 
 ### 4. External Dependencies
-Import NPM packages or Node.js built-ins directly into your flow.
+Import NPM packages or Node.js built-ins directly into your flow. You can optionally specify a version using the `@` symbol; if omitted, it defaults to `"latest"`.
 
-**Syntax:** `extern->LibName from "package-name"`
+**Syntax:** `extern->LibName from "package-name"[@version]`
 
 Example:
 ```text
+extern->three from "three"@0.183.2
 extern->chalk from "chalk"
 extern->fs from "node:fs"
 ```
 
-The generator automatically adds these to the generated `package.json` and manages imports in `main.ts`.
+The generator automatically adds these to the generated `package.json` with the specified version and manages imports in `main.ts` (keeping the import path clean).
 
 ### 5. Asynchronous Support
 Mark methods or main blocks as asynchronous using the `@async` keyword.

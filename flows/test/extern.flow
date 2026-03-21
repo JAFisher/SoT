@@ -1,0 +1,8 @@
+graph TD
+  extern->three from "three"@0.183.2
+  extern->express from "express"
+
+  @@main.code
+    console.log(three.REVISION);
+    const app = express();
+  @@main.end

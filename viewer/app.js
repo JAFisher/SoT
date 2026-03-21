@@ -254,15 +254,20 @@
       return;
     }
     externalsPanel.style.display = "";
-    externalsContent.innerHTML = Object.entries(externals).map(([name, path]) => `
-      <div class="detail-item">
-        <div class="detail-item-name">
-          ${escapeHtml(name)}
-          <span class="detail-item-badge badge-extern">ext</span>
+    externalsContent.innerHTML = Object.entries(externals).map(([name, data]) => {
+      const path = typeof data === 'string' ? data : data.path;
+      const version = typeof data === 'object' && data.version && data.version !== 'latest' ? data.version : null;
+      return `
+        <div class="detail-item">
+          <div class="detail-item-name">
+            ${escapeHtml(name)}
+            <span class="detail-item-badge badge-extern">ext</span>
+            ${version ? `<span class="detail-item-badge" style="background:var(--primary);color:white;border:none">v${escapeHtml(version)}</span>` : ''}
+          </div>
+          <div class="detail-item-signature">from '${escapeHtml(path)}'</div>
         </div>
-        <div class="detail-item-signature">from '${escapeHtml(path)}'</div>
-      </div>
-    `).join("");
+      `;
+    }).join("");
   }
 
   // ── Helpers ──
