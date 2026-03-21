@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>3D Pool Simulator</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #222;
+            font-family: 'Inter', sans-serif;
+        }
+
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            pointer-events: none;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        #ui h2 {
+            margin: 0 0 10px 0;
+            color: #facc15;
+        }
+
+        #ui p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #ddd;
+        }
+
+        .kbd {
+            background: #444;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="ui">
+        <h2>3D Pool</h2>
+        <p>Right Click & Drag to rotate camera.</p>
+        <p>Scroll to zoom in/out.</p>
+        <p>Left Click & Drag Cue Ball to shoot.</p>
+    </div>
+
+    <script type="module">
+        import { PoolGame } from './compiled.js';
+        const game = new PoolGame();
+        game.animate();
+    </script>
+</body>
+
+</html>
