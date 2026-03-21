@@ -178,6 +178,15 @@ Feed --> AuthFE
   return await response.json();
 @@Feed.getTrending.end
 
+@async @Feed.search{query: string, limit: number, offset: number}: any
+@@Feed.search.code
+  const l = limit || 25;
+  const o = offset || 0;
+  const response = await fetch("http://localhost:8080/api/search?q=" + encodeURIComponent(query) + "&limit=" + l + "&offset=" + o);
+  if (!response.ok) throw new Error("Failed to perform search");
+  return await response.json();
+@@Feed.search.end
+
 @async @Feed.getNotifications{limit: number, offset: number}: any
 @@Feed.getNotifications.code
   const l = limit || 25;

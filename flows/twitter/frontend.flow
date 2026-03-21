@@ -23,6 +23,8 @@ TwitterApp --> Messaging
   this.followedUsers = new Set();
   this.currentSocialUser = "";
   this.currentSocialType = "";
+  this.searchOffset = 0;
+  this.currentSearchQuery = "";
 @@TwitterApp.constructor.end
 
 @async @TwitterApp.init{}: void
@@ -137,6 +139,82 @@ TwitterApp --> Messaging
       container.style.display = 'none';
     }
   @@TwitterApp.renderTrending.end
+
+  @async @TwitterApp.performSearch{query: string, append: boolean}: void
+  @@TwitterApp.performSearch.code
+    if (!query) return;
+    const container = document.getElementById('search-list');
+    if (!container) return;
+
+    if (!append || this.currentSearchQuery !== query) {
+      this.searchOffset = 0;
+      this.currentSearchQuery = query;
+      container.innerHTML = "<div class='loading'>Searching...</div>";
+    }
+
+    try {
+      const results = await this.feed.search(query, this.tweetsLimit, this.searchOffset);
+      
+      if (!append) container.innerHTML = "";
+
+      if (results.length === 0) {
+        if (!append) {
+          container.innerHTML = "<div class='empty-timeline'>No results found for \"" + query + "\"</div>";
+        } else {
+          this.showToast("No more results", "info");
+        }
+        const loadMoreBtn = document.getElementById('searchLoadMoreBtn');
+        if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+        return;
+      }
+
+      let html = "";
+      results.forEach(r => {
+        if (r.type === 'user') {
+          html += this.renderUserItem(r, 'search');
+        } else if (r.type === 'hashtag') {
+          html += 
+            "<div class='trending-item' style='margin-bottom: 10px; cursor: pointer;' onclick='window.app.showHashtagTimeline(\"" + r.tag + "\")'>" +
+              "<div class='trending-tag' style='font-size: 1.1em;'>#" + r.tag + "</div>" +
+              "<div class='trending-count' style='color: var(--text-secondary);'>" + r.count + " Tweets</div>" +
+            "</div>";
+        } else if (r.type === 'message') {
+          html += this.renderSingleTweet({
+             id: r.id, 
+             authorUsername: r.sender_username, 
+             authorName: r.sender_name, 
+             authorAvatar: r.sender_avatar, 
+             content: r.content, 
+             timestamp: r.timestamp,
+             repliedToId: r.repliedToId, 
+             retweetedId: r.retweetedId,
+             likedCount: r.likedCount,
+             retweetCount: r.retweetCount, 
+             repliesCount: r.repliesCount,
+             imageUrl: r.imageUrl
+          });
+        }
+      });
+
+      if (append) {
+        container.innerHTML += html;
+      } else {
+        container.innerHTML = html;
+      }
+
+      this.searchOffset += results.length;
+
+      const loadMoreBtn = document.getElementById('searchLoadMoreBtn');
+      if (loadMoreBtn) {
+        loadMoreBtn.style.display = results.length < this.tweetsLimit ? 'none' : 'block';
+        loadMoreBtn.onclick = () => this.performSearch(this.currentSearchQuery, true);
+      }
+    } catch (e) {
+      console.error("Search failed:", e);
+      this.showToast("Search failed: " + e.message, "error");
+      if (!append) container.innerHTML = "<div class='error'>Failed to load search results.</div>";
+    }
+  @@TwitterApp.performSearch.end
 
   @async @TwitterApp.renderNotifications{containerId: string, append: boolean}: void
   @@TwitterApp.renderNotifications.code
@@ -376,6 +454,10 @@ TwitterApp --> Messaging
 @@TwitterApp.showHashtagTimeline.code
   this.currentTag = tag;
   this.tweetsOffset = 0;
+  document.getElementById('search-container').style.display = 'none';
+  document.getElementById('searchInput').value = '';
+  document.getElementById('timeline-container').style.display = 'block';
+  await window.app.loadTimeline('timeline', false);
   const container = document.getElementById('timeline');
   if (container) {
     container.innerHTML = 

@@ -473,6 +473,26 @@ Server --> Auth
       return;
     }
 
+    if (req.method === 'GET' && req.url.startsWith('/api/search')) {
+      const url = new URL(req.url, "http://" + req.headers.host);
+      const query = url.searchParams.get('q');
+      const limit = parseInt(url.searchParams.get('limit') || '25');
+      const offset = parseInt(url.searchParams.get('offset') || '0');
+      
+      if (!query) {
+        res.writeHead(400); res.end(JSON.stringify({ error: "Missing 'q' parameter" }));
+        return;
+      }
+      try {
+        const results = await this.auth.db.searchAll(query, limit, offset);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(results));
+      } catch (e) {
+        res.writeHead(500); res.end(JSON.stringify({ error: e.message }));
+      }
+      return;
+    }
+
     if (req.method === 'GET' && req.url.startsWith('/api/notifications')) {
       const url = new URL(req.url, "http://" + req.headers.host);
       const limit = parseInt(url.searchParams.get('limit') || '25');

@@ -40,7 +40,11 @@
                     <button id="logoutBtn" class="btn btn-outline">Log out</button>
                 </div>
             </div>
-
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search..." class="search-input">
+                <button id="searchBtn" class="btn btn-outline"
+                    style="padding: 6px 12px; height: 100%; box-sizing: border-box;">🔍</button>
+            </div>
             <div id="app-box">
                 <div class="post-box">
                     <div id="replyLabel"
@@ -73,6 +77,17 @@
 
                 <div class="load-more-container">
                     <button id="loadMoreBtn" class="btn btn-outline" style="display: none;">Load More</button>
+                </div>
+
+                <div id="search-container" style="display: none;">
+                    <div id="backFromSearchContainer">
+                        <button id="backFromSearchBtn" class="btn btn-outline">Back</button>
+                    </div>
+                    <h3 class="timeline-header">Search Results</h3>
+                    <div id="search-list"></div>
+                    <div class="load-more-container">
+                        <button id="searchLoadMoreBtn" class="btn btn-outline" style="display: none;">Load More</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -151,6 +166,30 @@
         document.getElementById('logoutBtn').addEventListener('click', () => {
             window.app.auth.logout();
             window.location.href = 'login.html';
+        });
+
+        document.getElementById('searchBtn').addEventListener('click', () => {
+            const query = document.getElementById('searchInput').value.trim();
+            if (query) {
+                document.getElementById('timeline-container').style.display = 'none';
+                document.getElementById('notifications-container').style.display = 'none';
+                document.getElementsByClassName('load-more-container')[0].style.display = 'none';
+                document.getElementById('search-container').style.display = 'block';
+                window.app.performSearch(query, false);
+            }
+        });
+
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('searchBtn').click();
+            }
+        });
+
+        document.getElementById('backFromSearchBtn').addEventListener('click', () => {
+            document.getElementById('search-container').style.display = 'none';
+            document.getElementById('searchInput').value = '';
+            document.getElementById('timeline-container').style.display = 'block';
+            window.app.loadTimeline('timeline', false);
         });
 
         let selectedImageBase64 = null;

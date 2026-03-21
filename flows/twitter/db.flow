@@ -596,6 +596,55 @@ Database[Database.ts{pool: any}]
   await this.pool.query("UPDATE notifications SET is_read = TRUE WHERE receiver_username = $1", [username]);
 @@Database.markNotificationsRead.end
 
+@async @Database.searchAll{query: string, limit: number, offset: number}: any
+@@Database.searchAll.code
+  const l = limit || 25;
+  const o = offset || 0;
+  const searchPattern = '%' + query + '%';
+  const tagPattern = query.startsWith('#') ? '%' + query.substring(1) + '%' : searchPattern;
+
+  const userRes = await this.pool.query(
+    "SELECT username, name, avatar_url, follower_count, following_count FROM users " +
+    "WHERE username ILIKE $1 OR name ILIKE $1 LIMIT $2 OFFSET $3",
+    [searchPattern, l, o]
+  );
+  
+  const tagRes = await this.pool.query(
+    "SELECT tag, COUNT(*) as count FROM hashtags " +
+    "WHERE tag ILIKE $1 GROUP BY tag LIMIT $2 OFFSET $3",
+    [tagPattern, l, o]
+  );
+
+  const msgRes = await this.pool.query(
+    "SELECT m.*, u.avatar_url as sender_avatar, u.name as sender_name, " +
+    "(SELECT COUNT(*) FROM messages r WHERE r.replied_to_id = m.id) as replies_count " +
+    "FROM messages m JOIN users u ON m.sender_username = u.username " +
+    "WHERE m.content ILIKE $1 ORDER BY m.timestamp DESC LIMIT $2 OFFSET $3",
+    [searchPattern, l, o]
+  );
+
+  const results = [];
+  userRes.rows.forEach(r => results.push({ type: 'user', username: r.username, name: r.name, avatarUrl: r.avatar_url, followerCount: r.follower_count, followingCount: r.following_count }));
+  tagRes.rows.forEach(r => results.push({ type: 'hashtag', tag: r.tag, count: Number(r.count) }));
+  msgRes.rows.forEach(r => results.push({ 
+    type: 'message', 
+    id: r.id, 
+    sender_username: r.sender_username, 
+    sender_name: r.sender_name, 
+    sender_avatar: r.sender_avatar, 
+    content: r.content, 
+    timestamp: Number(r.timestamp), 
+    repliedToId: r.replied_to_id, 
+    retweetedId: r.retweeted_id, 
+    likedCount: r.liked_count, 
+    retweetCount: r.retweet_count, 
+    repliesCount: Number(r.replies_count), 
+    imageUrl: r.image_url 
+  }));
+
+  return results;
+@@Database.searchAll.end
+
 @async @Database.query{text: string, params: any}: any
 @@Database.query.code
   return await this.pool.query(text, params);
