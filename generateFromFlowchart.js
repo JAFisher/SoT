@@ -234,10 +234,25 @@ function parseFlowchart(definition, sourceDir = "./flows") {
             }
 
             // 8.7 Rollup Blocks
-            const rollupMatch = line.match(/^Rollup->\{([^}]+)\}/);
-            if (rollupMatch) {
-                const filesList = rollupMatch[1].split(',').map(f => f.trim());
+            const legacyRollupMatch = line.match(/^Rollup->\{([^}]+)\}/);
+            const jsonRollupMatch = line.match(/^rollup->(\w+)?\s+(\{.*\})/i);
+
+            if (legacyRollupMatch) {
+                const filesList = legacyRollupMatch[1].split(',').map(f => f.trim()).filter(Boolean);
                 rollups.push({ files: filesList, namespace });
+                continue;
+            }
+
+            if (jsonRollupMatch) {
+                try {
+                    const ns = jsonRollupMatch[1] || "";
+                    const configStr = jsonRollupMatch[2].replace(/'/g, '"');
+                    const validJson = configStr.replace(/([{,]\s*)(\w+):/g, '$1"$2":');
+                    const config = JSON.parse(validJson);
+                    rollups.push({ files: config.files || [], namespace: config.namespace || ns });
+                } catch (e) {
+                    console.error("❌ Failed to parse rollup config: " + jsonRollupMatch[2]);
+                }
                 continue;
             }
 
@@ -320,7 +335,7 @@ function indent(code, n = 4) {
     return code.split("\n").map((line) => (line.length ? pad + line : line)).join("\n");
 }
 function stripTs(p) { return p.replace(/\.ts$/i, ""); }
-function toPascalCase(str) { return str.replace(/[-_](.)/g, (_, c) => c.toUpperCase()).replace(/^\w/, (c) => c.toUpperCase()); }
+function toPascalCase(str) { return str.replace(/-(.)/g, (_, c) => c.toUpperCase()).replace(/^\w/, (c) => c.toUpperCase()); }
 
 /**
  * GENERATE FILES
@@ -596,9 +611,40 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
             const outPath = path.join(baseDir, r.namespace);
             const rollupEntryPath = path.join(outPath, "rollup_entry.ts");
             let entryContent = "";
-            for (const file of r.files) {
-                const base = stripTs(file);
-                entryContent += `export * from "./${base}";\n`;
+            for (const pattern of r.files) {
+                if (pattern.includes('*')) {
+                    // Wildcard support: find all matching class names and their files
+                    const cleanPattern = pattern.replace(/^\//, "");
+                    const regex = new RegExp("^" + cleanPattern.replace(/\*/g, ".*") + "$");
+                    for (const [id, n] of Object.entries(nodes)) {
+                        const className = toPascalCase(path.basename(n.file || id, ".ts"));
+                        if (regex.test(className) || regex.test(id) || regex.test(n.file || "")) {
+                            const fileName = n.file || (id + ".ts");
+                            // Include files from their respective namespaces relative to the rollup output path
+                            const targetPath = path.join(n.namespace || "", fileName);
+                            const relToRollup = path.relative(r.namespace || "", targetPath).replace(/\\/g, "/");
+                            entryContent += `export * from "./${stripTs(relToRollup)}";\n`;
+                        }
+                    }
+                } else {
+                    const base = stripTs(pattern);
+                    const cleanPattern = pattern.replace(/^\//, "");
+                    const cleanBase = base.replace(/^\//, "");
+                    // Match against files in any namespace, allowing leading slashes and full paths
+                    const targetNodeEntry = Object.entries(nodes).find(([id, n]) => {
+                        const targetPath = path.join(n.namespace || "", n.file || (id + ".ts")).replace(/\\/g, "/");
+                        return n.file === cleanPattern || n.file === cleanBase + ".ts" || id === cleanBase || targetPath === cleanPattern;
+                    });
+                    if (targetNodeEntry) {
+                        const [, targetNode] = targetNodeEntry;
+                        const targetPath = path.join(targetNode.namespace || "", targetNode.file || (base + ".ts"));
+                        const relToRollup = path.relative(r.namespace || "", targetPath).replace(/\\/g, "/");
+                        entryContent += `export * from "./${stripTs(relToRollup)}";\n`;
+                    } else {
+                        // Fallback to literal if not found in nodes
+                        entryContent += `export * from "./${base}";\n`;
+                    }
+                }
             }
             fs.mkdirSync(outPath, { recursive: true });
             fs.writeFileSync(rollupEntryPath, entryContent, "utf-8");
@@ -623,8 +669,11 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
         const mainImports = new Set();
         const fullMainCode = mainBlocks.map(b => b.code).join("\n");
 
-        for (const name of [...allClassNames, ...allInterfaceNames, ...allTypeNames]) {
-            if (new RegExp(`\\b${name}\\b`).test(fullMainCode)) {
+        const allNodeIds = new Set(Object.keys(nodes));
+        const allKnownNames = [...allClassNames, ...allInterfaceNames, ...allTypeNames, ...allNodeIds];
+        for (const name of allKnownNames) {
+            const regex = new RegExp(`\\b${name}\\b`);
+            if (regex.test(fullMainCode)) {
                 // Find the source component regardless of its namespace
                 let target = types[name] || interfaces[name];
                 if (!target) {

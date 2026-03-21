@@ -1,0 +1,2701 @@
+include->tree_base.flow
+
+PineTree_1[PineTree_1.ts] ---|> Tree
+@PineTree_1.constructor{}
+@@PineTree_1.constructor.code
+  super();
+  this.trunkHeight = 3.36;
+  this.canopyRadius = 1.24;
+  this.canopyColor = '#2d5a27';
+@@PineTree_1.constructor.end
+
+BirchTree_2[BirchTree_2.ts] ---|> Tree
+@BirchTree_2.constructor{}
+@@BirchTree_2.constructor.code
+  super();
+  this.trunkHeight = 2.40;
+  this.canopyRadius = 1.18;
+  this.canopyColor = '#2e5a1c';
+@@BirchTree_2.constructor.end
+
+MapleTree_3[MapleTree_3.ts] ---|> Tree
+@MapleTree_3.constructor{}
+@@MapleTree_3.constructor.code
+  super();
+  this.trunkHeight = 3.15;
+  this.canopyRadius = 2.61;
+  this.canopyColor = '#1e4d2b';
+@@MapleTree_3.constructor.end
+
+WillowTree_4[WillowTree_4.ts] ---|> Tree
+@WillowTree_4.constructor{}
+@@WillowTree_4.constructor.code
+  super();
+  this.trunkHeight = 1.82;
+  this.canopyRadius = 2.94;
+  this.canopyColor = '#3a7d44';
+@@WillowTree_4.constructor.end
+
+CedarTree_5[CedarTree_5.ts] ---|> Tree
+@CedarTree_5.constructor{}
+@@CedarTree_5.constructor.code
+  super();
+  this.trunkHeight = 1.18;
+  this.canopyRadius = 2.94;
+  this.canopyColor = '#4a7c44';
+@@CedarTree_5.constructor.end
+
+SpruceTree_6[SpruceTree_6.ts] ---|> Tree
+@SpruceTree_6.constructor{}
+@@SpruceTree_6.constructor.code
+  super();
+  this.trunkHeight = 3.79;
+  this.canopyRadius = 2.02;
+  this.canopyColor = '#2e5a1c';
+@@SpruceTree_6.constructor.end
+
+RedwoodTree_7[RedwoodTree_7.ts] ---|> Tree
+@RedwoodTree_7.constructor{}
+@@RedwoodTree_7.constructor.code
+  super();
+  this.trunkHeight = 1.79;
+  this.canopyRadius = 1.36;
+  this.canopyColor = '#3a7d44';
+@@RedwoodTree_7.constructor.end
+
+BaobabTree_8[BaobabTree_8.ts] ---|> Tree
+@BaobabTree_8.constructor{}
+@@BaobabTree_8.constructor.code
+  super();
+  this.trunkHeight = 1.23;
+  this.canopyRadius = 1.75;
+  this.canopyColor = '#4a7c44';
+@@BaobabTree_8.constructor.end
+
+BanyanTree_9[BanyanTree_9.ts] ---|> Tree
+@BanyanTree_9.constructor{}
+@@BanyanTree_9.constructor.code
+  super();
+  this.trunkHeight = 1.73;
+  this.canopyRadius = 1.05;
+  this.canopyColor = '#2e5a1c';
+@@BanyanTree_9.constructor.end
+
+OakTree_10[OakTree_10.ts] ---|> Tree
+@OakTree_10.constructor{}
+@@OakTree_10.constructor.code
+  super();
+  this.trunkHeight = 1.21;
+  this.canopyRadius = 1.42;
+  this.canopyColor = '#1e4d2b';
+@@OakTree_10.constructor.end
+
+PineTree_11[PineTree_11.ts] ---|> Tree
+@PineTree_11.constructor{}
+@@PineTree_11.constructor.code
+  super();
+  this.trunkHeight = 2.44;
+  this.canopyRadius = 2.58;
+  this.canopyColor = '#4a7c44';
+@@PineTree_11.constructor.end
+
+BirchTree_12[BirchTree_12.ts] ---|> Tree
+@BirchTree_12.constructor{}
+@@BirchTree_12.constructor.code
+  super();
+  this.trunkHeight = 3.07;
+  this.canopyRadius = 1.83;
+  this.canopyColor = '#2e5a1c';
+@@BirchTree_12.constructor.end
+
+MapleTree_13[MapleTree_13.ts] ---|> Tree
+@MapleTree_13.constructor{}
+@@MapleTree_13.constructor.code
+  super();
+  this.trunkHeight = 2.80;
+  this.canopyRadius = 2.44;
+  this.canopyColor = '#3a7d44';
+@@MapleTree_13.constructor.end
+
+WillowTree_14[WillowTree_14.ts] ---|> Tree
+@WillowTree_14.constructor{}
+@@WillowTree_14.constructor.code
+  super();
+  this.trunkHeight = 3.77;
+  this.canopyRadius = 1.58;
+  this.canopyColor = '#4a7c44';
+@@WillowTree_14.constructor.end
+
+CedarTree_15[CedarTree_15.ts] ---|> Tree
+@CedarTree_15.constructor{}
+@@CedarTree_15.constructor.code
+  super();
+  this.trunkHeight = 1.44;
+  this.canopyRadius = 2.43;
+  this.canopyColor = '#2e5a1c';
+@@CedarTree_15.constructor.end
+
+SpruceTree_16[SpruceTree_16.ts] ---|> Tree
+@SpruceTree_16.constructor{}
+@@SpruceTree_16.constructor.code
+  super();
+  this.trunkHeight = 1.39;
+  this.canopyRadius = 1.01;
+  this.canopyColor = '#2e5a1c';
+@@SpruceTree_16.constructor.end
+
+RedwoodTree_17[RedwoodTree_17.ts] ---|> Tree
+@RedwoodTree_17.constructor{}
+@@RedwoodTree_17.constructor.code
+  super();
+  this.trunkHeight = 3.88;
+  this.canopyRadius = 1.97;
+  this.canopyColor = '#3a7d44';
+@@RedwoodTree_17.constructor.end
+
+BaobabTree_18[BaobabTree_18.ts] ---|> Tree
+@BaobabTree_18.constructor{}
+@@BaobabTree_18.constructor.code
+  super();
+  this.trunkHeight = 1.43;
+  this.canopyRadius = 1.46;
+  this.canopyColor = '#3a7d44';
+@@BaobabTree_18.constructor.end
+
+BanyanTree_19[BanyanTree_19.ts] ---|> Tree
+@BanyanTree_19.constructor{}
+@@BanyanTree_19.constructor.code
+  super();
+  this.trunkHeight = 2.58;
+  this.canopyRadius = 1.31;
+  this.canopyColor = '#4a7c44';
+@@BanyanTree_19.constructor.end
+
+OakTree_20[OakTree_20.ts] ---|> Tree
+@OakTree_20.constructor{}
+@@OakTree_20.constructor.code
+  super();
+  this.trunkHeight = 2.98;
+  this.canopyRadius = 1.62;
+  this.canopyColor = '#2e5a1c';
+@@OakTree_20.constructor.end
+
+PineTree_21[PineTree_21.ts] ---|> Tree
+@PineTree_21.constructor{}
+@@PineTree_21.constructor.code
+  super();
+  this.trunkHeight = 3.40;
+  this.canopyRadius = 1.78;
+  this.canopyColor = '#1e4d2b';
+@@PineTree_21.constructor.end
+
+BirchTree_22[BirchTree_22.ts] ---|> Tree
+@BirchTree_22.constructor{}
+@@BirchTree_22.constructor.code
+  super();
+  this.trunkHeight = 3.94;
+  this.canopyRadius = 2.89;
+  this.canopyColor = '#3a7d44';
+@@BirchTree_22.constructor.end
+
+MapleTree_23[MapleTree_23.ts] ---|> Tree
+@MapleTree_23.constructor{}
+@@MapleTree_23.constructor.code
+  super();
+  this.trunkHeight = 3.67;
+  this.canopyRadius = 1.90;
+  this.canopyColor = '#2d5a27';
+@@MapleTree_23.constructor.end
+
+WillowTree_24[WillowTree_24.ts] ---|> Tree
+@WillowTree_24.constructor{}
+@@WillowTree_24.constructor.code
+  super();
+  this.trunkHeight = 3.52;
+  this.canopyRadius = 2.00;
+  this.canopyColor = '#2e5a1c';
+@@WillowTree_24.constructor.end
+
+CedarTree_25[CedarTree_25.ts] ---|> Tree
+@CedarTree_25.constructor{}
+@@CedarTree_25.constructor.code
+  super();
+  this.trunkHeight = 3.98;
+  this.canopyRadius = 2.02;
+  this.canopyColor = '#1e4d2b';
+@@CedarTree_25.constructor.end
+
+SpruceTree_26[SpruceTree_26.ts] ---|> Tree
+@SpruceTree_26.constructor{}
+@@SpruceTree_26.constructor.code
+  super();
+  this.trunkHeight = 1.76;
+  this.canopyRadius = 2.61;
+  this.canopyColor = '#3a7d44';
+@@SpruceTree_26.constructor.end
+
+RedwoodTree_27[RedwoodTree_27.ts] ---|> Tree
+@RedwoodTree_27.constructor{}
+@@RedwoodTree_27.constructor.code
+  super();
+  this.trunkHeight = 2.27;
+  this.canopyRadius = 2.64;
+  this.canopyColor = '#4a7c44';
+@@RedwoodTree_27.constructor.end
+
+BaobabTree_28[BaobabTree_28.ts] ---|> Tree
+@BaobabTree_28.constructor{}
+@@BaobabTree_28.constructor.code
+  super();
+  this.trunkHeight = 1.94;
+  this.canopyRadius = 1.99;
+  this.canopyColor = '#4a7c44';
+@@BaobabTree_28.constructor.end
+
+BanyanTree_29[BanyanTree_29.ts] ---|> Tree
+@BanyanTree_29.constructor{}
+@@BanyanTree_29.constructor.code
+  super();
+  this.trunkHeight = 3.57;
+  this.canopyRadius = 2.17;
+  this.canopyColor = '#2e5a1c';
+@@BanyanTree_29.constructor.end
+
+OakTree_30[OakTree_30.ts] ---|> Tree
+@OakTree_30.constructor{}
+@@OakTree_30.constructor.code
+  super();
+  this.trunkHeight = 2.02;
+  this.canopyRadius = 2.62;
+  this.canopyColor = '#2d5a27';
+@@OakTree_30.constructor.end
+
+PineTree_31[PineTree_31.ts] ---|> Tree
+@PineTree_31.constructor{}
+@@PineTree_31.constructor.code
+  super();
+  this.trunkHeight = 1.15;
+  this.canopyRadius = 1.79;
+  this.canopyColor = '#1e4d2b';
+@@PineTree_31.constructor.end
+
+BirchTree_32[BirchTree_32.ts] ---|> Tree
+@BirchTree_32.constructor{}
+@@BirchTree_32.constructor.code
+  super();
+  this.trunkHeight = 1.31;
+  this.canopyRadius = 2.56;
+  this.canopyColor = '#2d5a27';
+@@BirchTree_32.constructor.end
+
+MapleTree_33[MapleTree_33.ts] ---|> Tree
+@MapleTree_33.constructor{}
+@@MapleTree_33.constructor.code
+  super();
+  this.trunkHeight = 1.42;
+  this.canopyRadius = 1.81;
+  this.canopyColor = '#3a7d44';
+@@MapleTree_33.constructor.end
+
+WillowTree_34[WillowTree_34.ts] ---|> Tree
+@WillowTree_34.constructor{}
+@@WillowTree_34.constructor.code
+  super();
+  this.trunkHeight = 3.16;
+  this.canopyRadius = 2.14;
+  this.canopyColor = '#2e5a1c';
+@@WillowTree_34.constructor.end
+
+CedarTree_35[CedarTree_35.ts] ---|> Tree
+@CedarTree_35.constructor{}
+@@CedarTree_35.constructor.code
+  super();
+  this.trunkHeight = 1.16;
+  this.canopyRadius = 1.88;
+  this.canopyColor = '#2d5a27';
+@@CedarTree_35.constructor.end
+
+SpruceTree_36[SpruceTree_36.ts] ---|> Tree
+@SpruceTree_36.constructor{}
+@@SpruceTree_36.constructor.code
+  super();
+  this.trunkHeight = 1.10;
+  this.canopyRadius = 2.57;
+  this.canopyColor = '#3a7d44';
+@@SpruceTree_36.constructor.end
+
+RedwoodTree_37[RedwoodTree_37.ts] ---|> Tree
+@RedwoodTree_37.constructor{}
+@@RedwoodTree_37.constructor.code
+  super();
+  this.trunkHeight = 2.17;
+  this.canopyRadius = 1.65;
+  this.canopyColor = '#2d5a27';
+@@RedwoodTree_37.constructor.end
+
+BaobabTree_38[BaobabTree_38.ts] ---|> Tree
+@BaobabTree_38.constructor{}
+@@BaobabTree_38.constructor.code
+  super();
+  this.trunkHeight = 2.81;
+  this.canopyRadius = 1.27;
+  this.canopyColor = '#2d5a27';
+@@BaobabTree_38.constructor.end
+
+BanyanTree_39[BanyanTree_39.ts] ---|> Tree
+@BanyanTree_39.constructor{}
+@@BanyanTree_39.constructor.code
+  super();
+  this.trunkHeight = 2.91;
+  this.canopyRadius = 3.00;
+  this.canopyColor = '#2d5a27';
+@@BanyanTree_39.constructor.end
+
+OakTree_40[OakTree_40.ts] ---|> Tree
+@OakTree_40.constructor{}
+@@OakTree_40.constructor.code
+  super();
+  this.trunkHeight = 2.93;
+  this.canopyRadius = 2.14;
+  this.canopyColor = '#4a7c44';
+@@OakTree_40.constructor.end
+
+PineTree_41[PineTree_41.ts] ---|> Tree
+@PineTree_41.constructor{}
+@@PineTree_41.constructor.code
+  super();
+  this.trunkHeight = 1.21;
+  this.canopyRadius = 2.20;
+  this.canopyColor = '#2e5a1c';
+@@PineTree_41.constructor.end
+
+BirchTree_42[BirchTree_42.ts] ---|> Tree
+@BirchTree_42.constructor{}
+@@BirchTree_42.constructor.code
+  super();
+  this.trunkHeight = 3.98;
+  this.canopyRadius = 2.17;
+  this.canopyColor = '#3a7d44';
+@@BirchTree_42.constructor.end
+
+MapleTree_43[MapleTree_43.ts] ---|> Tree
+@MapleTree_43.constructor{}
+@@MapleTree_43.constructor.code
+  super();
+  this.trunkHeight = 3.19;
+  this.canopyRadius = 2.17;
+  this.canopyColor = '#3a7d44';
+@@MapleTree_43.constructor.end
+
+WillowTree_44[WillowTree_44.ts] ---|> Tree
+@WillowTree_44.constructor{}
+@@WillowTree_44.constructor.code
+  super();
+  this.trunkHeight = 3.26;
+  this.canopyRadius = 2.05;
+  this.canopyColor = '#4a7c44';
+@@WillowTree_44.constructor.end
+
+CedarTree_45[CedarTree_45.ts] ---|> Tree
+@CedarTree_45.constructor{}
+@@CedarTree_45.constructor.code
+  super();
+  this.trunkHeight = 1.53;
+  this.canopyRadius = 1.89;
+  this.canopyColor = '#4a7c44';
+@@CedarTree_45.constructor.end
+
+SpruceTree_46[SpruceTree_46.ts] ---|> Tree
+@SpruceTree_46.constructor{}
+@@SpruceTree_46.constructor.code
+  super();
+  this.trunkHeight = 1.60;
+  this.canopyRadius = 1.89;
+  this.canopyColor = '#2d5a27';
+@@SpruceTree_46.constructor.end
+
+RedwoodTree_47[RedwoodTree_47.ts] ---|> Tree
+@RedwoodTree_47.constructor{}
+@@RedwoodTree_47.constructor.code
+  super();
+  this.trunkHeight = 2.28;
+  this.canopyRadius = 1.51;
+  this.canopyColor = '#2d5a27';
+@@RedwoodTree_47.constructor.end
+
+BaobabTree_48[BaobabTree_48.ts] ---|> Tree
+@BaobabTree_48.constructor{}
+@@BaobabTree_48.constructor.code
+  super();
+  this.trunkHeight = 2.07;
+  this.canopyRadius = 1.03;
+  this.canopyColor = '#4a7c44';
+@@BaobabTree_48.constructor.end
+
+BanyanTree_49[BanyanTree_49.ts] ---|> Tree
+@BanyanTree_49.constructor{}
+@@BanyanTree_49.constructor.code
+  super();
+  this.trunkHeight = 3.91;
+  this.canopyRadius = 1.85;
+  this.canopyColor = '#2e5a1c';
+@@BanyanTree_49.constructor.end
+
+OakTree_50[OakTree_50.ts] ---|> Tree
+@OakTree_50.constructor{}
+@@OakTree_50.constructor.code
+  super();
+  this.trunkHeight = 3.15;
+  this.canopyRadius = 2.86;
+  this.canopyColor = '#1e4d2b';
+@@OakTree_50.constructor.end
+
+PineTree_51[PineTree_51.ts] ---|> Tree
+@PineTree_51.constructor{}
+@@PineTree_51.constructor.code
+  super();
+  this.trunkHeight = 1.86;
+  this.canopyRadius = 2.87;
+  this.canopyColor = '#3a7d44';
+@@PineTree_51.constructor.end
+
+BirchTree_52[BirchTree_52.ts] ---|> Tree
+@BirchTree_52.constructor{}
+@@BirchTree_52.constructor.code
+  super();
+  this.trunkHeight = 3.40;
+  this.canopyRadius = 2.08;
+  this.canopyColor = '#3a7d44';
+@@BirchTree_52.constructor.end
+
+MapleTree_53[MapleTree_53.ts] ---|> Tree
+@MapleTree_53.constructor{}
+@@MapleTree_53.constructor.code
+  super();
+  this.trunkHeight = 3.65;
+  this.canopyRadius = 2.64;
+  this.canopyColor = '#2e5a1c';
+@@MapleTree_53.constructor.end
+
+WillowTree_54[WillowTree_54.ts] ---|> Tree
+@WillowTree_54.constructor{}
+@@WillowTree_54.constructor.code
+  super();
+  this.trunkHeight = 1.87;
+  this.canopyRadius = 1.10;
+  this.canopyColor = '#2e5a1c';
+@@WillowTree_54.constructor.end
+
+CedarTree_55[CedarTree_55.ts] ---|> Tree
+@CedarTree_55.constructor{}
+@@CedarTree_55.constructor.code
+  super();
+  this.trunkHeight = 3.89;
+  this.canopyRadius = 1.56;
+  this.canopyColor = '#4a7c44';
+@@CedarTree_55.constructor.end
+
+SpruceTree_56[SpruceTree_56.ts] ---|> Tree
+@SpruceTree_56.constructor{}
+@@SpruceTree_56.constructor.code
+  super();
+  this.trunkHeight = 2.59;
+  this.canopyRadius = 1.73;
+  this.canopyColor = '#2e5a1c';
+@@SpruceTree_56.constructor.end
+
+RedwoodTree_57[RedwoodTree_57.ts] ---|> Tree
+@RedwoodTree_57.constructor{}
+@@RedwoodTree_57.constructor.code
+  super();
+  this.trunkHeight = 2.66;
+  this.canopyRadius = 2.06;
+  this.canopyColor = '#2e5a1c';
+@@RedwoodTree_57.constructor.end
+
+BaobabTree_58[BaobabTree_58.ts] ---|> Tree
+@BaobabTree_58.constructor{}
+@@BaobabTree_58.constructor.code
+  super();
+  this.trunkHeight = 2.06;
+  this.canopyRadius = 2.66;
+  this.canopyColor = '#2d5a27';
+@@BaobabTree_58.constructor.end
+
+BanyanTree_59[BanyanTree_59.ts] ---|> Tree
+@BanyanTree_59.constructor{}
+@@BanyanTree_59.constructor.code
+  super();
+  this.trunkHeight = 2.31;
+  this.canopyRadius = 1.70;
+  this.canopyColor = '#4a7c44';
+@@BanyanTree_59.constructor.end
+
+OakTree_60[OakTree_60.ts] ---|> Tree
+@OakTree_60.constructor{}
+@@OakTree_60.constructor.code
+  super();
+  this.trunkHeight = 2.59;
+  this.canopyRadius = 2.71;
+  this.canopyColor = '#3a7d44';
+@@OakTree_60.constructor.end
+
+PineTree_61[PineTree_61.ts] ---|> Tree
+@PineTree_61.constructor{}
+@@PineTree_61.constructor.code
+  super();
+  this.trunkHeight = 2.95;
+  this.canopyRadius = 2.58;
+  this.canopyColor = '#4a7c44';
+@@PineTree_61.constructor.end
+
+BirchTree_62[BirchTree_62.ts] ---|> Tree
+@BirchTree_62.constructor{}
+@@BirchTree_62.constructor.code
+  super();
+  this.trunkHeight = 1.52;
+  this.canopyRadius = 1.16;
+  this.canopyColor = '#4a7c44';
+@@BirchTree_62.constructor.end
+
+MapleTree_63[MapleTree_63.ts] ---|> Tree
+@MapleTree_63.constructor{}
+@@MapleTree_63.constructor.code
+  super();
+  this.trunkHeight = 1.15;
+  this.canopyRadius = 1.02;
+  this.canopyColor = '#1e4d2b';
+@@MapleTree_63.constructor.end
+
+WillowTree_64[WillowTree_64.ts] ---|> Tree
+@WillowTree_64.constructor{}
+@@WillowTree_64.constructor.code
+  super();
+  this.trunkHeight = 1.29;
+  this.canopyRadius = 2.82;
+  this.canopyColor = '#3a7d44';
+@@WillowTree_64.constructor.end
+
+CedarTree_65[CedarTree_65.ts] ---|> Tree
+@CedarTree_65.constructor{}
+@@CedarTree_65.constructor.code
+  super();
+  this.trunkHeight = 2.53;
+  this.canopyRadius = 2.33;
+  this.canopyColor = '#2d5a27';
+@@CedarTree_65.constructor.end
+
+SpruceTree_66[SpruceTree_66.ts] ---|> Tree
+@SpruceTree_66.constructor{}
+@@SpruceTree_66.constructor.code
+  super();
+  this.trunkHeight = 1.76;
+  this.canopyRadius = 2.44;
+  this.canopyColor = '#3a7d44';
+@@SpruceTree_66.constructor.end
+
+RedwoodTree_67[RedwoodTree_67.ts] ---|> Tree
+@RedwoodTree_67.constructor{}
+@@RedwoodTree_67.constructor.code
+  super();
+  this.trunkHeight = 3.28;
+  this.canopyRadius = 2.22;
+  this.canopyColor = '#1e4d2b';
+@@RedwoodTree_67.constructor.end
+
+BaobabTree_68[BaobabTree_68.ts] ---|> Tree
+@BaobabTree_68.constructor{}
+@@BaobabTree_68.constructor.code
+  super();
+  this.trunkHeight = 1.74;
+  this.canopyRadius = 2.95;
+  this.canopyColor = '#2e5a1c';
+@@BaobabTree_68.constructor.end
+
+BanyanTree_69[BanyanTree_69.ts] ---|> Tree
+@BanyanTree_69.constructor{}
+@@BanyanTree_69.constructor.code
+  super();
+  this.trunkHeight = 3.68;
+  this.canopyRadius = 2.13;
+  this.canopyColor = '#2e5a1c';
+@@BanyanTree_69.constructor.end
+
+OakTree_70[OakTree_70.ts] ---|> Tree
+@OakTree_70.constructor{}
+@@OakTree_70.constructor.code
+  super();
+  this.trunkHeight = 1.44;
+  this.canopyRadius = 2.74;
+  this.canopyColor = '#2d5a27';
+@@OakTree_70.constructor.end
+
+PineTree_71[PineTree_71.ts] ---|> Tree
+@PineTree_71.constructor{}
+@@PineTree_71.constructor.code
+  super();
+  this.trunkHeight = 1.98;
+  this.canopyRadius = 2.95;
+  this.canopyColor = '#4a7c44';
+@@PineTree_71.constructor.end
+
+BirchTree_72[BirchTree_72.ts] ---|> Tree
+@BirchTree_72.constructor{}
+@@BirchTree_72.constructor.code
+  super();
+  this.trunkHeight = 2.29;
+  this.canopyRadius = 1.21;
+  this.canopyColor = '#2e5a1c';
+@@BirchTree_72.constructor.end
+
+MapleTree_73[MapleTree_73.ts] ---|> Tree
+@MapleTree_73.constructor{}
+@@MapleTree_73.constructor.code
+  super();
+  this.trunkHeight = 3.08;
+  this.canopyRadius = 1.31;
+  this.canopyColor = '#3a7d44';
+@@MapleTree_73.constructor.end
+
+WillowTree_74[WillowTree_74.ts] ---|> Tree
+@WillowTree_74.constructor{}
+@@WillowTree_74.constructor.code
+  super();
+  this.trunkHeight = 1.17;
+  this.canopyRadius = 2.07;
+  this.canopyColor = '#3a7d44';
+@@WillowTree_74.constructor.end
+
+CedarTree_75[CedarTree_75.ts] ---|> Tree
+@CedarTree_75.constructor{}
+@@CedarTree_75.constructor.code
+  super();
+  this.trunkHeight = 2.80;
+  this.canopyRadius = 2.23;
+  this.canopyColor = '#1e4d2b';
+@@CedarTree_75.constructor.end
+
+SpruceTree_76[SpruceTree_76.ts] ---|> Tree
+@SpruceTree_76.constructor{}
+@@SpruceTree_76.constructor.code
+  super();
+  this.trunkHeight = 2.39;
+  this.canopyRadius = 1.12;
+  this.canopyColor = '#1e4d2b';
+@@SpruceTree_76.constructor.end
+
+RedwoodTree_77[RedwoodTree_77.ts] ---|> Tree
+@RedwoodTree_77.constructor{}
+@@RedwoodTree_77.constructor.code
+  super();
+  this.trunkHeight = 2.88;
+  this.canopyRadius = 1.37;
+  this.canopyColor = '#2d5a27';
+@@RedwoodTree_77.constructor.end
+
+BaobabTree_78[BaobabTree_78.ts] ---|> Tree
+@BaobabTree_78.constructor{}
+@@BaobabTree_78.constructor.code
+  super();
+  this.trunkHeight = 2.15;
+  this.canopyRadius = 2.51;
+  this.canopyColor = '#2e5a1c';
+@@BaobabTree_78.constructor.end
+
+BanyanTree_79[BanyanTree_79.ts] ---|> Tree
+@BanyanTree_79.constructor{}
+@@BanyanTree_79.constructor.code
+  super();
+  this.trunkHeight = 3.11;
+  this.canopyRadius = 1.05;
+  this.canopyColor = '#3a7d44';
+@@BanyanTree_79.constructor.end
+
+OakTree_80[OakTree_80.ts] ---|> Tree
+@OakTree_80.constructor{}
+@@OakTree_80.constructor.code
+  super();
+  this.trunkHeight = 3.40;
+  this.canopyRadius = 1.24;
+  this.canopyColor = '#1e4d2b';
+@@OakTree_80.constructor.end
+
+PineTree_81[PineTree_81.ts] ---|> Tree
+@PineTree_81.constructor{}
+@@PineTree_81.constructor.code
+  super();
+  this.trunkHeight = 3.31;
+  this.canopyRadius = 1.82;
+  this.canopyColor = '#2d5a27';
+@@PineTree_81.constructor.end
+
+BirchTree_82[BirchTree_82.ts] ---|> Tree
+@BirchTree_82.constructor{}
+@@BirchTree_82.constructor.code
+  super();
+  this.trunkHeight = 3.53;
+  this.canopyRadius = 1.54;
+  this.canopyColor = '#3a7d44';
+@@BirchTree_82.constructor.end
+
+MapleTree_83[MapleTree_83.ts] ---|> Tree
+@MapleTree_83.constructor{}
+@@MapleTree_83.constructor.code
+  super();
+  this.trunkHeight = 3.75;
+  this.canopyRadius = 2.00;
+  this.canopyColor = '#2e5a1c';
+@@MapleTree_83.constructor.end
+
+WillowTree_84[WillowTree_84.ts] ---|> Tree
+@WillowTree_84.constructor{}
+@@WillowTree_84.constructor.code
+  super();
+  this.trunkHeight = 2.59;
+  this.canopyRadius = 2.29;
+  this.canopyColor = '#3a7d44';
+@@WillowTree_84.constructor.end
+
+CedarTree_85[CedarTree_85.ts] ---|> Tree
+@CedarTree_85.constructor{}
+@@CedarTree_85.constructor.code
+  super();
+  this.trunkHeight = 1.70;
+  this.canopyRadius = 2.47;
+  this.canopyColor = '#2e5a1c';
+@@CedarTree_85.constructor.end
+
+SpruceTree_86[SpruceTree_86.ts] ---|> Tree
+@SpruceTree_86.constructor{}
+@@SpruceTree_86.constructor.code
+  super();
+  this.trunkHeight = 2.03;
+  this.canopyRadius = 1.12;
+  this.canopyColor = '#4a7c44';
+@@SpruceTree_86.constructor.end
+
+RedwoodTree_87[RedwoodTree_87.ts] ---|> Tree
+@RedwoodTree_87.constructor{}
+@@RedwoodTree_87.constructor.code
+  super();
+  this.trunkHeight = 3.65;
+  this.canopyRadius = 1.11;
+  this.canopyColor = '#2d5a27';
+@@RedwoodTree_87.constructor.end
+
+BaobabTree_88[BaobabTree_88.ts] ---|> Tree
+@BaobabTree_88.constructor{}
+@@BaobabTree_88.constructor.code
+  super();
+  this.trunkHeight = 1.34;
+  this.canopyRadius = 2.44;
+  this.canopyColor = '#3a7d44';
+@@BaobabTree_88.constructor.end
+
+BanyanTree_89[BanyanTree_89.ts] ---|> Tree
+@BanyanTree_89.constructor{}
+@@BanyanTree_89.constructor.code
+  super();
+  this.trunkHeight = 3.43;
+  this.canopyRadius = 1.29;
+  this.canopyColor = '#1e4d2b';
+@@BanyanTree_89.constructor.end
+
+OakTree_90[OakTree_90.ts] ---|> Tree
+@OakTree_90.constructor{}
+@@OakTree_90.constructor.code
+  super();
+  this.trunkHeight = 2.14;
+  this.canopyRadius = 2.78;
+  this.canopyColor = '#2d5a27';
+@@OakTree_90.constructor.end
+
+PineTree_91[PineTree_91.ts] ---|> Tree
+@PineTree_91.constructor{}
+@@PineTree_91.constructor.code
+  super();
+  this.trunkHeight = 1.97;
+  this.canopyRadius = 2.56;
+  this.canopyColor = '#3a7d44';
+@@PineTree_91.constructor.end
+
+BirchTree_92[BirchTree_92.ts] ---|> Tree
+@BirchTree_92.constructor{}
+@@BirchTree_92.constructor.code
+  super();
+  this.trunkHeight = 3.37;
+  this.canopyRadius = 1.14;
+  this.canopyColor = '#2e5a1c';
+@@BirchTree_92.constructor.end
+
+MapleTree_93[MapleTree_93.ts] ---|> Tree
+@MapleTree_93.constructor{}
+@@MapleTree_93.constructor.code
+  super();
+  this.trunkHeight = 2.92;
+  this.canopyRadius = 2.73;
+  this.canopyColor = '#1e4d2b';
+@@MapleTree_93.constructor.end
+
+WillowTree_94[WillowTree_94.ts] ---|> Tree
+@WillowTree_94.constructor{}
+@@WillowTree_94.constructor.code
+  super();
+  this.trunkHeight = 2.44;
+  this.canopyRadius = 2.70;
+  this.canopyColor = '#4a7c44';
+@@WillowTree_94.constructor.end
+
+CedarTree_95[CedarTree_95.ts] ---|> Tree
+@CedarTree_95.constructor{}
+@@CedarTree_95.constructor.code
+  super();
+  this.trunkHeight = 3.77;
+  this.canopyRadius = 1.85;
+  this.canopyColor = '#2e5a1c';
+@@CedarTree_95.constructor.end
+
+SpruceTree_96[SpruceTree_96.ts] ---|> Tree
+@SpruceTree_96.constructor{}
+@@SpruceTree_96.constructor.code
+  super();
+  this.trunkHeight = 3.79;
+  this.canopyRadius = 1.90;
+  this.canopyColor = '#2d5a27';
+@@SpruceTree_96.constructor.end
+
+RedwoodTree_97[RedwoodTree_97.ts] ---|> Tree
+@RedwoodTree_97.constructor{}
+@@RedwoodTree_97.constructor.code
+  super();
+  this.trunkHeight = 1.84;
+  this.canopyRadius = 2.55;
+  this.canopyColor = '#4a7c44';
+@@RedwoodTree_97.constructor.end
+
+BaobabTree_98[BaobabTree_98.ts] ---|> Tree
+@BaobabTree_98.constructor{}
+@@BaobabTree_98.constructor.code
+  super();
+  this.trunkHeight = 3.53;
+  this.canopyRadius = 1.61;
+  this.canopyColor = '#2e5a1c';
+@@BaobabTree_98.constructor.end
+
+BanyanTree_99[BanyanTree_99.ts] ---|> Tree
+@BanyanTree_99.constructor{}
+@@BanyanTree_99.constructor.code
+  super();
+  this.trunkHeight = 3.45;
+  this.canopyRadius = 1.21;
+  this.canopyColor = '#4a7c44';
+@@BanyanTree_99.constructor.end
+
+OakTree_100[OakTree_100.ts] ---|> Tree
+@OakTree_100.constructor{}
+@@OakTree_100.constructor.code
+  super();
+  this.trunkHeight = 1.84;
+  this.canopyRadius = 2.09;
+  this.canopyColor = '#1e4d2b';
+@@OakTree_100.constructor.end
+
+PineTree_101[PineTree_101.ts] ---|> Tree
+@PineTree_101.constructor{}
+@@PineTree_101.constructor.code
+  super();
+  this.trunkHeight = 3.29;
+  this.canopyRadius = 2.90;
+  this.canopyColor = '#4a7c44';
+@@PineTree_101.constructor.end
+
+BirchTree_102[BirchTree_102.ts] ---|> Tree
+@BirchTree_102.constructor{}
+@@BirchTree_102.constructor.code
+  super();
+  this.trunkHeight = 1.08;
+  this.canopyRadius = 1.68;
+  this.canopyColor = '#3a7d44';
+@@BirchTree_102.constructor.end
+
+MapleTree_103[MapleTree_103.ts] ---|> Tree
+@MapleTree_103.constructor{}
+@@MapleTree_103.constructor.code
+  super();
+  this.trunkHeight = 1.65;
+  this.canopyRadius = 1.30;
+  this.canopyColor = '#2e5a1c';
+@@MapleTree_103.constructor.end
+
+WillowTree_104[WillowTree_104.ts] ---|> Tree
+@WillowTree_104.constructor{}
+@@WillowTree_104.constructor.code
+  super();
+  this.trunkHeight = 3.86;
+  this.canopyRadius = 2.76;
+  this.canopyColor = '#2e5a1c';
+@@WillowTree_104.constructor.end
+
+CedarTree_105[CedarTree_105.ts] ---|> Tree
+@CedarTree_105.constructor{}
+@@CedarTree_105.constructor.code
+  super();
+  this.trunkHeight = 1.09;
+  this.canopyRadius = 2.19;
+  this.canopyColor = '#4a7c44';
+@@CedarTree_105.constructor.end
+
+SpruceTree_106[SpruceTree_106.ts] ---|> Tree
+@SpruceTree_106.constructor{}
+@@SpruceTree_106.constructor.code
+  super();
+  this.trunkHeight = 3.09;
+  this.canopyRadius = 2.94;
+  this.canopyColor = '#1e4d2b';
+@@SpruceTree_106.constructor.end
+
+RedwoodTree_107[RedwoodTree_107.ts] ---|> Tree
+@RedwoodTree_107.constructor{}
+@@RedwoodTree_107.constructor.code
+  super();
+  this.trunkHeight = 2.66;
+  this.canopyRadius = 2.94;
+  this.canopyColor = '#2d5a27';
+@@RedwoodTree_107.constructor.end
+
+BaobabTree_108[BaobabTree_108.ts] ---|> Tree
+@BaobabTree_108.constructor{}
+@@BaobabTree_108.constructor.code
+  super();
+  this.trunkHeight = 2.73;
+  this.canopyRadius = 1.81;
+  this.canopyColor = '#4a7c44';
+@@BaobabTree_108.constructor.end
+
+BanyanTree_109[BanyanTree_109.ts] ---|> Tree
+@BanyanTree_109.constructor{}
+@@BanyanTree_109.constructor.code
+  super();
+  this.trunkHeight = 1.33;
+  this.canopyRadius = 2.06;
+  this.canopyColor = '#2e5a1c';
+@@BanyanTree_109.constructor.end
+
+OakTree_110[OakTree_110.ts] ---|> Tree
+@OakTree_110.constructor{}
+@@OakTree_110.constructor.code
+  super();
+  this.trunkHeight = 1.80;
+  this.canopyRadius = 2.25;
+  this.canopyColor = '#2e5a1c';
+@@OakTree_110.constructor.end
+
+PineTree_111[PineTree_111.ts] ---|> Tree
+@PineTree_111.constructor{}
+@@PineTree_111.constructor.code
+  super();
+  this.trunkHeight = 2.51;
+  this.canopyRadius = 1.02;
+  this.canopyColor = '#1e4d2b';
+@@PineTree_111.constructor.end
+
+BirchTree_112[BirchTree_112.ts] ---|> Tree
+@BirchTree_112.constructor{}
+@@BirchTree_112.constructor.code
+  super();
+  this.trunkHeight = 3.11;
+  this.canopyRadius = 1.63;
+  this.canopyColor = '#1e4d2b';
+@@BirchTree_112.constructor.end
+
+MapleTree_113[MapleTree_113.ts] ---|> Tree
+@MapleTree_113.constructor{}
+@@MapleTree_113.constructor.code
+  super();
+  this.trunkHeight = 2.46;
+  this.canopyRadius = 2.92;
+  this.canopyColor = '#2d5a27';
+@@MapleTree_113.constructor.end
+
+WillowTree_114[WillowTree_114.ts] ---|> Tree
+@WillowTree_114.constructor{}
+@@WillowTree_114.constructor.code
+  super();
+  this.trunkHeight = 2.35;
+  this.canopyRadius = 2.93;
+  this.canopyColor = '#2d5a27';
+@@WillowTree_114.constructor.end
+
+CedarTree_115[CedarTree_115.ts] ---|> Tree
+@CedarTree_115.constructor{}
+@@CedarTree_115.constructor.code
+  super();
+  this.trunkHeight = 3.65;
+  this.canopyRadius = 2.21;
+  this.canopyColor = '#4a7c44';
+@@CedarTree_115.constructor.end
+
+SpruceTree_116[SpruceTree_116.ts] ---|> Tree
+@SpruceTree_116.constructor{}
+@@SpruceTree_116.constructor.code
+  super();
+  this.trunkHeight = 2.80;
+  this.canopyRadius = 1.76;
+  this.canopyColor = '#1e4d2b';
+@@SpruceTree_116.constructor.end
+
+RedwoodTree_117[RedwoodTree_117.ts] ---|> Tree
+@RedwoodTree_117.constructor{}
+@@RedwoodTree_117.constructor.code
+  super();
+  this.trunkHeight = 1.53;
+  this.canopyRadius = 2.41;
+  this.canopyColor = '#3a7d44';
+@@RedwoodTree_117.constructor.end
+
+BaobabTree_118[BaobabTree_118.ts] ---|> Tree
+@BaobabTree_118.constructor{}
+@@BaobabTree_118.constructor.code
+  super();
+  this.trunkHeight = 2.03;
+  this.canopyRadius = 2.32;
+  this.canopyColor = '#4a7c44';
+@@BaobabTree_118.constructor.end
+
+BanyanTree_119[BanyanTree_119.ts] ---|> Tree
+@BanyanTree_119.constructor{}
+@@BanyanTree_119.constructor.code
+  super();
+  this.trunkHeight = 3.09;
+  this.canopyRadius = 2.30;
+  this.canopyColor = '#4a7c44';
+@@BanyanTree_119.constructor.end
+
+OakTree_120[OakTree_120.ts] ---|> Tree
+@OakTree_120.constructor{}
+@@OakTree_120.constructor.code
+  super();
+  this.trunkHeight = 1.34;
+  this.canopyRadius = 1.52;
+  this.canopyColor = '#3a7d44';
+@@OakTree_120.constructor.end
+
+PineTree_121[PineTree_121.ts] ---|> Tree
+@PineTree_121.constructor{}
+@@PineTree_121.constructor.code
+  super();
+  this.trunkHeight = 3.55;
+  this.canopyRadius = 2.63;
+  this.canopyColor = '#4a7c44';
+@@PineTree_121.constructor.end
+
+BirchTree_122[BirchTree_122.ts] ---|> Tree
+@BirchTree_122.constructor{}
+@@BirchTree_122.constructor.code
+  super();
+  this.trunkHeight = 2.27;
+  this.canopyRadius = 2.65;
+  this.canopyColor = '#2e5a1c';
+@@BirchTree_122.constructor.end
+
+MapleTree_123[MapleTree_123.ts] ---|> Tree
+@MapleTree_123.constructor{}
+@@MapleTree_123.constructor.code
+  super();
+  this.trunkHeight = 2.98;
+  this.canopyRadius = 2.33;
+  this.canopyColor = '#2d5a27';
+@@MapleTree_123.constructor.end
+
+WillowTree_124[WillowTree_124.ts] ---|> Tree
+@WillowTree_124.constructor{}
+@@WillowTree_124.constructor.code
+  super();
+  this.trunkHeight = 1.62;
+  this.canopyRadius = 2.17;
+  this.canopyColor = '#2d5a27';
+@@WillowTree_124.constructor.end
+
+CedarTree_125[CedarTree_125.ts] ---|> Tree
+@CedarTree_125.constructor{}
+@@CedarTree_125.constructor.code
+  super();
+  this.trunkHeight = 3.04;
+  this.canopyRadius = 1.97;
+  this.canopyColor = '#4a7c44';
+@@CedarTree_125.constructor.end
+
+SpruceTree_126[SpruceTree_126.ts] ---|> Tree
+@SpruceTree_126.constructor{}
+@@SpruceTree_126.constructor.code
+  super();
+  this.trunkHeight = 1.02;
+  this.canopyRadius = 1.47;
+  this.canopyColor = '#4a7c44';
+@@SpruceTree_126.constructor.end
+
+RedwoodTree_127[RedwoodTree_127.ts] ---|> Tree
+@RedwoodTree_127.constructor{}
+@@RedwoodTree_127.constructor.code
+  super();
+  this.trunkHeight = 2.80;
+  this.canopyRadius = 2.19;
+  this.canopyColor = '#3a7d44';
+@@RedwoodTree_127.constructor.end
+
+BaobabTree_128[BaobabTree_128.ts] ---|> Tree
+@BaobabTree_128.constructor{}
+@@BaobabTree_128.constructor.code
+  super();
+  this.trunkHeight = 2.18;
+  this.canopyRadius = 2.25;
+  this.canopyColor = '#2d5a27';
+@@BaobabTree_128.constructor.end
+
+BanyanTree_129[BanyanTree_129.ts] ---|> Tree
+@BanyanTree_129.constructor{}
+@@BanyanTree_129.constructor.code
+  super();
+  this.trunkHeight = 3.43;
+  this.canopyRadius = 2.38;
+  this.canopyColor = '#2d5a27';
+@@BanyanTree_129.constructor.end
+
+OakTree_130[OakTree_130.ts] ---|> Tree
+@OakTree_130.constructor{}
+@@OakTree_130.constructor.code
+  super();
+  this.trunkHeight = 1.78;
+  this.canopyRadius = 1.13;
+  this.canopyColor = '#4a7c44';
+@@OakTree_130.constructor.end
+
+PineTree_131[PineTree_131.ts] ---|> Tree
+@PineTree_131.constructor{}
+@@PineTree_131.constructor.code
+  super();
+  this.trunkHeight = 2.11;
+  this.canopyRadius = 2.64;
+  this.canopyColor = '#2d5a27';
+@@PineTree_131.constructor.end
+
+BirchTree_132[BirchTree_132.ts] ---|> Tree
+@BirchTree_132.constructor{}
+@@BirchTree_132.constructor.code
+  super();
+  this.trunkHeight = 3.57;
+  this.canopyRadius = 1.04;
+  this.canopyColor = '#3a7d44';
+@@BirchTree_132.constructor.end
+
+MapleTree_133[MapleTree_133.ts] ---|> Tree
+@MapleTree_133.constructor{}
+@@MapleTree_133.constructor.code
+  super();
+  this.trunkHeight = 1.67;
+  this.canopyRadius = 2.48;
+  this.canopyColor = '#2e5a1c';
+@@MapleTree_133.constructor.end
+
+WillowTree_134[WillowTree_134.ts] ---|> Tree
+@WillowTree_134.constructor{}
+@@WillowTree_134.constructor.code
+  super();
+  this.trunkHeight = 2.21;
+  this.canopyRadius = 1.93;
+  this.canopyColor = '#2e5a1c';
+@@WillowTree_134.constructor.end
+
+CedarTree_135[CedarTree_135.ts] ---|> Tree
+@CedarTree_135.constructor{}
+@@CedarTree_135.constructor.code
+  super();
+  this.trunkHeight = 1.94;
+  this.canopyRadius = 1.04;
+  this.canopyColor = '#1e4d2b';
+@@CedarTree_135.constructor.end
+
+SpruceTree_136[SpruceTree_136.ts] ---|> Tree
+@SpruceTree_136.constructor{}
+@@SpruceTree_136.constructor.code
+  super();
+  this.trunkHeight = 1.22;
+  this.canopyRadius = 1.56;
+  this.canopyColor = '#4a7c44';
+@@SpruceTree_136.constructor.end
+
+RedwoodTree_137[RedwoodTree_137.ts] ---|> Tree
+@RedwoodTree_137.constructor{}
+@@RedwoodTree_137.constructor.code
+  super();
+  this.trunkHeight = 3.73;
+  this.canopyRadius = 2.08;
+  this.canopyColor = '#4a7c44';
+@@RedwoodTree_137.constructor.end
+
+BaobabTree_138[BaobabTree_138.ts] ---|> Tree
+@BaobabTree_138.constructor{}
+@@BaobabTree_138.constructor.code
+  super();
+  this.trunkHeight = 3.74;
+  this.canopyRadius = 1.76;
+  this.canopyColor = '#1e4d2b';
+@@BaobabTree_138.constructor.end
+
+BanyanTree_139[BanyanTree_139.ts] ---|> Tree
+@BanyanTree_139.constructor{}
+@@BanyanTree_139.constructor.code
+  super();
+  this.trunkHeight = 2.94;
+  this.canopyRadius = 1.06;
+  this.canopyColor = '#3a7d44';
+@@BanyanTree_139.constructor.end
+
+OakTree_140[OakTree_140.ts] ---|> Tree
+@OakTree_140.constructor{}
+@@OakTree_140.constructor.code
+  super();
+  this.trunkHeight = 2.11;
+  this.canopyRadius = 2.90;
+  this.canopyColor = '#2e5a1c';
+@@OakTree_140.constructor.end
+
+PineTree_141[PineTree_141.ts] ---|> Tree
+@PineTree_141.constructor{}
+@@PineTree_141.constructor.code
+  super();
+  this.trunkHeight = 3.16;
+  this.canopyRadius = 1.35;
+  this.canopyColor = '#1e4d2b';
+@@PineTree_141.constructor.end
+
+BirchTree_142[BirchTree_142.ts] ---|> Tree
+@BirchTree_142.constructor{}
+@@BirchTree_142.constructor.code
+  super();
+  this.trunkHeight = 2.33;
+  this.canopyRadius = 1.61;
+  this.canopyColor = '#2e5a1c';
+@@BirchTree_142.constructor.end
+
+MapleTree_143[MapleTree_143.ts] ---|> Tree
+@MapleTree_143.constructor{}
+@@MapleTree_143.constructor.code
+  super();
+  this.trunkHeight = 3.22;
+  this.canopyRadius = 1.59;
+  this.canopyColor = '#1e4d2b';
+@@MapleTree_143.constructor.end
+
+WillowTree_144[WillowTree_144.ts] ---|> Tree
+@WillowTree_144.constructor{}
+@@WillowTree_144.constructor.code
+  super();
+  this.trunkHeight = 3.31;
+  this.canopyRadius = 2.82;
+  this.canopyColor = '#3a7d44';
+@@WillowTree_144.constructor.end
+
+CedarTree_145[CedarTree_145.ts] ---|> Tree
+@CedarTree_145.constructor{}
+@@CedarTree_145.constructor.code
+  super();
+  this.trunkHeight = 1.86;
+  this.canopyRadius = 1.68;
+  this.canopyColor = '#3a7d44';
+@@CedarTree_145.constructor.end
+
+SpruceTree_146[SpruceTree_146.ts] ---|> Tree
+@SpruceTree_146.constructor{}
+@@SpruceTree_146.constructor.code
+  super();
+  this.trunkHeight = 1.46;
+  this.canopyRadius = 2.11;
+  this.canopyColor = '#1e4d2b';
+@@SpruceTree_146.constructor.end
+
+RedwoodTree_147[RedwoodTree_147.ts] ---|> Tree
+@RedwoodTree_147.constructor{}
+@@RedwoodTree_147.constructor.code
+  super();
+  this.trunkHeight = 2.84;
+  this.canopyRadius = 1.20;
+  this.canopyColor = '#3a7d44';
+@@RedwoodTree_147.constructor.end
+
+BaobabTree_148[BaobabTree_148.ts] ---|> Tree
+@BaobabTree_148.constructor{}
+@@BaobabTree_148.constructor.code
+  super();
+  this.trunkHeight = 2.66;
+  this.canopyRadius = 1.28;
+  this.canopyColor = '#1e4d2b';
+@@BaobabTree_148.constructor.end
+
+BanyanTree_149[BanyanTree_149.ts] ---|> Tree
+@BanyanTree_149.constructor{}
+@@BanyanTree_149.constructor.code
+  super();
+  this.trunkHeight = 1.76;
+  this.canopyRadius = 2.60;
+  this.canopyColor = '#4a7c44';
+@@BanyanTree_149.constructor.end
+
+OakTree_150[OakTree_150.ts] ---|> Tree
+@OakTree_150.constructor{}
+@@OakTree_150.constructor.code
+  super();
+  this.trunkHeight = 2.47;
+  this.canopyRadius = 1.48;
+  this.canopyColor = '#2d5a27';
+@@OakTree_150.constructor.end
+
+PineTree_151[PineTree_151.ts] ---|> Tree
+@PineTree_151.constructor{}
+@@PineTree_151.constructor.code
+  super();
+  this.trunkHeight = 1.29;
+  this.canopyRadius = 1.34;
+  this.canopyColor = '#2e5a1c';
+@@PineTree_151.constructor.end
+
+BirchTree_152[BirchTree_152.ts] ---|> Tree
+@BirchTree_152.constructor{}
+@@BirchTree_152.constructor.code
+  super();
+  this.trunkHeight = 3.12;
+  this.canopyRadius = 2.63;
+  this.canopyColor = '#2e5a1c';
+@@BirchTree_152.constructor.end
+
+MapleTree_153[MapleTree_153.ts] ---|> Tree
+@MapleTree_153.constructor{}
+@@MapleTree_153.constructor.code
+  super();
+  this.trunkHeight = 3.04;
+  this.canopyRadius = 2.38;
+  this.canopyColor = '#2e5a1c';
+@@MapleTree_153.constructor.end
+
+WillowTree_154[WillowTree_154.ts] ---|> Tree
+@WillowTree_154.constructor{}
+@@WillowTree_154.constructor.code
+  super();
+  this.trunkHeight = 1.97;
+  this.canopyRadius = 1.09;
+  this.canopyColor = '#3a7d44';
+@@WillowTree_154.constructor.end
+
+CedarTree_155[CedarTree_155.ts] ---|> Tree
+@CedarTree_155.constructor{}
+@@CedarTree_155.constructor.code
+  super();
+  this.trunkHeight = 1.44;
+  this.canopyRadius = 2.02;
+  this.canopyColor = '#2d5a27';
+@@CedarTree_155.constructor.end
+
+SpruceTree_156[SpruceTree_156.ts] ---|> Tree
+@SpruceTree_156.constructor{}
+@@SpruceTree_156.constructor.code
+  super();
+  this.trunkHeight = 2.16;
+  this.canopyRadius = 1.39;
+  this.canopyColor = '#1e4d2b';
+@@SpruceTree_156.constructor.end
+
+RedwoodTree_157[RedwoodTree_157.ts] ---|> Tree
+@RedwoodTree_157.constructor{}
+@@RedwoodTree_157.constructor.code
+  super();
+  this.trunkHeight = 1.14;
+  this.canopyRadius = 2.25;
+  this.canopyColor = '#2d5a27';
+@@RedwoodTree_157.constructor.end
+
+BaobabTree_158[BaobabTree_158.ts] ---|> Tree
+@BaobabTree_158.constructor{}
+@@BaobabTree_158.constructor.code
+  super();
+  this.trunkHeight = 3.81;
+  this.canopyRadius = 2.56;
+  this.canopyColor = '#1e4d2b';
+@@BaobabTree_158.constructor.end
+
+BanyanTree_159[BanyanTree_159.ts] ---|> Tree
+@BanyanTree_159.constructor{}
+@@BanyanTree_159.constructor.code
+  super();
+  this.trunkHeight = 2.40;
+  this.canopyRadius = 1.10;
+  this.canopyColor = '#1e4d2b';
+@@BanyanTree_159.constructor.end
+
+OakTree_160[OakTree_160.ts] ---|> Tree
+@OakTree_160.constructor{}
+@@OakTree_160.constructor.code
+  super();
+  this.trunkHeight = 4.00;
+  this.canopyRadius = 1.60;
+  this.canopyColor = '#2e5a1c';
+@@OakTree_160.constructor.end
+
+PineTree_161[PineTree_161.ts] ---|> Tree
+@PineTree_161.constructor{}
+@@PineTree_161.constructor.code
+  super();
+  this.trunkHeight = 1.58;
+  this.canopyRadius = 1.56;
+  this.canopyColor = '#2e5a1c';
+@@PineTree_161.constructor.end
+
+BirchTree_162[BirchTree_162.ts] ---|> Tree
+@BirchTree_162.constructor{}
+@@BirchTree_162.constructor.code
+  super();
+  this.trunkHeight = 2.61;
+  this.canopyRadius = 2.98;
+  this.canopyColor = '#2e5a1c';
+@@BirchTree_162.constructor.end
+
+MapleTree_163[MapleTree_163.ts] ---|> Tree
+@MapleTree_163.constructor{}
+@@MapleTree_163.constructor.code
+  super();
+  this.trunkHeight = 2.14;
+  this.canopyRadius = 2.50;
+  this.canopyColor = '#1e4d2b';
+@@MapleTree_163.constructor.end
+
+WillowTree_164[WillowTree_164.ts] ---|> Tree
+@WillowTree_164.constructor{}
+@@WillowTree_164.constructor.code
+  super();
+  this.trunkHeight = 3.26;
+  this.canopyRadius = 2.35;
+  this.canopyColor = '#4a7c44';
+@@WillowTree_164.constructor.end
+
+CedarTree_165[CedarTree_165.ts] ---|> Tree
+@CedarTree_165.constructor{}
+@@CedarTree_165.constructor.code
+  super();
+  this.trunkHeight = 3.83;
+  this.canopyRadius = 2.03;
+  this.canopyColor = '#2d5a27';
+@@CedarTree_165.constructor.end
+
+SpruceTree_166[SpruceTree_166.ts] ---|> Tree
+@SpruceTree_166.constructor{}
+@@SpruceTree_166.constructor.code
+  super();
+  this.trunkHeight = 1.68;
+  this.canopyRadius = 2.06;
+  this.canopyColor = '#3a7d44';
+@@SpruceTree_166.constructor.end
+
+RedwoodTree_167[RedwoodTree_167.ts] ---|> Tree
+@RedwoodTree_167.constructor{}
+@@RedwoodTree_167.constructor.code
+  super();
+  this.trunkHeight = 2.61;
+  this.canopyRadius = 2.54;
+  this.canopyColor = '#2e5a1c';
+@@RedwoodTree_167.constructor.end
+
+BaobabTree_168[BaobabTree_168.ts] ---|> Tree
+@BaobabTree_168.constructor{}
+@@BaobabTree_168.constructor.code
+  super();
+  this.trunkHeight = 2.54;
+  this.canopyRadius = 2.70;
+  this.canopyColor = '#4a7c44';
+@@BaobabTree_168.constructor.end
+
+BanyanTree_169[BanyanTree_169.ts] ---|> Tree
+@BanyanTree_169.constructor{}
+@@BanyanTree_169.constructor.code
+  super();
+  this.trunkHeight = 2.15;
+  this.canopyRadius = 2.04;
+  this.canopyColor = '#4a7c44';
+@@BanyanTree_169.constructor.end
+
+OakTree_170[OakTree_170.ts] ---|> Tree
+@OakTree_170.constructor{}
+@@OakTree_170.constructor.code
+  super();
+  this.trunkHeight = 1.26;
+  this.canopyRadius = 1.58;
+  this.canopyColor = '#2d5a27';
+@@OakTree_170.constructor.end
+
+PineTree_171[PineTree_171.ts] ---|> Tree
+@PineTree_171.constructor{}
+@@PineTree_171.constructor.code
+  super();
+  this.trunkHeight = 1.24;
+  this.canopyRadius = 2.77;
+  this.canopyColor = '#2e5a1c';
+@@PineTree_171.constructor.end
+
+BirchTree_172[BirchTree_172.ts] ---|> Tree
+@BirchTree_172.constructor{}
+@@BirchTree_172.constructor.code
+  super();
+  this.trunkHeight = 1.36;
+  this.canopyRadius = 1.65;
+  this.canopyColor = '#2e5a1c';
+@@BirchTree_172.constructor.end
+
+MapleTree_173[MapleTree_173.ts] ---|> Tree
+@MapleTree_173.constructor{}
+@@MapleTree_173.constructor.code
+  super();
+  this.trunkHeight = 2.73;
+  this.canopyRadius = 2.03;
+  this.canopyColor = '#2e5a1c';
+@@MapleTree_173.constructor.end
+
+WillowTree_174[WillowTree_174.ts] ---|> Tree
+@WillowTree_174.constructor{}
+@@WillowTree_174.constructor.code
+  super();
+  this.trunkHeight = 2.98;
+  this.canopyRadius = 1.11;
+  this.canopyColor = '#4a7c44';
+@@WillowTree_174.constructor.end
+
+CedarTree_175[CedarTree_175.ts] ---|> Tree
+@CedarTree_175.constructor{}
+@@CedarTree_175.constructor.code
+  super();
+  this.trunkHeight = 2.55;
+  this.canopyRadius = 2.32;
+  this.canopyColor = '#1e4d2b';
+@@CedarTree_175.constructor.end
+
+SpruceTree_176[SpruceTree_176.ts] ---|> Tree
+@SpruceTree_176.constructor{}
+@@SpruceTree_176.constructor.code
+  super();
+  this.trunkHeight = 1.28;
+  this.canopyRadius = 2.53;
+  this.canopyColor = '#3a7d44';
+@@SpruceTree_176.constructor.end
+
+RedwoodTree_177[RedwoodTree_177.ts] ---|> Tree
+@RedwoodTree_177.constructor{}
+@@RedwoodTree_177.constructor.code
+  super();
+  this.trunkHeight = 2.87;
+  this.canopyRadius = 2.56;
+  this.canopyColor = '#1e4d2b';
+@@RedwoodTree_177.constructor.end
+
+BaobabTree_178[BaobabTree_178.ts] ---|> Tree
+@BaobabTree_178.constructor{}
+@@BaobabTree_178.constructor.code
+  super();
+  this.trunkHeight = 2.00;
+  this.canopyRadius = 1.44;
+  this.canopyColor = '#4a7c44';
+@@BaobabTree_178.constructor.end
+
+BanyanTree_179[BanyanTree_179.ts] ---|> Tree
+@BanyanTree_179.constructor{}
+@@BanyanTree_179.constructor.code
+  super();
+  this.trunkHeight = 2.74;
+  this.canopyRadius = 1.08;
+  this.canopyColor = '#3a7d44';
+@@BanyanTree_179.constructor.end
+
+OakTree_180[OakTree_180.ts] ---|> Tree
+@OakTree_180.constructor{}
+@@OakTree_180.constructor.code
+  super();
+  this.trunkHeight = 1.09;
+  this.canopyRadius = 1.25;
+  this.canopyColor = '#1e4d2b';
+@@OakTree_180.constructor.end
+
+PineTree_181[PineTree_181.ts] ---|> Tree
+@PineTree_181.constructor{}
+@@PineTree_181.constructor.code
+  super();
+  this.trunkHeight = 3.46;
+  this.canopyRadius = 2.53;
+  this.canopyColor = '#1e4d2b';
+@@PineTree_181.constructor.end
+
+BirchTree_182[BirchTree_182.ts] ---|> Tree
+@BirchTree_182.constructor{}
+@@BirchTree_182.constructor.code
+  super();
+  this.trunkHeight = 2.39;
+  this.canopyRadius = 1.70;
+  this.canopyColor = '#2d5a27';
+@@BirchTree_182.constructor.end
+
+MapleTree_183[MapleTree_183.ts] ---|> Tree
+@MapleTree_183.constructor{}
+@@MapleTree_183.constructor.code
+  super();
+  this.trunkHeight = 1.53;
+  this.canopyRadius = 1.06;
+  this.canopyColor = '#2d5a27';
+@@MapleTree_183.constructor.end
+
+WillowTree_184[WillowTree_184.ts] ---|> Tree
+@WillowTree_184.constructor{}
+@@WillowTree_184.constructor.code
+  super();
+  this.trunkHeight = 1.88;
+  this.canopyRadius = 2.77;
+  this.canopyColor = '#3a7d44';
+@@WillowTree_184.constructor.end
+
+CedarTree_185[CedarTree_185.ts] ---|> Tree
+@CedarTree_185.constructor{}
+@@CedarTree_185.constructor.code
+  super();
+  this.trunkHeight = 3.63;
+  this.canopyRadius = 1.32;
+  this.canopyColor = '#1e4d2b';
+@@CedarTree_185.constructor.end
+
+SpruceTree_186[SpruceTree_186.ts] ---|> Tree
+@SpruceTree_186.constructor{}
+@@SpruceTree_186.constructor.code
+  super();
+  this.trunkHeight = 2.06;
+  this.canopyRadius = 1.79;
+  this.canopyColor = '#2d5a27';
+@@SpruceTree_186.constructor.end
+
+RedwoodTree_187[RedwoodTree_187.ts] ---|> Tree
+@RedwoodTree_187.constructor{}
+@@RedwoodTree_187.constructor.code
+  super();
+  this.trunkHeight = 1.33;
+  this.canopyRadius = 1.84;
+  this.canopyColor = '#2d5a27';
+@@RedwoodTree_187.constructor.end
+
+BaobabTree_188[BaobabTree_188.ts] ---|> Tree
+@BaobabTree_188.constructor{}
+@@BaobabTree_188.constructor.code
+  super();
+  this.trunkHeight = 3.22;
+  this.canopyRadius = 2.51;
+  this.canopyColor = '#2e5a1c';
+@@BaobabTree_188.constructor.end
+
+BanyanTree_189[BanyanTree_189.ts] ---|> Tree
+@BanyanTree_189.constructor{}
+@@BanyanTree_189.constructor.code
+  super();
+  this.trunkHeight = 3.03;
+  this.canopyRadius = 2.93;
+  this.canopyColor = '#2d5a27';
+@@BanyanTree_189.constructor.end
+
+OakTree_190[OakTree_190.ts] ---|> Tree
+@OakTree_190.constructor{}
+@@OakTree_190.constructor.code
+  super();
+  this.trunkHeight = 2.53;
+  this.canopyRadius = 1.53;
+  this.canopyColor = '#2e5a1c';
+@@OakTree_190.constructor.end
+
+PineTree_191[PineTree_191.ts] ---|> Tree
+@PineTree_191.constructor{}
+@@PineTree_191.constructor.code
+  super();
+  this.trunkHeight = 2.41;
+  this.canopyRadius = 2.74;
+  this.canopyColor = '#1e4d2b';
+@@PineTree_191.constructor.end
+
+BirchTree_192[BirchTree_192.ts] ---|> Tree
+@BirchTree_192.constructor{}
+@@BirchTree_192.constructor.code
+  super();
+  this.trunkHeight = 1.92;
+  this.canopyRadius = 1.27;
+  this.canopyColor = '#2e5a1c';
+@@BirchTree_192.constructor.end
+
+MapleTree_193[MapleTree_193.ts] ---|> Tree
+@MapleTree_193.constructor{}
+@@MapleTree_193.constructor.code
+  super();
+  this.trunkHeight = 2.54;
+  this.canopyRadius = 2.23;
+  this.canopyColor = '#2e5a1c';
+@@MapleTree_193.constructor.end
+
+WillowTree_194[WillowTree_194.ts] ---|> Tree
+@WillowTree_194.constructor{}
+@@WillowTree_194.constructor.code
+  super();
+  this.trunkHeight = 2.80;
+  this.canopyRadius = 2.73;
+  this.canopyColor = '#2e5a1c';
+@@WillowTree_194.constructor.end
+
+CedarTree_195[CedarTree_195.ts] ---|> Tree
+@CedarTree_195.constructor{}
+@@CedarTree_195.constructor.code
+  super();
+  this.trunkHeight = 2.51;
+  this.canopyRadius = 1.73;
+  this.canopyColor = '#4a7c44';
+@@CedarTree_195.constructor.end
+
+SpruceTree_196[SpruceTree_196.ts] ---|> Tree
+@SpruceTree_196.constructor{}
+@@SpruceTree_196.constructor.code
+  super();
+  this.trunkHeight = 3.37;
+  this.canopyRadius = 1.55;
+  this.canopyColor = '#3a7d44';
+@@SpruceTree_196.constructor.end
+
+RedwoodTree_197[RedwoodTree_197.ts] ---|> Tree
+@RedwoodTree_197.constructor{}
+@@RedwoodTree_197.constructor.code
+  super();
+  this.trunkHeight = 1.24;
+  this.canopyRadius = 2.87;
+  this.canopyColor = '#3a7d44';
+@@RedwoodTree_197.constructor.end
+
+BaobabTree_198[BaobabTree_198.ts] ---|> Tree
+@BaobabTree_198.constructor{}
+@@BaobabTree_198.constructor.code
+  super();
+  this.trunkHeight = 2.18;
+  this.canopyRadius = 2.81;
+  this.canopyColor = '#2e5a1c';
+@@BaobabTree_198.constructor.end
+
+BanyanTree_199[BanyanTree_199.ts] ---|> Tree
+@BanyanTree_199.constructor{}
+@@BanyanTree_199.constructor.code
+  super();
+  this.trunkHeight = 3.78;
+  this.canopyRadius = 2.59;
+  this.canopyColor = '#1e4d2b';
+@@BanyanTree_199.constructor.end
+
+OakTree_200[OakTree_200.ts] ---|> Tree
+@OakTree_200.constructor{}
+@@OakTree_200.constructor.code
+  super();
+  this.trunkHeight = 2.87;
+  this.canopyRadius = 2.78;
+  this.canopyColor = '#3a7d44';
+@@OakTree_200.constructor.end
+
+PineTree_201[PineTree_201.ts] ---|> Tree
+@PineTree_201.constructor{}
+@@PineTree_201.constructor.code
+  super();
+  this.trunkHeight = 3.32;
+  this.canopyRadius = 1.69;
+  this.canopyColor = '#2e5a1c';
+@@PineTree_201.constructor.end
+
+BirchTree_202[BirchTree_202.ts] ---|> Tree
+@BirchTree_202.constructor{}
+@@BirchTree_202.constructor.code
+  super();
+  this.trunkHeight = 1.17;
+  this.canopyRadius = 1.84;
+  this.canopyColor = '#4a7c44';
+@@BirchTree_202.constructor.end
+
+MapleTree_203[MapleTree_203.ts] ---|> Tree
+@MapleTree_203.constructor{}
+@@MapleTree_203.constructor.code
+  super();
+  this.trunkHeight = 2.59;
+  this.canopyRadius = 1.13;
+  this.canopyColor = '#3a7d44';
+@@MapleTree_203.constructor.end
+
+WillowTree_204[WillowTree_204.ts] ---|> Tree
+@WillowTree_204.constructor{}
+@@WillowTree_204.constructor.code
+  super();
+  this.trunkHeight = 2.89;
+  this.canopyRadius = 1.76;
+  this.canopyColor = '#2d5a27';
+@@WillowTree_204.constructor.end
+
+CedarTree_205[CedarTree_205.ts] ---|> Tree
+@CedarTree_205.constructor{}
+@@CedarTree_205.constructor.code
+  super();
+  this.trunkHeight = 2.14;
+  this.canopyRadius = 1.78;
+  this.canopyColor = '#3a7d44';
+@@CedarTree_205.constructor.end
+
+SpruceTree_206[SpruceTree_206.ts] ---|> Tree
+@SpruceTree_206.constructor{}
+@@SpruceTree_206.constructor.code
+  super();
+  this.trunkHeight = 1.53;
+  this.canopyRadius = 1.75;
+  this.canopyColor = '#4a7c44';
+@@SpruceTree_206.constructor.end
+
+RedwoodTree_207[RedwoodTree_207.ts] ---|> Tree
+@RedwoodTree_207.constructor{}
+@@RedwoodTree_207.constructor.code
+  super();
+  this.trunkHeight = 3.72;
+  this.canopyRadius = 1.37;
+  this.canopyColor = '#3a7d44';
+@@RedwoodTree_207.constructor.end
+
+BaobabTree_208[BaobabTree_208.ts] ---|> Tree
+@BaobabTree_208.constructor{}
+@@BaobabTree_208.constructor.code
+  super();
+  this.trunkHeight = 3.74;
+  this.canopyRadius = 1.73;
+  this.canopyColor = '#3a7d44';
+@@BaobabTree_208.constructor.end
+
+BanyanTree_209[BanyanTree_209.ts] ---|> Tree
+@BanyanTree_209.constructor{}
+@@BanyanTree_209.constructor.code
+  super();
+  this.trunkHeight = 1.76;
+  this.canopyRadius = 1.28;
+  this.canopyColor = '#3a7d44';
+@@BanyanTree_209.constructor.end
+
+OakTree_210[OakTree_210.ts] ---|> Tree
+@OakTree_210.constructor{}
+@@OakTree_210.constructor.code
+  super();
+  this.trunkHeight = 2.22;
+  this.canopyRadius = 2.07;
+  this.canopyColor = '#4a7c44';
+@@OakTree_210.constructor.end
+
+PineTree_211[PineTree_211.ts] ---|> Tree
+@PineTree_211.constructor{}
+@@PineTree_211.constructor.code
+  super();
+  this.trunkHeight = 2.10;
+  this.canopyRadius = 2.31;
+  this.canopyColor = '#1e4d2b';
+@@PineTree_211.constructor.end
+
+BirchTree_212[BirchTree_212.ts] ---|> Tree
+@BirchTree_212.constructor{}
+@@BirchTree_212.constructor.code
+  super();
+  this.trunkHeight = 1.35;
+  this.canopyRadius = 2.58;
+  this.canopyColor = '#1e4d2b';
+@@BirchTree_212.constructor.end
+
+MapleTree_213[MapleTree_213.ts] ---|> Tree
+@MapleTree_213.constructor{}
+@@MapleTree_213.constructor.code
+  super();
+  this.trunkHeight = 2.76;
+  this.canopyRadius = 1.63;
+  this.canopyColor = '#2d5a27';
+@@MapleTree_213.constructor.end
+
+WillowTree_214[WillowTree_214.ts] ---|> Tree
+@WillowTree_214.constructor{}
+@@WillowTree_214.constructor.code
+  super();
+  this.trunkHeight = 2.55;
+  this.canopyRadius = 1.25;
+  this.canopyColor = '#4a7c44';
+@@WillowTree_214.constructor.end
+
+CedarTree_215[CedarTree_215.ts] ---|> Tree
+@CedarTree_215.constructor{}
+@@CedarTree_215.constructor.code
+  super();
+  this.trunkHeight = 3.25;
+  this.canopyRadius = 2.18;
+  this.canopyColor = '#4a7c44';
+@@CedarTree_215.constructor.end
+
+SpruceTree_216[SpruceTree_216.ts] ---|> Tree
+@SpruceTree_216.constructor{}
+@@SpruceTree_216.constructor.code
+  super();
+  this.trunkHeight = 2.92;
+  this.canopyRadius = 2.94;
+  this.canopyColor = '#4a7c44';
+@@SpruceTree_216.constructor.end
+
+RedwoodTree_217[RedwoodTree_217.ts] ---|> Tree
+@RedwoodTree_217.constructor{}
+@@RedwoodTree_217.constructor.code
+  super();
+  this.trunkHeight = 3.54;
+  this.canopyRadius = 2.69;
+  this.canopyColor = '#2d5a27';
+@@RedwoodTree_217.constructor.end
+
+BaobabTree_218[BaobabTree_218.ts] ---|> Tree
+@BaobabTree_218.constructor{}
+@@BaobabTree_218.constructor.code
+  super();
+  this.trunkHeight = 2.51;
+  this.canopyRadius = 2.53;
+  this.canopyColor = '#2e5a1c';
+@@BaobabTree_218.constructor.end
+
+BanyanTree_219[BanyanTree_219.ts] ---|> Tree
+@BanyanTree_219.constructor{}
+@@BanyanTree_219.constructor.code
+  super();
+  this.trunkHeight = 2.19;
+  this.canopyRadius = 1.30;
+  this.canopyColor = '#3a7d44';
+@@BanyanTree_219.constructor.end
+
+OakTree_220[OakTree_220.ts] ---|> Tree
+@OakTree_220.constructor{}
+@@OakTree_220.constructor.code
+  super();
+  this.trunkHeight = 1.38;
+  this.canopyRadius = 1.16;
+  this.canopyColor = '#1e4d2b';
+@@OakTree_220.constructor.end
+
+PineTree_221[PineTree_221.ts] ---|> Tree
+@PineTree_221.constructor{}
+@@PineTree_221.constructor.code
+  super();
+  this.trunkHeight = 1.58;
+  this.canopyRadius = 1.36;
+  this.canopyColor = '#3a7d44';
+@@PineTree_221.constructor.end
+
+BirchTree_222[BirchTree_222.ts] ---|> Tree
+@BirchTree_222.constructor{}
+@@BirchTree_222.constructor.code
+  super();
+  this.trunkHeight = 2.81;
+  this.canopyRadius = 2.12;
+  this.canopyColor = '#4a7c44';
+@@BirchTree_222.constructor.end
+
+MapleTree_223[MapleTree_223.ts] ---|> Tree
+@MapleTree_223.constructor{}
+@@MapleTree_223.constructor.code
+  super();
+  this.trunkHeight = 3.47;
+  this.canopyRadius = 1.23;
+  this.canopyColor = '#2d5a27';
+@@MapleTree_223.constructor.end
+
+WillowTree_224[WillowTree_224.ts] ---|> Tree
+@WillowTree_224.constructor{}
+@@WillowTree_224.constructor.code
+  super();
+  this.trunkHeight = 1.41;
+  this.canopyRadius = 1.61;
+  this.canopyColor = '#3a7d44';
+@@WillowTree_224.constructor.end
+
+CedarTree_225[CedarTree_225.ts] ---|> Tree
+@CedarTree_225.constructor{}
+@@CedarTree_225.constructor.code
+  super();
+  this.trunkHeight = 2.83;
+  this.canopyRadius = 2.98;
+  this.canopyColor = '#3a7d44';
+@@CedarTree_225.constructor.end
+
+SpruceTree_226[SpruceTree_226.ts] ---|> Tree
+@SpruceTree_226.constructor{}
+@@SpruceTree_226.constructor.code
+  super();
+  this.trunkHeight = 2.66;
+  this.canopyRadius = 1.78;
+  this.canopyColor = '#1e4d2b';
+@@SpruceTree_226.constructor.end
+
+RedwoodTree_227[RedwoodTree_227.ts] ---|> Tree
+@RedwoodTree_227.constructor{}
+@@RedwoodTree_227.constructor.code
+  super();
+  this.trunkHeight = 1.68;
+  this.canopyRadius = 2.20;
+  this.canopyColor = '#2d5a27';
+@@RedwoodTree_227.constructor.end
+
+BaobabTree_228[BaobabTree_228.ts] ---|> Tree
+@BaobabTree_228.constructor{}
+@@BaobabTree_228.constructor.code
+  super();
+  this.trunkHeight = 1.77;
+  this.canopyRadius = 1.03;
+  this.canopyColor = '#2e5a1c';
+@@BaobabTree_228.constructor.end
+
+BanyanTree_229[BanyanTree_229.ts] ---|> Tree
+@BanyanTree_229.constructor{}
+@@BanyanTree_229.constructor.code
+  super();
+  this.trunkHeight = 3.85;
+  this.canopyRadius = 2.48;
+  this.canopyColor = '#1e4d2b';
+@@BanyanTree_229.constructor.end
+
+OakTree_230[OakTree_230.ts] ---|> Tree
+@OakTree_230.constructor{}
+@@OakTree_230.constructor.code
+  super();
+  this.trunkHeight = 1.55;
+  this.canopyRadius = 2.91;
+  this.canopyColor = '#3a7d44';
+@@OakTree_230.constructor.end
+
+PineTree_231[PineTree_231.ts] ---|> Tree
+@PineTree_231.constructor{}
+@@PineTree_231.constructor.code
+  super();
+  this.trunkHeight = 3.84;
+  this.canopyRadius = 2.03;
+  this.canopyColor = '#3a7d44';
+@@PineTree_231.constructor.end
+
+BirchTree_232[BirchTree_232.ts] ---|> Tree
+@BirchTree_232.constructor{}
+@@BirchTree_232.constructor.code
+  super();
+  this.trunkHeight = 3.51;
+  this.canopyRadius = 2.92;
+  this.canopyColor = '#2d5a27';
+@@BirchTree_232.constructor.end
+
+MapleTree_233[MapleTree_233.ts] ---|> Tree
+@MapleTree_233.constructor{}
+@@MapleTree_233.constructor.code
+  super();
+  this.trunkHeight = 3.28;
+  this.canopyRadius = 2.14;
+  this.canopyColor = '#1e4d2b';
+@@MapleTree_233.constructor.end
+
+WillowTree_234[WillowTree_234.ts] ---|> Tree
+@WillowTree_234.constructor{}
+@@WillowTree_234.constructor.code
+  super();
+  this.trunkHeight = 2.38;
+  this.canopyRadius = 1.57;
+  this.canopyColor = '#4a7c44';
+@@WillowTree_234.constructor.end
+
+CedarTree_235[CedarTree_235.ts] ---|> Tree
+@CedarTree_235.constructor{}
+@@CedarTree_235.constructor.code
+  super();
+  this.trunkHeight = 3.67;
+  this.canopyRadius = 1.56;
+  this.canopyColor = '#4a7c44';
+@@CedarTree_235.constructor.end
+
+SpruceTree_236[SpruceTree_236.ts] ---|> Tree
+@SpruceTree_236.constructor{}
+@@SpruceTree_236.constructor.code
+  super();
+  this.trunkHeight = 1.94;
+  this.canopyRadius = 1.42;
+  this.canopyColor = '#4a7c44';
+@@SpruceTree_236.constructor.end
+
+RedwoodTree_237[RedwoodTree_237.ts] ---|> Tree
+@RedwoodTree_237.constructor{}
+@@RedwoodTree_237.constructor.code
+  super();
+  this.trunkHeight = 1.81;
+  this.canopyRadius = 2.22;
+  this.canopyColor = '#2d5a27';
+@@RedwoodTree_237.constructor.end
+
+BaobabTree_238[BaobabTree_238.ts] ---|> Tree
+@BaobabTree_238.constructor{}
+@@BaobabTree_238.constructor.code
+  super();
+  this.trunkHeight = 2.47;
+  this.canopyRadius = 2.51;
+  this.canopyColor = '#2d5a27';
+@@BaobabTree_238.constructor.end
+
+BanyanTree_239[BanyanTree_239.ts] ---|> Tree
+@BanyanTree_239.constructor{}
+@@BanyanTree_239.constructor.code
+  super();
+  this.trunkHeight = 1.15;
+  this.canopyRadius = 1.49;
+  this.canopyColor = '#3a7d44';
+@@BanyanTree_239.constructor.end
+
+OakTree_240[OakTree_240.ts] ---|> Tree
+@OakTree_240.constructor{}
+@@OakTree_240.constructor.code
+  super();
+  this.trunkHeight = 1.25;
+  this.canopyRadius = 1.39;
+  this.canopyColor = '#3a7d44';
+@@OakTree_240.constructor.end
+
+PineTree_241[PineTree_241.ts] ---|> Tree
+@PineTree_241.constructor{}
+@@PineTree_241.constructor.code
+  super();
+  this.trunkHeight = 1.78;
+  this.canopyRadius = 2.95;
+  this.canopyColor = '#4a7c44';
+@@PineTree_241.constructor.end
+
+BirchTree_242[BirchTree_242.ts] ---|> Tree
+@BirchTree_242.constructor{}
+@@BirchTree_242.constructor.code
+  super();
+  this.trunkHeight = 3.77;
+  this.canopyRadius = 2.59;
+  this.canopyColor = '#4a7c44';
+@@BirchTree_242.constructor.end
+
+MapleTree_243[MapleTree_243.ts] ---|> Tree
+@MapleTree_243.constructor{}
+@@MapleTree_243.constructor.code
+  super();
+  this.trunkHeight = 3.40;
+  this.canopyRadius = 1.06;
+  this.canopyColor = '#4a7c44';
+@@MapleTree_243.constructor.end
+
+WillowTree_244[WillowTree_244.ts] ---|> Tree
+@WillowTree_244.constructor{}
+@@WillowTree_244.constructor.code
+  super();
+  this.trunkHeight = 2.37;
+  this.canopyRadius = 1.90;
+  this.canopyColor = '#3a7d44';
+@@WillowTree_244.constructor.end
+
+CedarTree_245[CedarTree_245.ts] ---|> Tree
+@CedarTree_245.constructor{}
+@@CedarTree_245.constructor.code
+  super();
+  this.trunkHeight = 1.42;
+  this.canopyRadius = 1.16;
+  this.canopyColor = '#1e4d2b';
+@@CedarTree_245.constructor.end
+
+SpruceTree_246[SpruceTree_246.ts] ---|> Tree
+@SpruceTree_246.constructor{}
+@@SpruceTree_246.constructor.code
+  super();
+  this.trunkHeight = 3.35;
+  this.canopyRadius = 2.86;
+  this.canopyColor = '#3a7d44';
+@@SpruceTree_246.constructor.end
+
+RedwoodTree_247[RedwoodTree_247.ts] ---|> Tree
+@RedwoodTree_247.constructor{}
+@@RedwoodTree_247.constructor.code
+  super();
+  this.trunkHeight = 1.45;
+  this.canopyRadius = 1.28;
+  this.canopyColor = '#2e5a1c';
+@@RedwoodTree_247.constructor.end
+
+BaobabTree_248[BaobabTree_248.ts] ---|> Tree
+@BaobabTree_248.constructor{}
+@@BaobabTree_248.constructor.code
+  super();
+  this.trunkHeight = 3.25;
+  this.canopyRadius = 1.08;
+  this.canopyColor = '#2d5a27';
+@@BaobabTree_248.constructor.end
+
+BanyanTree_249[BanyanTree_249.ts] ---|> Tree
+@BanyanTree_249.constructor{}
+@@BanyanTree_249.constructor.code
+  super();
+  this.trunkHeight = 1.46;
+  this.canopyRadius = 1.03;
+  this.canopyColor = '#3a7d44';
+@@BanyanTree_249.constructor.end
+
+OakTree_250[OakTree_250.ts] ---|> Tree
+@OakTree_250.constructor{}
+@@OakTree_250.constructor.code
+  super();
+  this.trunkHeight = 3.46;
+  this.canopyRadius = 1.68;
+  this.canopyColor = '#3a7d44';
+@@OakTree_250.constructor.end
+
+PineTree_251[PineTree_251.ts] ---|> Tree
+@PineTree_251.constructor{}
+@@PineTree_251.constructor.code
+  super();
+  this.trunkHeight = 3.48;
+  this.canopyRadius = 2.73;
+  this.canopyColor = '#4a7c44';
+@@PineTree_251.constructor.end
+
+BirchTree_252[BirchTree_252.ts] ---|> Tree
+@BirchTree_252.constructor{}
+@@BirchTree_252.constructor.code
+  super();
+  this.trunkHeight = 3.73;
+  this.canopyRadius = 1.54;
+  this.canopyColor = '#1e4d2b';
+@@BirchTree_252.constructor.end
+
+MapleTree_253[MapleTree_253.ts] ---|> Tree
+@MapleTree_253.constructor{}
+@@MapleTree_253.constructor.code
+  super();
+  this.trunkHeight = 2.41;
+  this.canopyRadius = 1.17;
+  this.canopyColor = '#2d5a27';
+@@MapleTree_253.constructor.end
+
+WillowTree_254[WillowTree_254.ts] ---|> Tree
+@WillowTree_254.constructor{}
+@@WillowTree_254.constructor.code
+  super();
+  this.trunkHeight = 3.44;
+  this.canopyRadius = 1.80;
+  this.canopyColor = '#4a7c44';
+@@WillowTree_254.constructor.end
+
+CedarTree_255[CedarTree_255.ts] ---|> Tree
+@CedarTree_255.constructor{}
+@@CedarTree_255.constructor.code
+  super();
+  this.trunkHeight = 1.42;
+  this.canopyRadius = 1.48;
+  this.canopyColor = '#1e4d2b';
+@@CedarTree_255.constructor.end
+
+SpruceTree_256[SpruceTree_256.ts] ---|> Tree
+@SpruceTree_256.constructor{}
+@@SpruceTree_256.constructor.code
+  super();
+  this.trunkHeight = 3.32;
+  this.canopyRadius = 1.86;
+  this.canopyColor = '#2e5a1c';
+@@SpruceTree_256.constructor.end
+
+RedwoodTree_257[RedwoodTree_257.ts] ---|> Tree
+@RedwoodTree_257.constructor{}
+@@RedwoodTree_257.constructor.code
+  super();
+  this.trunkHeight = 1.99;
+  this.canopyRadius = 2.28;
+  this.canopyColor = '#4a7c44';
+@@RedwoodTree_257.constructor.end
+
+BaobabTree_258[BaobabTree_258.ts] ---|> Tree
+@BaobabTree_258.constructor{}
+@@BaobabTree_258.constructor.code
+  super();
+  this.trunkHeight = 3.36;
+  this.canopyRadius = 1.31;
+  this.canopyColor = '#2e5a1c';
+@@BaobabTree_258.constructor.end
+
+BanyanTree_259[BanyanTree_259.ts] ---|> Tree
+@BanyanTree_259.constructor{}
+@@BanyanTree_259.constructor.code
+  super();
+  this.trunkHeight = 2.88;
+  this.canopyRadius = 2.81;
+  this.canopyColor = '#2d5a27';
+@@BanyanTree_259.constructor.end
+
+OakTree_260[OakTree_260.ts] ---|> Tree
+@OakTree_260.constructor{}
+@@OakTree_260.constructor.code
+  super();
+  this.trunkHeight = 2.81;
+  this.canopyRadius = 1.96;
+  this.canopyColor = '#2d5a27';
+@@OakTree_260.constructor.end
+
+PineTree_261[PineTree_261.ts] ---|> Tree
+@PineTree_261.constructor{}
+@@PineTree_261.constructor.code
+  super();
+  this.trunkHeight = 3.45;
+  this.canopyRadius = 2.64;
+  this.canopyColor = '#2d5a27';
+@@PineTree_261.constructor.end
+
+BirchTree_262[BirchTree_262.ts] ---|> Tree
+@BirchTree_262.constructor{}
+@@BirchTree_262.constructor.code
+  super();
+  this.trunkHeight = 2.96;
+  this.canopyRadius = 2.31;
+  this.canopyColor = '#1e4d2b';
+@@BirchTree_262.constructor.end
+
+MapleTree_263[MapleTree_263.ts] ---|> Tree
+@MapleTree_263.constructor{}
+@@MapleTree_263.constructor.code
+  super();
+  this.trunkHeight = 3.44;
+  this.canopyRadius = 2.63;
+  this.canopyColor = '#2e5a1c';
+@@MapleTree_263.constructor.end
+
+WillowTree_264[WillowTree_264.ts] ---|> Tree
+@WillowTree_264.constructor{}
+@@WillowTree_264.constructor.code
+  super();
+  this.trunkHeight = 2.23;
+  this.canopyRadius = 1.37;
+  this.canopyColor = '#4a7c44';
+@@WillowTree_264.constructor.end
+
+CedarTree_265[CedarTree_265.ts] ---|> Tree
+@CedarTree_265.constructor{}
+@@CedarTree_265.constructor.code
+  super();
+  this.trunkHeight = 2.95;
+  this.canopyRadius = 2.31;
+  this.canopyColor = '#2d5a27';
+@@CedarTree_265.constructor.end
+
+SpruceTree_266[SpruceTree_266.ts] ---|> Tree
+@SpruceTree_266.constructor{}
+@@SpruceTree_266.constructor.code
+  super();
+  this.trunkHeight = 3.89;
+  this.canopyRadius = 1.80;
+  this.canopyColor = '#2e5a1c';
+@@SpruceTree_266.constructor.end
+
+RedwoodTree_267[RedwoodTree_267.ts] ---|> Tree
+@RedwoodTree_267.constructor{}
+@@RedwoodTree_267.constructor.code
+  super();
+  this.trunkHeight = 1.85;
+  this.canopyRadius = 1.34;
+  this.canopyColor = '#1e4d2b';
+@@RedwoodTree_267.constructor.end
+
+BaobabTree_268[BaobabTree_268.ts] ---|> Tree
+@BaobabTree_268.constructor{}
+@@BaobabTree_268.constructor.code
+  super();
+  this.trunkHeight = 3.46;
+  this.canopyRadius = 2.67;
+  this.canopyColor = '#1e4d2b';
+@@BaobabTree_268.constructor.end
+
+BanyanTree_269[BanyanTree_269.ts] ---|> Tree
+@BanyanTree_269.constructor{}
+@@BanyanTree_269.constructor.code
+  super();
+  this.trunkHeight = 3.68;
+  this.canopyRadius = 2.29;
+  this.canopyColor = '#3a7d44';
+@@BanyanTree_269.constructor.end
+
+OakTree_270[OakTree_270.ts] ---|> Tree
+@OakTree_270.constructor{}
+@@OakTree_270.constructor.code
+  super();
+  this.trunkHeight = 3.21;
+  this.canopyRadius = 1.44;
+  this.canopyColor = '#4a7c44';
+@@OakTree_270.constructor.end
+
+PineTree_271[PineTree_271.ts] ---|> Tree
+@PineTree_271.constructor{}
+@@PineTree_271.constructor.code
+  super();
+  this.trunkHeight = 1.05;
+  this.canopyRadius = 2.43;
+  this.canopyColor = '#1e4d2b';
+@@PineTree_271.constructor.end
+
+BirchTree_272[BirchTree_272.ts] ---|> Tree
+@BirchTree_272.constructor{}
+@@BirchTree_272.constructor.code
+  super();
+  this.trunkHeight = 1.03;
+  this.canopyRadius = 1.70;
+  this.canopyColor = '#2d5a27';
+@@BirchTree_272.constructor.end
+
+MapleTree_273[MapleTree_273.ts] ---|> Tree
+@MapleTree_273.constructor{}
+@@MapleTree_273.constructor.code
+  super();
+  this.trunkHeight = 2.70;
+  this.canopyRadius = 2.60;
+  this.canopyColor = '#4a7c44';
+@@MapleTree_273.constructor.end
+
+WillowTree_274[WillowTree_274.ts] ---|> Tree
+@WillowTree_274.constructor{}
+@@WillowTree_274.constructor.code
+  super();
+  this.trunkHeight = 2.32;
+  this.canopyRadius = 1.43;
+  this.canopyColor = '#2e5a1c';
+@@WillowTree_274.constructor.end
+
+CedarTree_275[CedarTree_275.ts] ---|> Tree
+@CedarTree_275.constructor{}
+@@CedarTree_275.constructor.code
+  super();
+  this.trunkHeight = 2.07;
+  this.canopyRadius = 2.13;
+  this.canopyColor = '#4a7c44';
+@@CedarTree_275.constructor.end
+
+SpruceTree_276[SpruceTree_276.ts] ---|> Tree
+@SpruceTree_276.constructor{}
+@@SpruceTree_276.constructor.code
+  super();
+  this.trunkHeight = 2.83;
+  this.canopyRadius = 1.77;
+  this.canopyColor = '#3a7d44';
+@@SpruceTree_276.constructor.end
+
+RedwoodTree_277[RedwoodTree_277.ts] ---|> Tree
+@RedwoodTree_277.constructor{}
+@@RedwoodTree_277.constructor.code
+  super();
+  this.trunkHeight = 2.85;
+  this.canopyRadius = 1.85;
+  this.canopyColor = '#2d5a27';
+@@RedwoodTree_277.constructor.end
+
+BaobabTree_278[BaobabTree_278.ts] ---|> Tree
+@BaobabTree_278.constructor{}
+@@BaobabTree_278.constructor.code
+  super();
+  this.trunkHeight = 3.06;
+  this.canopyRadius = 2.83;
+  this.canopyColor = '#2e5a1c';
+@@BaobabTree_278.constructor.end
+
+BanyanTree_279[BanyanTree_279.ts] ---|> Tree
+@BanyanTree_279.constructor{}
+@@BanyanTree_279.constructor.code
+  super();
+  this.trunkHeight = 1.42;
+  this.canopyRadius = 1.94;
+  this.canopyColor = '#2d5a27';
+@@BanyanTree_279.constructor.end
+
+OakTree_280[OakTree_280.ts] ---|> Tree
+@OakTree_280.constructor{}
+@@OakTree_280.constructor.code
+  super();
+  this.trunkHeight = 2.21;
+  this.canopyRadius = 2.18;
+  this.canopyColor = '#2e5a1c';
+@@OakTree_280.constructor.end
+
+PineTree_281[PineTree_281.ts] ---|> Tree
+@PineTree_281.constructor{}
+@@PineTree_281.constructor.code
+  super();
+  this.trunkHeight = 3.28;
+  this.canopyRadius = 2.54;
+  this.canopyColor = '#2e5a1c';
+@@PineTree_281.constructor.end
+
+BirchTree_282[BirchTree_282.ts] ---|> Tree
+@BirchTree_282.constructor{}
+@@BirchTree_282.constructor.code
+  super();
+  this.trunkHeight = 2.85;
+  this.canopyRadius = 2.00;
+  this.canopyColor = '#3a7d44';
+@@BirchTree_282.constructor.end
+
+MapleTree_283[MapleTree_283.ts] ---|> Tree
+@MapleTree_283.constructor{}
+@@MapleTree_283.constructor.code
+  super();
+  this.trunkHeight = 2.20;
+  this.canopyRadius = 2.00;
+  this.canopyColor = '#2e5a1c';
+@@MapleTree_283.constructor.end
+
+WillowTree_284[WillowTree_284.ts] ---|> Tree
+@WillowTree_284.constructor{}
+@@WillowTree_284.constructor.code
+  super();
+  this.trunkHeight = 2.72;
+  this.canopyRadius = 1.92;
+  this.canopyColor = '#3a7d44';
+@@WillowTree_284.constructor.end
+
+CedarTree_285[CedarTree_285.ts] ---|> Tree
+@CedarTree_285.constructor{}
+@@CedarTree_285.constructor.code
+  super();
+  this.trunkHeight = 1.86;
+  this.canopyRadius = 1.60;
+  this.canopyColor = '#2d5a27';
+@@CedarTree_285.constructor.end
+
+SpruceTree_286[SpruceTree_286.ts] ---|> Tree
+@SpruceTree_286.constructor{}
+@@SpruceTree_286.constructor.code
+  super();
+  this.trunkHeight = 2.82;
+  this.canopyRadius = 2.26;
+  this.canopyColor = '#4a7c44';
+@@SpruceTree_286.constructor.end
+
+RedwoodTree_287[RedwoodTree_287.ts] ---|> Tree
+@RedwoodTree_287.constructor{}
+@@RedwoodTree_287.constructor.code
+  super();
+  this.trunkHeight = 1.02;
+  this.canopyRadius = 1.74;
+  this.canopyColor = '#3a7d44';
+@@RedwoodTree_287.constructor.end
+
+BaobabTree_288[BaobabTree_288.ts] ---|> Tree
+@BaobabTree_288.constructor{}
+@@BaobabTree_288.constructor.code
+  super();
+  this.trunkHeight = 2.74;
+  this.canopyRadius = 1.93;
+  this.canopyColor = '#2d5a27';
+@@BaobabTree_288.constructor.end
+
+BanyanTree_289[BanyanTree_289.ts] ---|> Tree
+@BanyanTree_289.constructor{}
+@@BanyanTree_289.constructor.code
+  super();
+  this.trunkHeight = 1.39;
+  this.canopyRadius = 1.96;
+  this.canopyColor = '#4a7c44';
+@@BanyanTree_289.constructor.end
+
+OakTree_290[OakTree_290.ts] ---|> Tree
+@OakTree_290.constructor{}
+@@OakTree_290.constructor.code
+  super();
+  this.trunkHeight = 2.09;
+  this.canopyRadius = 2.93;
+  this.canopyColor = '#2d5a27';
+@@OakTree_290.constructor.end
+
+PineTree_291[PineTree_291.ts] ---|> Tree
+@PineTree_291.constructor{}
+@@PineTree_291.constructor.code
+  super();
+  this.trunkHeight = 1.85;
+  this.canopyRadius = 2.67;
+  this.canopyColor = '#3a7d44';
+@@PineTree_291.constructor.end
+
+BirchTree_292[BirchTree_292.ts] ---|> Tree
+@BirchTree_292.constructor{}
+@@BirchTree_292.constructor.code
+  super();
+  this.trunkHeight = 2.11;
+  this.canopyRadius = 1.15;
+  this.canopyColor = '#2d5a27';
+@@BirchTree_292.constructor.end
+
+MapleTree_293[MapleTree_293.ts] ---|> Tree
+@MapleTree_293.constructor{}
+@@MapleTree_293.constructor.code
+  super();
+  this.trunkHeight = 2.52;
+  this.canopyRadius = 2.33;
+  this.canopyColor = '#4a7c44';
+@@MapleTree_293.constructor.end
+
+WillowTree_294[WillowTree_294.ts] ---|> Tree
+@WillowTree_294.constructor{}
+@@WillowTree_294.constructor.code
+  super();
+  this.trunkHeight = 2.09;
+  this.canopyRadius = 1.33;
+  this.canopyColor = '#2d5a27';
+@@WillowTree_294.constructor.end
+
+CedarTree_295[CedarTree_295.ts] ---|> Tree
+@CedarTree_295.constructor{}
+@@CedarTree_295.constructor.code
+  super();
+  this.trunkHeight = 3.95;
+  this.canopyRadius = 2.95;
+  this.canopyColor = '#2e5a1c';
+@@CedarTree_295.constructor.end
+
+SpruceTree_296[SpruceTree_296.ts] ---|> Tree
+@SpruceTree_296.constructor{}
+@@SpruceTree_296.constructor.code
+  super();
+  this.trunkHeight = 1.72;
+  this.canopyRadius = 2.75;
+  this.canopyColor = '#4a7c44';
+@@SpruceTree_296.constructor.end
+
+RedwoodTree_297[RedwoodTree_297.ts] ---|> Tree
+@RedwoodTree_297.constructor{}
+@@RedwoodTree_297.constructor.code
+  super();
+  this.trunkHeight = 1.12;
+  this.canopyRadius = 1.27;
+  this.canopyColor = '#2e5a1c';
+@@RedwoodTree_297.constructor.end
+
+BaobabTree_298[BaobabTree_298.ts] ---|> Tree
+@BaobabTree_298.constructor{}
+@@BaobabTree_298.constructor.code
+  super();
+  this.trunkHeight = 3.52;
+  this.canopyRadius = 1.47;
+  this.canopyColor = '#3a7d44';
+@@BaobabTree_298.constructor.end
+
+BanyanTree_299[BanyanTree_299.ts] ---|> Tree
+@BanyanTree_299.constructor{}
+@@BanyanTree_299.constructor.code
+  super();
+  this.trunkHeight = 3.88;
+  this.canopyRadius = 2.38;
+  this.canopyColor = '#2d5a27';
+@@BanyanTree_299.constructor.end
+
+OakTree_300[OakTree_300.ts] ---|> Tree
+@OakTree_300.constructor{}
+@@OakTree_300.constructor.code
+  super();
+  this.trunkHeight = 2.12;
+  this.canopyRadius = 2.06;
+  this.canopyColor = '#1e4d2b';
+@@OakTree_300.constructor.end
