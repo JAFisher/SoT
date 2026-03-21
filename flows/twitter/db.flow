@@ -65,6 +65,19 @@ Database[Database.ts{pool: any}]
       }
     }
     
+    // Notification for mentions
+    const mentionMatches = content.match(/@(\w+)/g);
+    if (mentionMatches) {
+      const uniqueMentions = Array.from(new Set(mentionMatches.map(m => m.substring(1))));
+      for (const mentionedUser of uniqueMentions) {
+        if (mentionedUser !== senderUsername) {
+          await client.query(
+            "INSERT INTO notifications (sender_username, receiver_username, action, message_id, timestamp) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING",
+            [senderUsername, mentionedUser, 'mention', message.id, timestamp]
+          );
+        }
+      }
+    }
     // Notification for replies
     if (repliedToId) {
       const parentRes = await client.query("SELECT sender_username FROM messages WHERE id = $1", [repliedToId]);
