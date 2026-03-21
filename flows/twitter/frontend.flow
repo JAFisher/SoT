@@ -173,6 +173,7 @@ TwitterApp --> Messaging
         else if (n.action === 'follow') { actionText = "followed you"; icon = "👤"; }
         else if (n.action === 'retweet') { actionText = "retweeted your tweet"; icon = "🔄"; }
         else if (n.action === 'reply') { actionText = "replied to your tweet"; icon = "💬"; }
+        else if (n.action === 'mention') { actionText = "mentioned you"; icon = "🔔"; }
 
         html += 
           "<div class='notification-item " + (n.isRead ? "" : "unread") + "' id='notification-" + n.id + "'>" +
@@ -183,7 +184,7 @@ TwitterApp --> Messaging
               (n.messageContent ? "<div class='notification-message-preview'>\"" + n.messageContent + "\"</div>" : "") +
               "<div class='notification-time'>" + time + "</div>" +
               "<div class='notification-actions' style='margin-top: 8px; display: flex; gap: 10px;'>" +
-                (n.action === 'reply' ? "<button class='btn btn-outline btn-compact' onclick=\"window.app.startReply('" + n.messageId + "', '" + n.from + "', 'notif-" + n.id + "')\"> Reply Back</button>" : "") +
+                ((n.action === 'reply' || n.action === 'mention') ? "<button class='btn btn-outline btn-compact' onclick=\"window.app.startReply('" + n.messageId + "', '" + n.from + "', 'notif-" + n.id + "')\"> Reply Back</button>" : "") +
                 (n.action === 'follow' && !this.followedUsers.has(n.from) ? "<button class='btn btn-primary btn-compact' id='follow-back-" + n.from + "' style='width:auto;' onclick=\"window.app.toggleFollow('" + n.from + "', 0)\">👤 Follow Back</button>" : "") +
               "</div>" +
               "<div id='replies-instance-notif-" + n.id + "' class='replies-container' style='display: none;'></div>" +
@@ -563,7 +564,7 @@ TwitterApp --> Messaging
   }
 @@TwitterApp.updateBanner.end
 
-@TwitterApp.startReply{tweetId: string, author: string, instanceId: number}: void
+@TwitterApp.startReply{tweetId: string, author: string, instanceId: string}: void
 @@TwitterApp.startReply.code
   const container = document.getElementById("replies-instance-" + instanceId);
   if (!container) return;
@@ -581,7 +582,7 @@ TwitterApp --> Messaging
       "<textarea id=\"input-instance-" + instanceId + "\" class=\"inline-reply-textarea\" placeholder=\"Replying to @" + author + "...\" maxlength=\"300\"></textarea>" +
       "<div class=\"inline-reply-actions\">" +
         "<div id=\"reply-char-count-" + instanceId + "\" class=\"char-counter\">0 / 300</div>" +
-        "<button class=\"btn btn-primary\" onclick=\"window.app.postInlineReply('" + tweetId + "', " + instanceId + ", '" + author + "')\">Reply</button>" +
+        "<button class=\"btn btn-primary\" onclick=\"window.app.postInlineReply('" + tweetId + "', '" + instanceId + "', '" + author + "')\">Reply</button>" +
       "</div>";
     container.prepend(inputDiv);
     
@@ -600,7 +601,7 @@ TwitterApp --> Messaging
   }
 @@TwitterApp.startReply.end
 
-@async @TwitterApp.postInlineReply{parentTweetId: string, instanceId: number, parentAuthor: string}: void
+@async @TwitterApp.postInlineReply{parentTweetId: string, instanceId: string, parentAuthor: string}: void
 @@TwitterApp.postInlineReply.code
   const textarea = document.getElementById("input-instance-" + instanceId);
   const content = textarea.value;
