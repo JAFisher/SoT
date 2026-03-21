@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="A Twitter-style social network engine built using SoT (Single Oriented Transformation) syntax.">
+    <meta name="description"
+        content="A Twitter-style social network engine built using SoT (Single Oriented Transformation) syntax.">
     <title>Social Network</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -53,9 +54,8 @@
                     </div>
                     <div class="post-actions">
                         <input type="file" id="imgInput" accept="image/png, image/jpeg" style="display: none;">
-                        <button id="addImgBtn" class="btn btn-outline"
-                            style="width: auto; padding: 6px 12px; margin-right: 10px;">🖼️ Image</button>
                         <div id="charCount" class="char-counter">0 / 300</div>
+                        <button id="addImgBtn" class="add-image-btn btn btn-outline">🖼️ Image</button>
                         <button id="postBtn" class="btn btn-primary">Post</button>
                     </div>
                 </div>
@@ -145,7 +145,7 @@
             document.getElementById('notifications-container').style.display = 'none';
             document.getElementById('timeline-container').style.display = 'block';
             // Re-bind load more button for timeline
-            window.app.loadTimeline('timeline', false); 
+            window.app.loadTimeline('timeline', false);
         });
 
         document.getElementById('logoutBtn').addEventListener('click', () => {
