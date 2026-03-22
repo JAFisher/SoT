@@ -44,6 +44,11 @@ TwitterApp --> Messaging
     document.body.classList.add('light-mode');
   }
 
+  // Ensure DOM is parsed before updating icon
+  setTimeout(() => {
+    this.updateThemeIcon(savedTheme === 'light');
+  }, 50);
+
   if (this.auth.token) {
     try {
       await this.auth.refresh();
@@ -58,12 +63,20 @@ TwitterApp --> Messaging
 @TwitterApp.toggleTheme{}: void
 @@TwitterApp.toggleTheme.code
   document.body.classList.toggle('light-mode');
-  if (document.body.classList.contains('light-mode')) {
-    localStorage.setItem('theme', 'light');
-  } else {
-    localStorage.setItem('theme', 'dark');
-  }
+  const isLight = document.body.classList.contains('light-mode');
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+  this.updateThemeIcon(isLight);
 @@TwitterApp.toggleTheme.end
+
+@TwitterApp.updateThemeIcon{isLight: boolean}: void
+@@TwitterApp.updateThemeIcon.code
+  const moon = document.getElementById('theme-icon-moon');
+  const sun = document.getElementById('theme-icon-sun');
+  if (moon && sun) {
+      moon.style.display = isLight ? 'none' : 'block';
+      sun.style.display = isLight ? 'block' : 'none';
+  }
+@@TwitterApp.updateThemeIcon.end
 
 @async @TwitterApp.renderTimeline{containerId: string}: void
 @@TwitterApp.renderTimeline.code
@@ -156,7 +169,7 @@ TwitterApp --> Messaging
             "<div class='trending-item' onclick=\"window.location.href='profile.html?username=" + t.authorUsername + "'\">" +
               "<div class='trending-tag'>@" + t.authorUsername + "</div>" +
               "<div class='trending-count' style='white-space: normal; margin-top: 4px;'>" + contentSnippet + "</div>" +
-              "<div style='font-size: 0.8em; color: var(--primary-color); margin-top: 6px; font-weight: bold;'>❤️ " + t.likedCount + " Likes</div>" +
+              "<div style='font-size: 0.8em; margin-top: 6px; font-weight: bold; color: var(--text-primary);'><svg viewBox='0 0 24 24' width='14' height='14' fill='#e0245e' stroke='none' style='vertical-align: text-bottom; margin-right: 4px;'><path d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'></path></svg>" + t.likedCount + " Likes</div>" +
             "</div>";
         });
       }
@@ -280,7 +293,7 @@ TwitterApp --> Messaging
         const time = this.formatRelativeTime(n.timestamp);
         let actionText = "";
         let icon = "";
-        if (n.action === 'like') { actionText = "liked your message"; icon = "❤️"; }
+        if (n.action === 'like') { actionText = "liked your message"; icon = "<svg viewBox='0 0 24 24' width='16' height='16' fill='#e0245e' stroke='none' style='vertical-align: text-bottom;'><path d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'></path></svg>"; }
         else if (n.action === 'follow') { actionText = "followed you"; icon = "👤"; }
         else if (n.action === 'retweet') { actionText = "reposted your message"; icon = "🔄"; }
         else if (n.action === 'reply') { actionText = "replied to your message"; icon = "💬"; }
@@ -442,7 +455,7 @@ TwitterApp --> Messaging
     "<div class=\"tweet-footer\">" +
         "<button class=\"tweet-btn reply-btn\" onclick=\"window.app.startReply('" + t.id + "', '" + t.authorUsername + "', " + instanceId + ")\">💬 " + (t.repliesCount || 0) + "</button>" +
         retweetBtn +
-        "<button class=\"tweet-btn like-btn\" id=\"like-btn-instance-" + instanceId + "\" onclick=\"window.app.like('" + t.id + "', " + instanceId + ")\">❤️ " + (t.likedCount || 0) + "</button>" +
+        "<button class=\"tweet-btn like-btn\" id=\"like-btn-instance-" + instanceId + "\" onclick=\"window.app.like('" + t.id + "', " + instanceId + ")\"><svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom;'><path d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'></path></svg> <span class='like-count'>" + (t.likedCount || 0) + "</span></button>" +
         "<span class=\"tweet-btn view-count-label\" id=\"view-count-instance-" + instanceId + "\">👁️ " + (t.viewCount || 0) + "</span>" +
         "<button class=\"tweet-btn view-replies-btn\" onclick=\"window.app.toggleReplies('" + t.id + "', " + instanceId + ", '" + t.authorUsername + "')\">View Replies</button>" +
       "</div>" +
@@ -477,7 +490,7 @@ TwitterApp --> Messaging
     "<div class=\"reply-footer\">" +
       "<button class=\"tweet-btn reply-btn btn-compact\" onclick=\"window.app.startReply('" + r.id + "', '" + r.sender_username + "', " + rInstanceId + ")\">💬 " + (r.repliesCount || 0) + "</button>" +
       retweetBtn +
-      "<button class=\"tweet-btn like-btn btn-compact\" id=\"like-btn-instance-" + rInstanceId + "\" onclick=\"window.app.like('" + r.id + "', " + rInstanceId + ")\">❤️ " + (r.likedCount || 0) + "</button>" +
+      "<button class=\"tweet-btn like-btn btn-compact\" id=\"like-btn-instance-" + rInstanceId + "\" onclick=\"window.app.like('" + r.id + "', " + rInstanceId + ")\"><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom;'><path d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'></path></svg> <span class='like-count'>" + (r.likedCount || 0) + "</span></button>" +
       "<span class=\"tweet-btn view-count-label btn-compact\" id=\"view-count-instance-" + rInstanceId + "\">👁️ " + (r.viewCount || 0) + "</span>" +
       "<button class=\"tweet-btn view-replies-btn btn-compact\" onclick=\"window.app.toggleReplies('" + r.id + "', " + rInstanceId + ", '" + r.sender_username + "')\">View Replies</button>" +
     "</div>" +
@@ -825,12 +838,17 @@ TwitterApp --> Messaging
   try {
     await this.feed.likeMessage(tweetId);
     const btnId = "like-btn-instance-" + instanceId;
-    const btn = document.getElementById(btnId);
+    const btn = document.getElementById("like-btn-instance-" + instanceId);
     if (btn) {
-      const current = parseInt(btn.innerText.replace('❤️ ', '')) || 0;
-      btn.innerText = "❤️ " + (current + 1);
+      const countSpan = btn.querySelector('.like-count');
+      const current = countSpan ? (parseInt(countSpan.innerText) || 0) : 0;
+      if (countSpan) countSpan.innerText = (current + 1);
       
-      // Add animation class
+      const svg = btn.querySelector('svg');
+      if (svg) {
+          svg.setAttribute('fill', '#e0245e');
+          svg.setAttribute('stroke', '#e0245e');
+      }
       btn.classList.add('heart-pop');
       setTimeout(() => btn.classList.remove('heart-pop'), 400);
       
