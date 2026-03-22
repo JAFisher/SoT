@@ -31,7 +31,9 @@ Database[Database.ts{pool: any}]
   await this.pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS following_count INT DEFAULT 0;");
   await this.pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS banner_url TEXT;");
   await this.pool.query("CREATE TABLE IF NOT EXISTS messages (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), sender_username VARCHAR(255) NOT NULL, receiver_username VARCHAR(255) NOT NULL,content TEXT NOT NULL,timestamp BIGINT NOT NULL,replied_to_id UUID,retweeted_id UUID,liked_count INT DEFAULT 0, retweet_count INT DEFAULT 0, image_url TEXT);");
+  await this.pool.query("ALTER TABLE messages ADD COLUMN IF NOT EXISTS view_count INT DEFAULT 0;");
   await this.pool.query("CREATE TABLE IF NOT EXISTS likes ( id SERIAL PRIMARY KEY, message_id UUID NOT NULL REFERENCES messages(id), username VARCHAR(255) NOT NULL, UNIQUE(message_id, username));");
+  await this.pool.query("CREATE TABLE IF NOT EXISTS views (id SERIAL PRIMARY KEY, message_id UUID NOT NULL REFERENCES messages(id), username VARCHAR(255) NOT NULL, UNIQUE(message_id, username));");
   await this.pool.query("CREATE TABLE IF NOT EXISTS follows (follower_username VARCHAR(255) NOT NULL, following_username VARCHAR(255) NOT NULL, UNIQUE(follower_username, following_username));");
   await this.pool.query("CREATE TABLE IF NOT EXISTS hashtags (tag VARCHAR(255) NOT NULL, message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE, PRIMARY KEY (tag, message_id));");
   await this.pool.query("CREATE TABLE IF NOT EXISTS notifications (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), sender_username VARCHAR(255) NOT NULL, receiver_username VARCHAR(255) NOT NULL, action VARCHAR(255) NOT NULL, message_id UUID, timestamp BIGINT NOT NULL, is_read BOOLEAN DEFAULT FALSE, UNIQUE(sender_username, receiver_username, action, message_id));");
@@ -117,7 +119,8 @@ Database[Database.ts{pool: any}]
     repliedToId: row.replied_to_id,
     retweetedId: row.retweeted_id,
     likedCount: row.liked_count,
-    retweetCount: row.retweet_count
+    retweetCount: row.retweet_count,
+    viewCount: row.view_count || 0
   }));
 @@Database.getMessagesBetween.end
 
@@ -153,7 +156,8 @@ Database[Database.ts{pool: any}]
     likedCount: row.liked_count,
     retweetCount: row.retweet_count,
     repliesCount: Number(row.reply_count),
-    imageUrl: row.image_url
+    imageUrl: row.image_url,
+    viewCount: row.view_count || 0
   }));
 @@Database.getPublicTweets.end
 
@@ -195,7 +199,8 @@ Database[Database.ts{pool: any}]
     likedCount: row.liked_count,
     retweetCount: row.retweet_count,
     repliesCount: Number(row.reply_count),
-    imageUrl: row.image_url
+    imageUrl: row.image_url,
+    viewCount: row.view_count || 0
   }));
 @@Database.getPersonalizedTweets.end
 
@@ -231,7 +236,8 @@ Database[Database.ts{pool: any}]
     likedCount: row.liked_count,
     retweetCount: row.retweet_count,
     repliesCount: Number(row.reply_count),
-    imageUrl: row.image_url
+    imageUrl: row.image_url,
+    viewCount: row.view_count || 0
   }));
 @@Database.getUserTweets.end
 
@@ -281,6 +287,27 @@ Database[Database.ts{pool: any}]
     client.release();
   }
 @@Database.unlikeMessage.end
+
+@async @Database.incrementViewCount{messageId: string, viewerUsername: string}: boolean
+@@Database.incrementViewCount.code
+  const client = await this.pool.connect();
+  let incremented = false;
+  try {
+    await client.query('BEGIN');
+    const res = await client.query('INSERT INTO views (message_id, username) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING id', [messageId, viewerUsername]);
+    if (res.rowCount > 0) {
+      await client.query('UPDATE messages SET view_count = view_count + 1 WHERE id = $1 AND sender_username != $2', [messageId, viewerUsername]);
+      incremented = true;
+    }
+    await client.query('COMMIT');
+    return incremented;
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+@@Database.incrementViewCount.end
 
 @async @Database.retweetMessage{sender: string, originalId: string, ts: number}: any
 @@Database.retweetMessage.code
@@ -352,7 +379,8 @@ Database[Database.ts{pool: any}]
       likedCount: 0,
       retweetCount: 0,
       repliesCount: 0,
-      imageUrl: row.image_url
+      imageUrl: row.image_url,
+      viewCount: row.view_count || 0
     };
   } catch (e) {
     if (client) await client.query('ROLLBACK');
@@ -387,7 +415,8 @@ Database[Database.ts{pool: any}]
     likedCount: row.liked_count,
     retweetCount: row.retweet_count,
     repliesCount: Number(row.reply_count),
-    imageUrl: row.image_url
+    imageUrl: row.image_url,
+    viewCount: row.view_count || 0
   }));
 @@Database.getReplies.end
 
@@ -424,7 +453,8 @@ Database[Database.ts{pool: any}]
     likedCount: row.liked_count,
     retweetCount: row.retweet_count,
     repliesCount: Number(row.reply_count),
-    imageUrl: row.image_url
+    imageUrl: row.image_url,
+    viewCount: row.view_count || 0
   }));
 @@Database.getMessagesByHashtag.end
 @async @Database.followUser{follower: string, following: string}: void
@@ -639,7 +669,8 @@ Database[Database.ts{pool: any}]
     likedCount: r.liked_count, 
     retweetCount: r.retweet_count, 
     repliesCount: Number(r.replies_count), 
-    imageUrl: r.image_url 
+    imageUrl: r.image_url,
+    viewCount: r.view_count || 0
   }));
 
   return results;

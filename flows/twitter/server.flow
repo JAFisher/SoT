@@ -301,6 +301,26 @@ Server --> Auth
       return;
     }
 
+    if (req.method === 'POST' && req.url === '/api/message/view') {
+      const user = getAuthUser(req);
+      if (!user) { res.writeHead(401); res.end(); return; }
+      let body = '';
+      req.on('data', chunk => { body += chunk; });
+      req.on('end', async () => {
+        try {
+          const { messageId } = JSON.parse(body);
+          let incremented = false;
+          if (messageId) {
+            incremented = await this.auth.db.incrementViewCount(messageId, user.username);
+          }
+          res.writeHead(200); res.end(JSON.stringify({ success: true, incremented }));
+        } catch (e) {
+          res.writeHead(400); res.end(JSON.stringify({ error: e.message }));
+        }
+      });
+      return;
+    }
+
     if (req.method === 'POST' && req.url === '/api/retweet') {
       const user = getAuthUser(req);
       if (!user) { res.writeHead(401); res.end(); return; }
