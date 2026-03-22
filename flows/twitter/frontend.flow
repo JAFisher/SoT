@@ -729,7 +729,7 @@ TwitterApp --> Messaging
       "<div class=\"inline-reply-actions\">" +
         "<input type=\"file\" id=\"img-input-instance-" + instanceId + "\" accept=\"image/png, image/jpeg\" style=\"display: none;\">" +
         "<div id=\"reply-char-count-" + instanceId + "\" class=\"char-counter\">0 / 300</div>" +
-        "<button id=\"add-img-btn-instance-" + instanceId + "\" class=\"add-image-btn btn btn-outline\">🖼️ Image</button>" +
+        "<button id=\"add-img-btn-instance-" + instanceId + "\" class=\"add-image-btn btn btn-outline\" style=\"display: inline-flex; align-items: center;\"><svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='margin-right: 4px;'><rect x='3' y='3' width='18' height='18' rx='2' ry='2'></rect><circle cx='8.5' cy='8.5' r='1.5'></circle><polyline points='21 15 16 10 5 21'></polyline></svg> Image</button>" +
         "<button class=\"btn btn-primary\" onclick=\"window.app.postInlineReply('" + tweetId + "', '" + instanceId + "', '" + author + "')\">Reply</button>" +
       "</div>";
     container.prepend(inputDiv);
