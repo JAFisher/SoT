@@ -161,18 +161,18 @@ h4 {
 
 .btn-primary {
     background-color: var(--accent-color);
-    color: #000000;
+    color: var(--text-primary);
 }
 
 .btn-primary:hover {
     background-color: var(--accent-hover);
-    color: #000000;
+    color: var(--text-primary);
 }
 
 .btn-outline {
     background-color: transparent;
-    color: var(--accent-color);
-    border: 1px solid var(--accent-color);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
     width: fit-content;
 }
 
