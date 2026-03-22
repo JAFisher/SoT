@@ -405,7 +405,7 @@ TwitterApp --> Messaging
       "<div class='tweet-reply-context' style='margin-bottom: 8px; font-size: 0.9em;'>" +
         "<span style='color: var(--text-secondary);'>Replying to </span>" +
         "<a href='profile.html?username=" + t.repliedToUsername + "' class='tweet-name-link' style='color: var(--primary-color); font-weight: bold;'>@" + t.repliedToUsername + "</a>" +
-        (t.parentContent ? "<div class='tweet-parent-preview' style='opacity: 0.6; padding-left: 10px; border-left: 2px solid var(--border-color); margin-top: 4px; font-style: italic;'>\"" + t.parentContent + "\"</div>" : "") +
+        (t.parentContent ? "<div class='tweet-parent-preview'>\"" + t.parentContent + "\"</div>" : "") +
       "</div>" : "";
 
     return "<div class=\"tweet\" id=\"tweet-instance-" + instanceId + "\">" +

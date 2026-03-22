@@ -295,8 +295,11 @@ h4 {
 
 .tweet-footer {
     display: flex;
-    gap: 24px;
-    margin-top: 8px;
+    margin-top: 12px;
+    width: fit-content;
+    background-color: #15202b;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-full);
 }
 
 .tweet-btn {
@@ -1026,4 +1029,16 @@ h4 {
     margin-bottom: 20px;
     margin-top: 20px;
     justify-content: center;
+}
+
+.tweet-parent-preview {
+    border: 1px solid #454599;
+    padding: 20px;
+    border-radius: 20px;
+    border-top-left-radius: 0px;
+    padding-left: 10px;
+    border-left: 2px solid var(--border-color);
+    margin-top: 4px;
+    font-style: italic;
+    color: var(--text-secondary);
 }
