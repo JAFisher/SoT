@@ -676,6 +676,42 @@ Database[Database.ts{pool: any}]
   return results;
 @@Database.searchAll.end
 
+@async @Database.getTrendingLikes{sinceTimestamp: number, limit: number}: any
+@@Database.getTrendingLikes.code
+  const client = await this.pool.connect();
+  try {
+    const res = await client.query(`
+      SELECT m1.*, 
+             u1.avatar_url as author_avatar, 
+             u1.follower_count as author_follower_count,
+             (SELECT COUNT(*) FROM messages m3 WHERE m3.replied_to_id = m1.id) as reply_count
+      FROM messages m1
+      LEFT JOIN users u1 ON m1.sender_username = u1.username
+      WHERE m1.timestamp >= $1 AND m1.receiver_username = '' AND m1.liked_count > 0
+      ORDER BY m1.liked_count DESC, m1.timestamp DESC
+      LIMIT $2
+    `, [sinceTimestamp, limit]);
+
+    return res.rows.map(row => ({
+      id: row.id,
+      authorUsername: row.sender_username,
+      authorAvatar: row.author_avatar,
+      authorFollowerCount: row.author_follower_count,
+      content: row.content,
+      timestamp: Number(row.timestamp),
+      repliedToId: row.replied_to_id,
+      retweetedId: row.retweeted_id,
+      likedCount: row.liked_count,
+      retweetCount: row.retweet_count,
+      repliesCount: Number(row.reply_count),
+      imageUrl: row.image_url,
+      viewCount: row.view_count || 0
+    }));
+  } finally {
+    client.release();
+  }
+@@Database.getTrendingLikes.end
+
 @async @Database.query{text: string, params: any}: any
 @@Database.query.code
   return await this.pool.query(text, params);

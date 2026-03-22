@@ -193,6 +193,13 @@ Feed --> AuthFE
   return await response.json();
 @@Feed.getTrending.end
 
+@async @Feed.getTrendingLikes{}: any
+@@Feed.getTrendingLikes.code
+  const response = await fetch("http://localhost:8080/api/trending/likes");
+  if (!response.ok) throw new Error("Failed to fetch trending likes");
+  return await response.json();
+@@Feed.getTrendingLikes.end
+
 @async @Feed.search{query: string, limit: number, offset: number}: any
 @@Feed.search.code
   const l = limit || 25;

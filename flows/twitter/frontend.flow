@@ -118,22 +118,40 @@ TwitterApp --> Messaging
     if (!container) return;
 
     try {
+      let html = "";
+      
       const trending = await this.feed.getTrending();
-      if (!trending || trending.length === 0) {
-        container.style.display = 'none';
-        return;
+      if (trending && trending.length > 0) {
+        html += "<h3>Trends for you</h3>";
+        trending.forEach(t => {
+          html += 
+            "<div class='trending-item' onclick='window.app.showHashtagTimeline(\"" + t.tag + "\")'>" +
+              "<div class='trending-tag'>#" + t.tag + "</div>" +
+              "<div class='trending-count'>" + t.count + " Tweets</div>" +
+            "</div>";
+        });
       }
 
-      container.style.display = 'block';
-      let html = "<h3>Trends for you</h3>";
-      trending.forEach(t => {
-        html += 
-          "<div class='trending-item' onclick='window.app.showHashtagTimeline(\"" + t.tag + "\")'>" +
-            "<div class='trending-tag'>#" + t.tag + "</div>" +
-            "<div class='trending-count'>" + t.count + " Tweets</div>" +
-          "</div>";
-      });
-      container.innerHTML = html;
+      const trendingLikes = await this.feed.getTrendingLikes();
+      if (trendingLikes && trendingLikes.length > 0) {
+        html += "<h3 style='margin-top: 20px;'>Trending Likes</h3>";
+        trendingLikes.forEach(t => {
+          const contentSnippet = t.content.length > 50 ? t.content.substring(0, 50) + "..." : t.content;
+          html += 
+            "<div class='trending-item' onclick=\"window.location.href='profile.html?username=" + t.authorUsername + "'\">" +
+              "<div class='trending-tag'>@" + t.authorUsername + "</div>" +
+              "<div class='trending-count' style='white-space: normal; margin-top: 4px;'>" + contentSnippet + "</div>" +
+              "<div style='font-size: 0.8em; color: var(--primary-color); margin-top: 6px; font-weight: bold;'>❤️ " + t.likedCount + " Likes</div>" +
+            "</div>";
+        });
+      }
+
+      if (html === "") {
+        container.style.display = 'none';
+      } else {
+        container.style.display = 'block';
+        container.innerHTML = html;
+      }
     } catch (e) {
       console.error("Failed to render trending:", e);
       container.style.display = 'none';

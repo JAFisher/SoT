@@ -740,6 +740,8 @@ h4 {
     padding: 16px;
     position: sticky;
     top: 16px;
+    overflow-y: auto;
+    max-height: 600px;
 }
 
 .trending-box h3 {
