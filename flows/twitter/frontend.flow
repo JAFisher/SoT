@@ -125,7 +125,7 @@ TwitterApp --> Messaging
         html += "<h3>Trends for you</h3>";
         trending.forEach(t => {
           html += 
-            "<div class='trending-item' onclick='window.app.showHashtagTimeline(\"" + t.tag + "\")'>" +
+            "<div class='trending-item' onclick='window.location.href=\"dashboard.html?hashtag=" + t.tag + "\"'>" +
               "<div class='trending-tag'>#" + t.tag + "</div>" +
               "<div class='trending-count'>" + t.count + " Tweets</div>" +
             "</div>";
