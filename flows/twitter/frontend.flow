@@ -275,7 +275,7 @@ TwitterApp --> Messaging
           "<div class='notification-item " + (n.isRead ? "" : "unread") + "' id='notification-" + n.id + "'>" +
             "<img src='" + (n.fromAvatar || 'http://localhost:8080/images/userprofiledefault.png') + "' alt='Notification avatar' class='notification-avatar'>" +
             "<div class='notification-content'>" +
-              "<div><span class='notification-user'>@" + n.from + "</span> " + actionText + " " + icon + "</div>" +
+              "<div><a href='profile.html?username=" + n.from + "' class='notification-user'>@" + n.from + "</a> " + actionText + " " + icon + "</div>" +
               (n.parentContent ? "<div class='notification-parent-preview' style='font-size: 0.85em; opacity: 0.6; margin: 4px 0; padding-left: 8px; border-left: 2px solid var(--border-color); margin-top: 4px; font-style: italic;'>Replying to: \"" + n.parentContent + "\"</div>" : "") +
               (n.messageContent ? "<div class='notification-message-preview'>\"" + n.messageContent + "\"</div>" : "") +
               "<div class='notification-time'>" + time + "</div>" +
