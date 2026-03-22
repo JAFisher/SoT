@@ -382,7 +382,7 @@ TwitterApp --> Messaging
     const followBtn = (!isSelf && currentUser) ? 
       "<button class=\"tweet-btn follow-btn\" id=\"twitter-follow-" + t.authorUsername + "\" onclick=\"window.app.toggleFollow('" + t.authorUsername + "', " + (t.authorFollowerCount || 0) + ")\">" + (isFollowing ? "Unfollow" : "Follow") + "</button>" : "";
 
-    const highlightedContent = t.content.replace(/#(\w+)/g, '<span class="hashtag" onclick="event.stopPropagation(); window.app.showHashtagTimeline(\'$1\')">#$1</span>');
+    const highlightedContent = t.content.replace(/#(\w+)/g, '<span class="hashtag" onclick="event.stopPropagation(); window.app.showHashtagTimeline(\'$1\')">#$1</span>').replace(/@(\w+)/g, '<a href="profile.html?username=$1" class="tweet-name-link" style="color: var(--accent-color); text-decoration: none;" onclick="event.stopPropagation()">@$1</a>');
     const replyContextHtml = t.repliedToUsername ? 
       "<div class='tweet-reply-context' style='margin-bottom: 8px; font-size: 0.9em;'>" +
         "<span style='color: var(--text-secondary);'>Replying to </span>" +
@@ -428,7 +428,7 @@ TwitterApp --> Messaging
     const avatarHtml = "<a href=\"profile.html?username=" + r.sender_username + "\"><img src=\"" + avatarUrl + "\" alt=\"" + r.sender_username + "'s avatar\" class=\"tweet-avatar\"></a>";
     const imageHtml = r.imageUrl ? "<div class=\"tweet-image-container\"><img src=\"" + r.imageUrl + "\" alt=\"Reply image\" class=\"tweet-image\"></div>" : "";
 
-    const highlightedContent = r.content.replace(/#(\w+)/g, '<span class="hashtag" onclick="event.stopPropagation(); window.app.showHashtagTimeline(\'$1\')">#$1</span>');
+    const highlightedContent = r.content.replace(/#(\w+)/g, '<span class="hashtag" onclick="event.stopPropagation(); window.app.showHashtagTimeline(\'$1\')">#$1</span>').replace(/@(\w+)/g, '<a href="profile.html?username=$1" class="tweet-name-link" style="color: var(--accent-color); text-decoration: none;" onclick="event.stopPropagation()">@$1</a>');
     const replyContextHtml = r.repliedToUsername ? 
       "<div class='tweet-reply-context' style='margin-bottom: 5px; font-size: 0.8em; opacity: 0.8;'>" +
         "<span>Replying to </span>" +
