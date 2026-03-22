@@ -39,6 +39,11 @@ TwitterApp --> Messaging
     document.body.appendChild(container);
   }
 
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme === 'light') {
+    document.body.classList.add('light-mode');
+  }
+
   if (this.auth.token) {
     try {
       await this.auth.refresh();
@@ -49,6 +54,16 @@ TwitterApp --> Messaging
     await this.fetchFollowing();
   }
 @@TwitterApp.init.end
+
+@TwitterApp.toggleTheme{}: void
+@@TwitterApp.toggleTheme.code
+  document.body.classList.toggle('light-mode');
+  if (document.body.classList.contains('light-mode')) {
+    localStorage.setItem('theme', 'light');
+  } else {
+    localStorage.setItem('theme', 'dark');
+  }
+@@TwitterApp.toggleTheme.end
 
 @async @TwitterApp.renderTimeline{containerId: string}: void
 @@TwitterApp.renderTimeline.code
