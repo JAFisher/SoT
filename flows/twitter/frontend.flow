@@ -265,10 +265,10 @@ TwitterApp --> Messaging
         const time = this.formatRelativeTime(n.timestamp);
         let actionText = "";
         let icon = "";
-        if (n.action === 'like') { actionText = "liked your tweet"; icon = "❤️"; }
+        if (n.action === 'like') { actionText = "liked your message"; icon = "❤️"; }
         else if (n.action === 'follow') { actionText = "followed you"; icon = "👤"; }
-        else if (n.action === 'retweet') { actionText = "retweeted your tweet"; icon = "🔄"; }
-        else if (n.action === 'reply') { actionText = "replied to your tweet"; icon = "💬"; }
+        else if (n.action === 'retweet') { actionText = "reposted your message"; icon = "🔄"; }
+        else if (n.action === 'reply') { actionText = "replied to your message"; icon = "💬"; }
         else if (n.action === 'mention') { actionText = "mentioned you"; icon = "🔔"; }
 
         html += 
@@ -345,11 +345,11 @@ TwitterApp --> Messaging
   
   if (tweets.length === 0) {
     if (append) {
-      this.showToast("No more tweets to load", "info");
+      this.showToast("No more messages to load", "info");
       const loadMoreBtn = document.getElementById('loadMoreBtn');
       if (loadMoreBtn) loadMoreBtn.style.display = 'none';
     } else {
-      container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">No tweets yet!</div>';
+      container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">No messages yet!</div>';
     }
     return;
   }
@@ -385,7 +385,7 @@ TwitterApp --> Messaging
   const instanceId = ++this.renderCount;
   const name = t.authorName || t.authorUsername;
   const isRetweet = !!t.retweetedId;
-  const retweetTag = isRetweet ? "<span class=\"retweet-tag\">🔄 Retweeted from @" + t.retweetedAuthor + "</span>" : "";
+  const retweetTag = isRetweet ? "<span class=\"retweet-tag\">🔄 Reposted from @" + t.retweetedAuthor + "</span>" : "";
     const currentUser = this.auth.getCurrentUser();
     const canRetweet = currentUser && currentUser.username !== t.authorUsername;
     const retweetBtn = canRetweet ?
@@ -849,7 +849,7 @@ TwitterApp --> Messaging
       tempDiv.innerHTML = this.renderSingleTweet(retweet);
       if (tempDiv.firstElementChild) {
         container.prepend(tempDiv.firstElementChild);
-        this.showToast("Retweeted successfully!", "success");
+        this.showToast("Reposted successfully!", "success");
       }
     }
 
