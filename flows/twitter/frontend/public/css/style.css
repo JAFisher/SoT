@@ -283,6 +283,8 @@ h4 {
     background: rgba(29, 161, 242, 0.1);
     padding: 2px 8px;
     border-radius: var(--radius-full);
+    width: fit-content;
+    margin-top: 6px;
 }
 
 .tweet-content {
@@ -1031,14 +1033,39 @@ h4 {
     justify-content: center;
 }
 
+@keyframes horizontalGradient {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: 0% 0;
+    }
+}
+
 .tweet-parent-preview {
+    position: relative;
     border: 1px solid #454599;
     padding: 20px;
-    border-radius: 20px;
-    border-top-left-radius: 0px;
+    border-radius: 0px;
     padding-left: 10px;
     border-left: 2px solid var(--border-color);
+    border-bottom: 2px solid transparent;
+    border-bottom: none;
     margin-top: 4px;
     font-style: italic;
     color: var(--text-secondary);
+}
+
+.tweet-parent-preview::after {
+    content: '';
+    position: absolute;
+    bottom: 0px;
+    left: 0px;
+    right: 0px;
+    height: 2px;
+    background: linear-gradient(90deg, #454599, #87cefa, #454599);
+    background-size: 200% 100%;
+    animation: horizontalGradient 3s linear infinite;
+
 }
