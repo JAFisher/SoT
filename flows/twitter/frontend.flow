@@ -513,6 +513,8 @@ TwitterApp --> Messaging
        loadMoreBtn.onclick = () => window.app.loadMore('timeline');
     }
     await this.renderTimeline('timeline');
+    window.history.replaceState('dashboard', 'dashboard', '/dashboard.html');
+
   }
 @@TwitterApp.goBackToTimeline.end
 

@@ -467,10 +467,6 @@ h4 {
     color: var(--accent-color);
 }
 
-#timeline {
-    padding-bottom: 100px;
-}
-
 @keyframes heartPop {
     0% {
         transform: scale(1);
