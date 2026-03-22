@@ -12,8 +12,8 @@
     <div class="layout-wrapper">
         <div class="container">
             <div class="header">
-                <button class="btn btn-outline back-btn" onclick="window.location.href='dashboard.html'"
-                    style="width: auto; padding: 6px 12px;">← Back</button>
+                <button id="backBtn" class="btn btn-outline back-btn" onclick="window.location.href='dashboard.html'"
+                    style="width: auto; padding: 6px 12px; display: inline-flex; align-items: center; gap: 4px;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg> Back</button>
                 <h2 id="profile-title">Profile</h2>
                 <div style="flex-grow: 1; text-align: right;">
                     <button id="themeToggleBtn" class="btn btn-outline" onclick="window.app.toggleTheme()" style="padding: 6px; border-radius: 50%; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;">

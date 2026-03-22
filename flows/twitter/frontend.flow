@@ -296,8 +296,8 @@ TwitterApp --> Messaging
         if (n.action === 'like') { actionText = "liked your message"; icon = "<svg viewBox='0 0 24 24' width='16' height='16' fill='#e0245e' stroke='none' style='vertical-align: text-bottom;'><path d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'></path></svg>"; }
         else if (n.action === 'follow') { actionText = "followed you"; icon = "<svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom;'><path d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'></path><circle cx='12' cy='7' r='4'></circle></svg>"; }
         else if (n.action === 'retweet') { actionText = "reposted your message"; icon = "<svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='#17bf63' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom;'><path d='M17 1l4 4-4 4'></path><path d='M3 11V9a4 4 0 0 1 4-4h14'></path><path d='M7 23l-4-4 4-4'></path><path d='M21 13v2a4 4 0 0 1-4 4H3'></path></svg>"; }
-        else if (n.action === 'reply') { actionText = "replied to your message"; icon = "💬"; }
-        else if (n.action === 'mention') { actionText = "mentioned you"; icon = "🔔"; }
+        else if (n.action === 'reply') { actionText = "replied to your message"; icon = "<svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom;'><path d='M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.1a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z'></path></svg>"; }
+        else if (n.action === 'mention') { actionText = "mentioned you"; icon = "<svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom;'><path d='M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9'></path><path d='M13.73 21a2 2 0 0 1-3.46 0'></path></svg>"; }
 
         html += 
           "<div class='notification-item " + (n.isRead ? "" : "unread") + "' id='notification-" + n.id + "'>" +
@@ -452,7 +452,7 @@ TwitterApp --> Messaging
     "<div class=\"tweet-content\">" + replyContextHtml + highlightedContent + "</div>" +
     imageHtml +
     "<div class=\"tweet-footer\">" +
-        "<button class=\"tweet-btn reply-btn\" onclick=\"window.app.startReply('" + t.id + "', '" + t.authorUsername + "', " + instanceId + ")\">💬 " + (t.repliesCount || 0) + "</button>" +
+        "<button class=\"tweet-btn reply-btn\" onclick=\"window.app.startReply('" + t.id + "', '" + t.authorUsername + "', " + instanceId + ")\"><svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom; margin-right: 4px;'><path d='M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.1a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z'></path></svg> <span class='reply-count'>" + (t.repliesCount || 0) + "</span></button>" +
         retweetBtn +
         "<button class=\"tweet-btn like-btn\" id=\"like-btn-instance-" + instanceId + "\" onclick=\"window.app.like('" + t.id + "', " + instanceId + ")\"><svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom;'><path d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'></path></svg> <span class='like-count'>" + (t.likedCount || 0) + "</span></button>" +
         "<span class=\"tweet-btn view-count-label\" id=\"view-count-instance-" + instanceId + "\"><svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom; margin-right: 4px;'><line x1='18' y1='20' x2='18' y2='10'></line><line x1='12' y1='20' x2='12' y2='4'></line><line x1='6' y1='20' x2='6' y2='14'></line></svg> <span class='view-count'>" + (t.viewCount || 0) + "</span></span>" +
@@ -486,7 +486,7 @@ TwitterApp --> Messaging
     "<div class=\"reply-content\">" + replyContextHtml + highlightedContent + "</div>" +
     imageHtml +
     "<div class=\"reply-footer\">" +
-      "<button class=\"tweet-btn reply-btn btn-compact\" onclick=\"window.app.startReply('" + r.id + "', '" + r.sender_username + "', " + rInstanceId + ")\">💬 " + (r.repliesCount || 0) + "</button>" +
+      "<button class=\"tweet-btn reply-btn btn-compact\" onclick=\"window.app.startReply('" + r.id + "', '" + r.sender_username + "', " + rInstanceId + ")\"><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom; margin-right: 4px;'><path d='M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.1a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z'></path></svg> <span class='reply-count'>" + (r.repliesCount || 0) + "</span></button>" +
       retweetBtn +
       "<button class=\"tweet-btn like-btn btn-compact\" id=\"like-btn-instance-" + rInstanceId + "\" onclick=\"window.app.like('" + r.id + "', " + rInstanceId + ")\"><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom;'><path d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'></path></svg> <span class='like-count'>" + (r.likedCount || 0) + "</span></button>" +
       "<span class=\"tweet-btn view-count-label btn-compact\" id=\"view-count-instance-" + rInstanceId + "\"><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom; margin-right: 4px;'><line x1='18' y1='20' x2='18' y2='10'></line><line x1='12' y1='20' x2='12' y2='4'></line><line x1='6' y1='20' x2='6' y2='14'></line></svg> <span class='view-count'>" + (r.viewCount || 0) + "</span></span>" +
@@ -724,7 +724,7 @@ TwitterApp --> Messaging
       "<textarea id=\"input-instance-" + instanceId + "\" class=\"inline-reply-textarea\" placeholder=\"Replying to @" + author + "...\" maxlength=\"300\"></textarea>" +
       "<div id=\"image-preview-instance-" + instanceId + "\" style=\"display: none; margin-bottom: 10px; position: relative;\">" +
         "<img id=\"preview-img-instance-" + instanceId + "\" src=\"\" alt=\"Image Preview\" style=\"max-width: 100%; border-radius: var(--radius-md);\">" +
-        "<button id=\"remove-img-btn-instance-" + instanceId + "\" class=\"btn\" style=\"position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border-radius: 50%; padding: 0; background: rgba(0,0,0,0.6); color: white;\">✕</button>" +
+        "<button id=\"remove-img-btn-instance-" + instanceId + "\" class=\"btn\" style=\"position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border-radius: 50%; padding: 0; background: rgba(0,0,0,0.6); color: white; display: flex; align-items: center; justify-content: center;\"><svg viewBox='0 0 24 24' width='18' height='18' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><line x1='18' y1='6' x2='6' y2='18'></line><line x1='6' y1='6' x2='18' y2='18'></line></svg></button>" +
       "</div>" +
       "<div class=\"inline-reply-actions\">" +
         "<input type=\"file\" id=\"img-input-instance-" + instanceId + "\" accept=\"image/png, image/jpeg\" style=\"display: none;\">" +
@@ -827,8 +827,9 @@ TwitterApp --> Messaging
   
   const replyBtn = document.querySelector("#tweet-instance-" + instanceId + " .reply-btn");
   if (replyBtn) {
-    const current = parseInt(replyBtn.innerText.replace('💬 ', '')) || 0;
-    replyBtn.innerText = "💬 " + (current + 1);
+    const countSpan = replyBtn.querySelector('.reply-count');
+    const current = countSpan ? (parseInt(countSpan.innerText) || 0) : 0;
+    if (countSpan) countSpan.innerText = (current + 1).toString();
   }
 @@TwitterApp.postInlineReply.end
 

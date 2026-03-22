@@ -1091,5 +1091,8 @@ h4 {
     background: linear-gradient(90deg, #454599, #87cefa, #454599);
     background-size: 200% 100%;
     animation: horizontalGradient 3s linear infinite;
+}
 
+.back-btn {
+    margin-bottom: unset;
 }
