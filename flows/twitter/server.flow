@@ -566,5 +566,10 @@ Server --> Auth
 
 @async @@main.code
   const server = new Server();
-  await server.start();
+  try {
+    await server.start();
+  } catch (e) {
+    console.error("SERVER FATAL ERROR:", e);
+    process.exit(1);
+  }
 @@main.end

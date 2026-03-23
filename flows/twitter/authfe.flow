@@ -1,4 +1,4 @@
-type->User {id: string, username: string, name: string, avatarUrl: string}
+type->User {id: string, username: string, name: string, avatarUrl: string, isAdmin: boolean}
 type->AuthResponse {token: string, refreshToken: string, user: User}
 
 AuthFE[AuthFE.ts{currentUser: any, token: string, refreshToken: string, serverURL: string}]

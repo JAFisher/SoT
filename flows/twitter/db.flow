@@ -8,6 +8,9 @@ EXPOSE 5432
 docker->end
 
 extern->pg from "pg"
+extern->dotenv from "dotenv"
+extern->bcrypt from "bcrypt"
+
 
 Database[Database.ts{pool: any}]
 
@@ -30,6 +33,8 @@ Database[Database.ts{pool: any}]
   await this.pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS follower_count INT DEFAULT 0;");
   await this.pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS following_count INT DEFAULT 0;");
   await this.pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS banner_url TEXT;");
+  await this.pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;");
+  
   await this.pool.query("CREATE TABLE IF NOT EXISTS messages (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), sender_username VARCHAR(255) NOT NULL, receiver_username VARCHAR(255) NOT NULL,content TEXT NOT NULL,timestamp BIGINT NOT NULL,replied_to_id UUID,retweeted_id UUID,liked_count INT DEFAULT 0, retweet_count INT DEFAULT 0, image_url TEXT);");
   await this.pool.query("ALTER TABLE messages ADD COLUMN IF NOT EXISTS view_count INT DEFAULT 0;");
   await this.pool.query("CREATE TABLE IF NOT EXISTS likes ( id SERIAL PRIMARY KEY, message_id UUID NOT NULL REFERENCES messages(id), username VARCHAR(255) NOT NULL, UNIQUE(message_id, username));");
@@ -38,7 +43,23 @@ Database[Database.ts{pool: any}]
   await this.pool.query("CREATE TABLE IF NOT EXISTS hashtags (tag VARCHAR(255) NOT NULL, message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE, PRIMARY KEY (tag, message_id));");
   await this.pool.query("CREATE TABLE IF NOT EXISTS notifications (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), sender_username VARCHAR(255) NOT NULL, receiver_username VARCHAR(255) NOT NULL, action VARCHAR(255) NOT NULL, message_id UUID, timestamp BIGINT NOT NULL, is_read BOOLEAN DEFAULT FALSE, UNIQUE(sender_username, receiver_username, action, message_id));");
 
+  dotenv.config();
+  const adminUser = process.env.ADMIN_USERNAME;
+  const adminPass = process.env.ADMIN_PASSWORD;
+
+  if (adminUser && adminPass) {
+    const hash = await bcrypt.hash(adminPass, 10);
+    await this.pool.query(`
+      INSERT INTO users (username, name, password_hash, is_admin)
+      VALUES ($1, 'Admin', $2, TRUE)
+      ON CONFLICT (username) DO UPDATE
+      SET password_hash = $2, is_admin = TRUE
+    `, [adminUser.toLowerCase(), hash]);
+    console.log(`[DB] Admin user '${adminUser}' seeded/updated.`);
+  }
+
   console.log("Database initialized (Fresh start).");
+
 @@Database.init.end
 
 @async @Database.insertMessage{senderUsername: string, receiverUsername: string, content: string, timestamp: number, repliedToId: string, retweetedId: string, imageUrl: string}: any
