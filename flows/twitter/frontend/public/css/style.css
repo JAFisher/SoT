@@ -1010,7 +1010,8 @@ h4 {
     position: relative;
     align-items: center;
     flex-direction: row-reverse;
-    margin: 20px;
+    margin-bottom: 20px;
+    margin-top: 20px;
     position: sticky;
     top: 10px;
 }

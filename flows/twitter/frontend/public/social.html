@@ -13,15 +13,35 @@
         <div class="container">
             <div class="header">
                 <button id="social-back-btn" class="btn btn-outline back-btn"
-                    style="width: auto; padding: 6px 12px; display: inline-flex; align-items: center; gap: 4px;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg> Back</button>
+                    style="width: auto; padding: 6px 12px; display: inline-flex; align-items: center; gap: 4px;"><svg
+                        viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg> Back</button>
                 <div style="margin-left: 16px;">
                     <h2 id="social-user-name" style="margin: 0; font-size: 19px;">Loading...</h2>
                     <div id="social-user-handle" style="color: var(--text-secondary); font-size: 13px;">@...</div>
                 </div>
                 <div style="flex-grow: 1; text-align: right;">
-                    <button id="themeToggleBtn" class="btn btn-outline" onclick="window.app.toggleTheme()" style="padding: 6px; border-radius: 50%; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
-                        <svg id="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px; display: block;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-                        <svg id="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px; display: none;"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                    <button id="themeToggleBtn" class="btn btn-outline" onclick="window.app.toggleTheme()"
+                        style="padding: 6px; margin-left: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
+                        <svg id="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            style="width: 20px; height: 20px; display: block;">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                        <svg id="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            style="width: 20px; height: 20px; display: none;">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
                     </button>
                 </div>
             </div>
@@ -59,14 +79,14 @@
                 document.getElementById('social-user-name').innerText = user.name || user.username;
                 document.getElementById('social-user-handle').innerText = '@' + user.username;
                 document.getElementById('social-back-btn').onclick = () => {
-                   window.location.href = 'profile.html?username=' + username;
+                    window.location.href = 'profile.html?username=' + username;
                 };
 
                 window.switchTab = async (tab) => {
                     currentTab = tab;
                     document.querySelectorAll('.social-tab').forEach(t => t.classList.remove('active'));
                     document.getElementById('tab-' + tab).classList.add('active');
-                    
+
                     // Update URL without reload
                     const newUrl = new URL(window.location.href);
                     newUrl.searchParams.set('tab', tab);
