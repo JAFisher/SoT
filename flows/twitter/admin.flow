@@ -46,6 +46,7 @@ AdminPage --> Feed
                     "<span style=\"font-weight: 600;\">@" + r.reportedUsername + "</span>" +
                   "</div>" +
                   "<div style=\"color: var(--text-primary); font-size: 0.95em;\">" + r.content + "</div>" +
+                  (r.imageUrl ? "<img src=\"" + r.imageUrl + "\" style=\"width: 100%; max-width: 300px; border-radius: 8px; margin-top: 10px; border: 1px solid var(--border-color); display: block;\">" : "") +
                 "</div>" +
                 "<div style=\"font-size: 0.85em; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center;\">" +
                   "<span>Reports: <span style=\"font-weight: 500; color: var(--primary-color);\">" + r.reportCount + "</span></span>" +

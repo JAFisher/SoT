@@ -750,11 +750,11 @@ Database[Database.ts{pool: any}]
 @async @Database.getReports{}: any[]
 @@Database.getReports.code
   const res = await this.pool.query(
-    "SELECT m.id as message_id, m.content, m.sender_username as reported_username, u.avatar_url as reported_avatar, MAX(r.timestamp) as timestamp, COUNT(r.id) as report_count " +
+    "SELECT m.id as message_id, m.content, m.sender_username as reported_username, u.avatar_url as reported_avatar, m.image_url, MAX(r.timestamp) as timestamp, COUNT(r.id) as report_count " +
     "FROM reports r " +
     "JOIN messages m ON r.message_id = m.id " +
     "JOIN users u ON m.sender_username = u.username " +
-    "GROUP BY m.id, m.content, m.sender_username, u.avatar_url " +
+    "GROUP BY m.id, m.content, m.sender_username, u.avatar_url, m.image_url " +
     "HAVING MAX(CASE WHEN r.marked_as_safe THEN 1 ELSE 0 END) = 0 " +
     "ORDER BY timestamp DESC"
   );
@@ -763,6 +763,7 @@ Database[Database.ts{pool: any}]
     content: row.content,
     reportedUsername: row.reported_username,
     reportedAvatar: row.reported_avatar,
+    imageUrl: row.image_url,
     timestamp: Number(row.timestamp),
     reportCount: parseInt(row.report_count)
   }));
