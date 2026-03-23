@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Twitter Clone</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    .admin-container {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-color);
+    }
+
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .admin-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .admin-content {
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .back-link {
+      color: var(--primary-color);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="admin-container">
+    <div class="admin-header">
+      <h1 class="admin-title">Admin Dashboard</h1>
+      <a href="dashboard.html" class="back-link">Back to Dashboard</a>
+    </div>
+    <div class="admin-content">
+      <p>Welcome to the Admin Dashboard. This page is only accessible to users with administrative privileges.</p>
+      <div
+        style="margin-top: 20px; padding: 20px; border: 2px dashed var(--border-color); text-align: center; border-radius: var(--radius-md);">
+        Admin functionality coming soon...
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { TwitterApp } from './compiled.js';
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      try {
+        const admin = new TwitterApp();
+        window.admin = admin.adminPage;
+        await admin.adminPage.init();
+      } catch (e) {
+        console.error("Admin init failed:", e);
+        // window.location.href = "dashboard.html";
+      }
+    });
+  </script>
+</body>
+
+</html>

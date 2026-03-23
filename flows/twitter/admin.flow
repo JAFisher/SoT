@@ -1,0 +1,22 @@
+include->authfe.flow
+
+AdminPage[AdminPage.ts{auth: any}]
+AdminPage --> AuthFE
+
+@AdminPage.constructor{}
+@@AdminPage.constructor.code
+  this.auth = new AuthFE();
+@@AdminPage.constructor.end
+
+@async @AdminPage.init{}: void
+@@AdminPage.init.code
+
+  if (!this.auth.currentUser || !this.auth.currentUser.isAdmin) {
+    window.location.href = "dashboard.html";
+    console.log("Admin not initialized");
+    return;
+  }
+  console.log("Admin initialized");
+@@AdminPage.init.end
+
+

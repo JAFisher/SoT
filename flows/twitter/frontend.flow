@@ -1,6 +1,7 @@
 include->authfe.flow
 include->feeds.flow
 include->messages.flow
+include->admin.flow
 
 cliscripts->start node -e "require('fs').copyFileSync('compiled.js', 'public/compiled.js')" && npx -y http-server public -p 3000
 
@@ -8,12 +9,14 @@ TwitterApp[TwitterApp.ts{auth: any, feed: any, messaging: any, initialized: bool
 TwitterApp --> AuthFE
 TwitterApp --> Feed
 TwitterApp --> Messaging
+TwitterApp --> AdminPage
 
 @TwitterApp.constructor{}
 @@TwitterApp.constructor.code
   this.auth = new AuthFE();
   this.feed = new Feed();
   this.messaging = new Messaging();
+  this.adminPage = new AdminPage();
   this.initialized = false;
   this.renderCount = 0;
   this.tweetsOffset = 0;
