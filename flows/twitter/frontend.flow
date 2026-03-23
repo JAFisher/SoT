@@ -460,6 +460,7 @@ TwitterApp --> AdminPage
         "<button class=\"tweet-btn like-btn\" id=\"like-btn-instance-" + instanceId + "\" onclick=\"window.app.like('" + t.id + "', " + instanceId + ")\"><svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom;'><path d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'></path></svg> <span class='like-count'>" + (t.likedCount || 0) + "</span></button>" +
         "<span class=\"tweet-btn view-count-label\" id=\"view-count-instance-" + instanceId + "\"><svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom; margin-right: 4px;'><line x1='18' y1='20' x2='18' y2='10'></line><line x1='12' y1='20' x2='12' y2='4'></line><line x1='6' y1='20' x2='6' y2='14'></line></svg> <span class='view-count'>" + (t.viewCount || 0) + "</span></span>" +
         "<button class=\"tweet-btn view-replies-btn\" onclick=\"window.app.toggleReplies('" + t.id + "', " + instanceId + ", '" + t.authorUsername + "')\">View Replies</button>" +
+        "<button class=\"tweet-btn report-btn\" onclick=\"window.app.reportTweet('" + t.id + "', " + instanceId + ")\"><svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom; margin-right: 4px;'><path d='M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z'></path><line x1='4' y1='22' x2='4' y2='15'></line></svg> Report</button>" +
       "</div>" +
       "<div id=\"replies-instance-" + instanceId + "\" class=\"replies-container\" style=\"display: none;\"></div>" +
     "</div>";
@@ -494,6 +495,7 @@ TwitterApp --> AdminPage
       "<button class=\"tweet-btn like-btn btn-compact\" id=\"like-btn-instance-" + rInstanceId + "\" onclick=\"window.app.like('" + r.id + "', " + rInstanceId + ")\"><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom;'><path d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'></path></svg> <span class='like-count'>" + (r.likedCount || 0) + "</span></button>" +
       "<span class=\"tweet-btn view-count-label btn-compact\" id=\"view-count-instance-" + rInstanceId + "\"><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom; margin-right: 4px;'><line x1='18' y1='20' x2='18' y2='10'></line><line x1='12' y1='20' x2='12' y2='4'></line><line x1='6' y1='20' x2='6' y2='14'></line></svg> <span class='view-count'>" + (r.viewCount || 0) + "</span></span>" +
       "<button class=\"tweet-btn view-replies-btn btn-compact\" onclick=\"window.app.toggleReplies('" + r.id + "', " + rInstanceId + ", '" + r.sender_username + "')\">View Replies</button>" +
+      "<button class=\"tweet-btn report-btn btn-compact\" title=\"Report\" onclick=\"window.app.reportTweet('" + r.id + "', " + rInstanceId + ")\"><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom;'><path d='M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z'></path><line x1='4' y1='22' x2='4' y2='15'></line></svg></button>" +
     "</div>" +
     "<div id=\"replies-instance-" + rInstanceId + "\" class=\"replies-container\" style=\"display: none;\"></div>" +
   "</div>";
@@ -1057,5 +1059,16 @@ TwitterApp --> AdminPage
              "<div class='user-item-actions'>" + followBtn + "</div>" +
            "</div>";
 @@TwitterApp.renderUserItem.end
+
+@async @TwitterApp.reportTweet{tweetId: string, instanceId: number}: void
+@@TwitterApp.reportTweet.code
+  if (!confirm("Are you sure you want to report this tweet?")) return;
+  try {
+    await this.feed.reportTweet(tweetId);
+    this.showToast("Tweet reported to administrators", "success");
+  } catch (e) {
+    this.showToast("Failed to report tweet: " + e.message, "error");
+  }
+@@TwitterApp.reportTweet.end
 
 Rollup->{AuthFE.ts, Feed.ts, Messaging.ts, TwitterApp.ts}

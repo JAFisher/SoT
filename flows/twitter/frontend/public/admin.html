@@ -55,13 +55,20 @@
       <h1 class="admin-title">Admin Dashboard</h1>
       <a href="dashboard.html" class="back-link">Back to Dashboard</a>
     </div>
-    <div class="admin-content">
-      <p>Welcome to the Admin Dashboard. This page is only accessible to users with administrative privileges.</p>
-      <div
-        style="margin-top: 20px; padding: 20px; border: 2px dashed var(--border-color); text-align: center; border-radius: var(--radius-md);">
-        Admin functionality coming soon...
+      <div class="admin-content">
+        <p>Welcome to the Admin Dashboard. This page is only accessible to users with administrative privileges.</p>
+        
+        <div style="margin-top:24px;">
+          <h2 style="font-size: 1.2rem; margin-bottom: 16px;">Flagged Reports</h2>
+          <div id="reports-container">
+            <div style="padding: 20px; text-align: center; opacity: 0.6;">Loading reports...</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 40px; padding: 20px; border: 2px dashed var(--border-color); text-align: center; border-radius: var(--radius-md);">
+          More admin functionality coming soon...
+        </div>
       </div>
-    </div>
   </div>
 
   <script type="module">
@@ -69,9 +76,10 @@
 
     window.addEventListener('DOMContentLoaded', async () => {
       try {
-        const admin = new TwitterApp();
-        window.admin = admin.adminPage;
-        await admin.adminPage.init();
+        window.app = new TwitterApp();
+        await window.app.init();
+        await window.app.adminPage.init();
+        await window.app.adminPage.renderReports('reports-container');
       } catch (e) {
         console.error("Admin init failed:", e);
         // window.location.href = "dashboard.html";

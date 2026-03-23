@@ -1,16 +1,18 @@
 include->authfe.flow
+include->feeds.flow
 
-AdminPage[AdminPage.ts{auth: any}]
+AdminPage[AdminPage.ts{auth: any, feed: any}]
 AdminPage --> AuthFE
+AdminPage --> Feed
 
 @AdminPage.constructor{}
 @@AdminPage.constructor.code
   this.auth = new AuthFE();
+  this.feed = new Feed();
 @@AdminPage.constructor.end
 
 @async @AdminPage.init{}: void
 @@AdminPage.init.code
-
   if (!this.auth.currentUser || !this.auth.currentUser.isAdmin) {
     window.location.href = "dashboard.html";
     console.log("Admin not initialized");
@@ -18,5 +20,43 @@ AdminPage --> AuthFE
   }
   console.log("Admin initialized");
 @@AdminPage.init.end
+
+@async @AdminPage.renderReports{containerId: string}: void
+@@AdminPage.renderReports.code
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  
+  try {
+    const reports = await this.feed.getReports();
+    if (reports.length === 0) {
+      container.innerHTML = "<div class='empty-reports'>No reports found.</div>";
+      return;
+    }
+    
+    let html = "<div class='reports-list'>";
+    reports.forEach(r => {
+      html += "<div class=\"report-item\" style=\"border-bottom: 1px solid var(--border-color); padding: 15px 0;\">" +
+                "<div style=\"display: flex; justify-content: space-between; margin-bottom: 8px;\">" +
+                  "<span style=\"font-weight: bold; color: var(--text-primary);\">Reported Tweet</span>" +
+                  "<span style=\"font-size: 0.8em; color: var(--text-secondary);\">" + new Date(r.timestamp).toLocaleString() + "</span>" +
+                "</div>" +
+                "<div style=\"margin-bottom: 10px; padding: 10px; background: var(--bg-primary); border-radius: var(--radius-md);\">" +
+                  "<div style=\"display: flex; align-items: center; gap: 8px; margin-bottom: 5px;\">" +
+                    "<img src=\"" + r.reportedAvatar + "\" style=\"width: 24px; height: 24px; border-radius: 50%;\">" +
+                    "<span style=\"font-weight: 600;\">@" + r.reportedUsername + "</span>" +
+                  "</div>" +
+                  "<div style=\"color: var(--text-primary); font-size: 0.95em;\">" + r.content + "</div>" +
+                "</div>" +
+                "<div style=\"font-size: 0.85em; color: var(--text-secondary);\">" +
+                  "Reporter: <span style=\"font-weight: 500; color: var(--primary-color);\">@" + r.reporterUsername + "</span>" +
+                "</div>" +
+              "</div>";
+    });
+    html += "</div>";
+    container.innerHTML = html;
+  } catch (e) {
+    container.innerHTML = "<div class='error'>Failed to load reports: " + e.message + "</div>";
+  }
+@@AdminPage.renderReports.end
 
 

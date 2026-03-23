@@ -42,6 +42,7 @@ Database[Database.ts{pool: any}]
   await this.pool.query("CREATE TABLE IF NOT EXISTS follows (follower_username VARCHAR(255) NOT NULL, following_username VARCHAR(255) NOT NULL, UNIQUE(follower_username, following_username));");
   await this.pool.query("CREATE TABLE IF NOT EXISTS hashtags (tag VARCHAR(255) NOT NULL, message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE, PRIMARY KEY (tag, message_id));");
   await this.pool.query("CREATE TABLE IF NOT EXISTS notifications (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), sender_username VARCHAR(255) NOT NULL, receiver_username VARCHAR(255) NOT NULL, action VARCHAR(255) NOT NULL, message_id UUID, timestamp BIGINT NOT NULL, is_read BOOLEAN DEFAULT FALSE, UNIQUE(sender_username, receiver_username, action, message_id));");
+  await this.pool.query("CREATE TABLE IF NOT EXISTS reports (id SERIAL PRIMARY KEY, reporter_username VARCHAR(255) REFERENCES users(username), message_id UUID REFERENCES messages(id), timestamp BIGINT, UNIQUE(reporter_username, message_id));");
 
   dotenv.config();
   const adminUser = process.env.ADMIN_USERNAME;
@@ -732,6 +733,34 @@ Database[Database.ts{pool: any}]
     client.release();
   }
 @@Database.getTrendingLikes.end
+
+@async @Database.reportMessage{reporterUsername: string, messageId: string}: void
+@@Database.reportMessage.code
+  await this.pool.query(
+    "INSERT INTO reports (reporter_username, message_id, timestamp) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
+    [reporterUsername, messageId, Date.now()]
+  );
+@@Database.reportMessage.end
+
+@async @Database.getReports{}: any[]
+@@Database.getReports.code
+  const res = await this.pool.query(
+    "SELECT r.*, m.content, m.sender_username as reported_username, u.avatar_url as reported_avatar " +
+    "FROM reports r " +
+    "JOIN messages m ON r.message_id = m.id " +
+    "JOIN users u ON m.sender_username = u.username " +
+    "ORDER BY r.timestamp DESC"
+  );
+  return res.rows.map(row => ({
+    id: row.id,
+    reporterUsername: row.reporter_username,
+    messageId: row.message_id,
+    content: row.content,
+    reportedUsername: row.reported_username,
+    reportedAvatar: row.reported_avatar,
+    timestamp: Number(row.timestamp)
+  }));
+@@Database.getReports.end
 
 @async @Database.query{text: string, params: any}: any
 @@Database.query.code

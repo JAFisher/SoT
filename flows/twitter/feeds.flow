@@ -232,3 +232,28 @@ Feed --> AuthFE
   });
   return await response.json();
 @@Feed.markNotificationsRead.end
+
+@async @Feed.reportTweet{messageId: string}: any
+@@Feed.reportTweet.code
+  const response = await fetch("http://localhost:8080/api/report", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + window.app.auth.token
+    },
+    body: JSON.stringify({ messageId })
+  });
+  if (!response.ok) throw new Error("Failed to report tweet");
+  return await response.json();
+@@Feed.reportTweet.end
+
+@async @Feed.getReports{}: any
+@@Feed.getReports.code
+  const response = await fetch("http://localhost:8080/api/admin/reports", {
+    headers: {
+      "Authorization": "Bearer " + window.app.auth.token
+    }
+  });
+  if (!response.ok) throw new Error("Failed to fetch reports");
+  return await response.json();
+@@Feed.getReports.end
