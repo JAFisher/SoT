@@ -48,8 +48,11 @@ AdminPage --> Feed
                   "<div style=\"color: var(--text-primary); font-size: 0.95em;\">" + r.content + "</div>" +
                 "</div>" +
                 "<div style=\"font-size: 0.85em; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center;\">" +
-                  "<span>Reporter: <span style=\"font-weight: 500; color: var(--primary-color);\">@" + r.reporterUsername + "</span></span>" +
-                  "<button class=\"tweet-btn delete-btn\" style=\"background: #ff4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;\" onclick=\"window.app.adminPage.deleteTweet('" + r.messageId + "', 'reports-container')\">Delete & Cascade</button>" +
+                  "<span>Reports: <span style=\"font-weight: 500; color: var(--primary-color);\">" + r.reportCount + "</span></span>" +
+                  "<div>" +
+                    "<button class=\"tweet-btn safe-btn\" style=\"background: var(--accent-color, #1da1f2); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-bottom:12px; font-weight: bold; margin-right: 8px;\" onclick=\"window.app.adminPage.markReportSafe('" + r.messageId + "', 'reports-container')\">Mark as Safe</button>" +
+                    "<button class=\"tweet-btn delete-btn\" style=\"background: #ff4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-bottom:12px; font-weight: bold;\" onclick=\"window.app.adminPage.deleteTweet('" + r.messageId + "', 'reports-container')\">Delete & Cascade</button>" +
+                  "</div>" +
                 "</div>" +
               "</div>";
     });
@@ -59,6 +62,16 @@ AdminPage --> Feed
     container.innerHTML = "<div class='error'>Failed to load reports: " + e.message + "</div>";
   }
 @@AdminPage.renderReports.end
+
+@async @AdminPage.markReportSafe{messageId: string, containerId: string}: void
+@@AdminPage.markReportSafe.code
+  try {
+    await this.feed.markReportSafe(messageId);
+    await this.renderReports(containerId);
+  } catch (e) {
+    alert("Failed to mark report as safe: " + e.message);
+  }
+@@AdminPage.markReportSafe.end
 
 @async @AdminPage.deleteTweet{tweetId: string, containerId: string}: void
 @@AdminPage.deleteTweet.code

@@ -42,7 +42,10 @@ Database[Database.ts{pool: any}]
   await this.pool.query("CREATE TABLE IF NOT EXISTS follows (follower_username VARCHAR(255) NOT NULL, following_username VARCHAR(255) NOT NULL, UNIQUE(follower_username, following_username));");
   await this.pool.query("CREATE TABLE IF NOT EXISTS hashtags (tag VARCHAR(255) NOT NULL, message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE, PRIMARY KEY (tag, message_id));");
   await this.pool.query("CREATE TABLE IF NOT EXISTS notifications (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), sender_username VARCHAR(255) NOT NULL, receiver_username VARCHAR(255) NOT NULL, action VARCHAR(255) NOT NULL, message_id UUID, timestamp BIGINT NOT NULL, is_read BOOLEAN DEFAULT FALSE, UNIQUE(sender_username, receiver_username, action, message_id));");
-  await this.pool.query("CREATE TABLE IF NOT EXISTS reports (id SERIAL PRIMARY KEY, reporter_username VARCHAR(255) REFERENCES users(username), message_id UUID REFERENCES messages(id), timestamp BIGINT, UNIQUE(reporter_username, message_id));");
+  await this.pool.query("CREATE TABLE IF NOT EXISTS reports (id SERIAL PRIMARY KEY, reporter_username VARCHAR(255) REFERENCES users(username), message_id UUID REFERENCES messages(id), timestamp BIGINT, marked_as_safe BOOLEAN DEFAULT FALSE, UNIQUE(reporter_username, message_id));");
+  try {
+    await this.pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS marked_as_safe BOOLEAN DEFAULT FALSE;");
+  } catch (e) {}
 
   dotenv.config();
   const adminUser = process.env.ADMIN_USERNAME;
@@ -745,22 +748,28 @@ Database[Database.ts{pool: any}]
 @async @Database.getReports{}: any[]
 @@Database.getReports.code
   const res = await this.pool.query(
-    "SELECT r.*, m.content, m.sender_username as reported_username, u.avatar_url as reported_avatar " +
+    "SELECT m.id as message_id, m.content, m.sender_username as reported_username, u.avatar_url as reported_avatar, MAX(r.timestamp) as timestamp, COUNT(r.id) as report_count " +
     "FROM reports r " +
     "JOIN messages m ON r.message_id = m.id " +
     "JOIN users u ON m.sender_username = u.username " +
-    "ORDER BY r.timestamp DESC"
+    "GROUP BY m.id, m.content, m.sender_username, u.avatar_url " +
+    "HAVING MAX(CASE WHEN r.marked_as_safe THEN 1 ELSE 0 END) = 0 " +
+    "ORDER BY timestamp DESC"
   );
   return res.rows.map(row => ({
-    id: row.id,
-    reporterUsername: row.reporter_username,
     messageId: row.message_id,
     content: row.content,
     reportedUsername: row.reported_username,
     reportedAvatar: row.reported_avatar,
-    timestamp: Number(row.timestamp)
+    timestamp: Number(row.timestamp),
+    reportCount: parseInt(row.report_count)
   }));
 @@Database.getReports.end
+
+@async @Database.markReportSafe{messageId: string}: void
+@@Database.markReportSafe.code
+  await this.pool.query("UPDATE reports SET marked_as_safe = TRUE WHERE message_id = $1", [messageId]);
+@@Database.markReportSafe.end
 
 @async @Database.deleteTweetCascade{tweetId: string}: string[]
 @@Database.deleteTweetCascade.code

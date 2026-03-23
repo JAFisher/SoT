@@ -629,6 +629,35 @@ Server --> Auth
       return;
     }
 
+   
+    if (req.method === 'POST' && req.url.startsWith('/api/admin/reports/') && req.url.endsWith('/safe')) {
+      const user = getAuthUser(req);
+      if (!user || !user.isAdmin) {
+        res.writeHead(403);
+        res.end(JSON.stringify({ error: "Forbidden: Admin access required" }));
+        return;
+      }
+      
+      const parts = req.url.split('/');
+      const messageId = parts[parts.length - 2];
+      
+      if (!messageId) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: "Missing messageId" }));
+        return;
+      }
+      
+      try {
+        await this.auth.db.markReportSafe(messageId);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+      return;
+    }
+
     // Default fallback
     res.writeHead(404);
     res.end();
