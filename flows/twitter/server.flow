@@ -603,26 +603,15 @@ Server --> Auth
       }
       
       try {
-        const imageUrls = await this.auth.db.deleteTweetCascade(tweetId);
-        
-        // Cleanup images from filesystem
-        for (const url of imageUrls) {
-          try {
-            const fileName = url.split('/').pop();
-            const imagesDir = path.join(process.cwd(), 'public', 'images');
-            const filePath = path.join(imagesDir, fileName);
-            if (fs.existsSync(filePath)) {
-              fs.unlinkSync(filePath);
-              console.log("[ADMIN] Deleted image file:", filePath);
-            }
-          } catch (err) {
-            console.error("[ADMIN] Failed to delete image file:", url, err);
-          }
-        }
-        
-        res.writeHead(200);
-        res.end(JSON.stringify({ success: true }));
+        const result = await this.auth.db.deleteTweetCascade(tweetId);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ 
+          success: true, 
+          deletedCount: result.deletedCount, 
+          imageUrls: result.imageUrls 
+        }));
       } catch (e) {
+        console.error("[ADMIN] Delete cascade failed:", e);
         res.writeHead(500);
         res.end(JSON.stringify({ error: e.message }));
       }

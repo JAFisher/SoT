@@ -10,6 +10,8 @@ docker->end
 extern->pg from "pg"
 extern->dotenv from "dotenv"
 extern->bcrypt from "bcrypt"
+extern->fs from "fs"
+extern->path from "path"
 
 
 Database[Database.ts{pool: any}]
@@ -778,15 +780,15 @@ Database[Database.ts{pool: any}]
     await client.query('BEGIN');
 
     // 1. Find entire tree
-    const findTreeQuery = `
-      WITH RECURSIVE message_tree AS (
-        SELECT id, image_url FROM messages WHERE id = $1
-        UNION ALL
-        SELECT m.id, m.image_url FROM messages m
-        JOIN message_tree mt ON m.replied_to_id = mt.id OR m.retweeted_id = mt.id
-      )
-      SELECT id, image_url FROM message_tree;
-    `;
+    const findTreeQuery = 
+      "WITH RECURSIVE message_tree AS (" +
+      "  SELECT id, image_url FROM messages WHERE id = $1 " +
+      "  UNION ALL " +
+      "  SELECT m.id, m.image_url FROM messages m " +
+      "  JOIN message_tree mt ON m.replied_to_id = mt.id OR m.retweeted_id = mt.id " +
+      ") " +
+      "SELECT id, image_url FROM message_tree;";
+    
     const treeRes = await client.query(findTreeQuery, [tweetId]);
     const ids = treeRes.rows.map(r => r.id);
     const imageUrls = treeRes.rows.map(r => r.image_url).filter(Boolean);
@@ -830,7 +832,7 @@ Database[Database.ts{pool: any}]
       imageUrls: deletedImages
     };
   } catch (e) {
-    console.error(e);
+    console.log(e);
     await client.query('ROLLBACK');
     throw e;
   } finally {
