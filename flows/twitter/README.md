@@ -46,6 +46,7 @@ The application is built using modular flow files that are compiled into TypeScr
 - **[authfe.flow](authfe.flow)**: Client-side authentication logic for the frontend.
 - **[server.flow](server.flow)**: The main HTTP server entry point, defining all API routes and integrating the `Auth` and `Database` flows.
 - **[frontend.flow](frontend.flow)**: The primary frontend application logic, including the dashboard, profile, and social views.
+- **[admin.flow](admin.flow)**: Specific logic for the administrative dashboard, including message moderation, "Mark as Safe" archiving, and cascading deletions.
 - **[feeds.flow](feeds.flow)**: Logic for rendering and managing tweet feeds.
 - **[messages.flow](messages.flow)**: Logic for the messaging system.
 
@@ -65,3 +66,15 @@ The application is built using modular flow files that are compiled into TypeScr
    cd src/twitter/frontend
    npm run start
    ```
+
+## Admin & Moderation
+
+The application includes a built-in moderation system.
+
+1. **Accessing the Dashboard**: 
+   Log in with the credentials defined in your `.env` file and navigate to `http://localhost:3000/admin.html`.
+
+2. **Moderation Features**:
+   - **Reports List**: View and manage all reported tweets, grouped by message ID.
+   - **Mark as Safe**: Archive a reported tweet if it's deemed appropriate. This hides the tweet from the dashboard for all associated reports.
+   - **Delete & Cascade**: Permanently remove a tweet, all its replies, retweets, and associated images from the server.
