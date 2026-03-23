@@ -22,7 +22,7 @@ Server --> Auth
   const server = http.createServer(async (req, res) => {
     // CORS headers just in case we hit it cross-origin, though we assume same-domain right now
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, POST, GET');
+    res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, POST, GET, DELETE');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
     console.log("[BACKEND] " + req.method + " " + req.url);
@@ -584,6 +584,47 @@ Server --> Auth
         res.end(JSON.stringify(reports));
       } catch (e) {
         res.writeHead(500); res.end(JSON.stringify({ error: e.message }));
+      }
+      return;
+    }
+
+    if (req.method === 'DELETE' && req.url.startsWith('/api/admin/tweets/')) {
+      const user = getAuthUser(req);
+      if (!user || !user.isAdmin) {
+        res.writeHead(403);
+        res.end(JSON.stringify({ error: "Forbidden: Admin access required" }));
+        return;
+      }
+      
+      const tweetId = req.url.split('/').pop();
+      if (!tweetId) {
+        res.writeHead(400); res.end(JSON.stringify({ error: "Missing tweetId" }));
+        return;
+      }
+      
+      try {
+        const imageUrls = await this.auth.db.deleteTweetCascade(tweetId);
+        
+        // Cleanup images from filesystem
+        for (const url of imageUrls) {
+          try {
+            const fileName = url.split('/').pop();
+            const imagesDir = path.join(process.cwd(), 'public', 'images');
+            const filePath = path.join(imagesDir, fileName);
+            if (fs.existsSync(filePath)) {
+              fs.unlinkSync(filePath);
+              console.log("[ADMIN] Deleted image file:", filePath);
+            }
+          } catch (err) {
+            console.error("[ADMIN] Failed to delete image file:", url, err);
+          }
+        }
+        
+        res.writeHead(200);
+        res.end(JSON.stringify({ success: true }));
+      } catch (e) {
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: e.message }));
       }
       return;
     }

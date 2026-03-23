@@ -762,6 +762,50 @@ Database[Database.ts{pool: any}]
   }));
 @@Database.getReports.end
 
+@async @Database.deleteTweetCascade{tweetId: string}: string[]
+@@Database.deleteTweetCascade.code
+  const client = await this.pool.connect();
+  try {
+    await client.query('BEGIN');
+    
+    // 1. Find the entire tree of messages (self, replies, retweets of self, retweets of replies, etc.)
+    const findTreeQuery = `
+      WITH RECURSIVE message_tree AS (
+          SELECT id, image_url FROM messages WHERE id = $1
+          UNION ALL
+          SELECT m.id, m.image_url FROM messages m
+          JOIN message_tree mt ON m.replied_to_id = mt.id OR m.retweeted_id = mt.id
+      )
+      SELECT id, image_url FROM message_tree;
+    `;
+    const treeRes = await client.query(findTreeQuery, [tweetId]);
+    const ids = treeRes.rows.map(row => row.id);
+    const imageUrls = treeRes.rows.map(row => row.image_url).filter(url => !!url);
+    
+    if (ids.length > 0) {
+      // 2. Delete from all tables that reference messages
+      await client.query('DELETE FROM reports WHERE message_id = ANY($1)', [ids]);
+      await client.query('DELETE FROM hashtags WHERE message_id = ANY($1)', [ids]);
+      await client.query('DELETE FROM likes WHERE message_id = ANY($1)', [ids]);
+      await client.query('DELETE FROM notifications WHERE message_id = ANY($1)', [ids]);
+      
+      // Also need to handle replies/retweets that points to these but aren't deleted? 
+      // Actually the recursive CTE should find them ALL. 
+      // If there are any we missed (unlikely with recursive CTE), we might hit FK constraint.
+      
+      await client.query('DELETE FROM messages WHERE id = ANY($1)', [ids]);
+    }
+    
+    await client.query('COMMIT');
+    return imageUrls;
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+@@Database.deleteTweetCascade.end
+
 @async @Database.query{text: string, params: any}: any
 @@Database.query.code
   return await this.pool.query(text, params);

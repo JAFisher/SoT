@@ -257,3 +257,15 @@ Feed --> AuthFE
   if (!response.ok) throw new Error("Failed to fetch reports");
   return await response.json();
 @@Feed.getReports.end
+
+@async @Feed.deleteTweet{tweetId: string}: any
+@@Feed.deleteTweet.code
+  const response = await fetch("http://localhost:8080/api/admin/tweets/" + tweetId, {
+    method: "DELETE",
+    headers: {
+      "Authorization": "Bearer " + window.app.auth.token
+    }
+  });
+  if (!response.ok) throw new Error("Failed to delete tweet");
+  return await response.json();
+@@Feed.deleteTweet.end
