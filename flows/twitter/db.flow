@@ -771,43 +771,66 @@ Database[Database.ts{pool: any}]
   await this.pool.query("UPDATE reports SET marked_as_safe = TRUE WHERE message_id = $1", [messageId]);
 @@Database.markReportSafe.end
 
-@async @Database.deleteTweetCascade{tweetId: string}: string[]
+@async @Database.deleteTweetCascade{tweetId: string}: {deletedCount: number, imageUrls: string[]}
 @@Database.deleteTweetCascade.code
   const client = await this.pool.connect();
   try {
     await client.query('BEGIN');
-    
-    // 1. Find the entire tree of messages (self, replies, retweets of self, retweets of replies, etc.)
+
+    // 1. Find entire tree
     const findTreeQuery = `
       WITH RECURSIVE message_tree AS (
-          SELECT id, image_url FROM messages WHERE id = $1
-          UNION ALL
-          SELECT m.id, m.image_url FROM messages m
-          JOIN message_tree mt ON m.replied_to_id = mt.id OR m.retweeted_id = mt.id
+        SELECT id, image_url FROM messages WHERE id = $1
+        UNION ALL
+        SELECT m.id, m.image_url FROM messages m
+        JOIN message_tree mt ON m.replied_to_id = mt.id OR m.retweeted_id = mt.id
       )
       SELECT id, image_url FROM message_tree;
     `;
     const treeRes = await client.query(findTreeQuery, [tweetId]);
-    const ids = treeRes.rows.map(row => row.id);
-    const imageUrls = treeRes.rows.map(row => row.image_url).filter(url => !!url);
-    
-    if (ids.length > 0) {
-      // 2. Delete from all tables that reference messages
-      await client.query('DELETE FROM reports WHERE message_id = ANY($1)', [ids]);
-      await client.query('DELETE FROM hashtags WHERE message_id = ANY($1)', [ids]);
-      await client.query('DELETE FROM likes WHERE message_id = ANY($1)', [ids]);
-      await client.query('DELETE FROM notifications WHERE message_id = ANY($1)', [ids]);
-      
-      // Also need to handle replies/retweets that points to these but aren't deleted? 
-      // Actually the recursive CTE should find them ALL. 
-      // If there are any we missed (unlikely with recursive CTE), we might hit FK constraint.
-      
-      await client.query('DELETE FROM messages WHERE id = ANY($1)', [ids]);
+    const ids = treeRes.rows.map(r => r.id);
+    const imageUrls = treeRes.rows.map(r => r.image_url).filter(Boolean);
+
+    if (ids.length === 0) {
+      throw new Error("Tweet not found");
     }
-    
+
+    // 2. Delete dependent rows
+    await client.query('DELETE FROM views         WHERE message_id = ANY($1)', [ids]);
+    await client.query('DELETE FROM reports       WHERE message_id = ANY($1)', [ids]);
+    await client.query('DELETE FROM hashtags      WHERE message_id = ANY($1)', [ids]);
+    await client.query('DELETE FROM likes         WHERE message_id = ANY($1)', [ids]);
+    await client.query('DELETE FROM notifications WHERE message_id = ANY($1)', [ids]);
+
+    // 3. Delete messages themselves
+    await client.query('DELETE FROM messages WHERE id = ANY($1)', [ids]);
+
+    // 4. Delete physical images (before commit so we can rollback on error)
+    const deletedImages = [];
+    for (const url of imageUrls) {
+      try {
+        const filename = url.split('/images/').pop();
+        if (filename) {
+          const filePath = path.join(process.cwd(), 'public', 'images', filename);
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            deletedImages.push(filename);
+          }
+        }
+      } catch (fsErr) {
+        console.error(`Failed to delete image ${url}:`, fsErr);
+        // Decide: continue or throw? Here we continue but log.
+      }
+    }
+
     await client.query('COMMIT');
-    return imageUrls;
+
+    return {
+      deletedCount: ids.length,
+      imageUrls: deletedImages
+    };
   } catch (e) {
+    console.error(e);
     await client.query('ROLLBACK');
     throw e;
   } finally {
