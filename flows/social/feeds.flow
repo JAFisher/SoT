@@ -1,6 +1,6 @@
 include->authfe.flow
 
-type->Tweet {id: string, authorUsername: string, content: string, timestamp: number}
+type->Message {id: string, authorUsername: string, content: string, timestamp: number}
 
 Feed[Feed.ts{tweets: Array}]
 Feed --> AuthFE
@@ -10,18 +10,18 @@ Feed --> AuthFE
   this.tweets = [];
 @@Feed.constructor.end
 
-@async @Feed.postTweet{senderUsername: string, content: string, repliedToId: string, retweetedId: string, imageUrl: string}: any
-@@Feed.postTweet.code
-  const response = await fetch("http://localhost:8080/api/tweets", {
+@async @Feed.postMessage{senderUsername: string, content: string, repliedToId: string, repostedId: string, imageUrl: string}: any
+@@Feed.postMessage.code
+  const response = await fetch("http://localhost:8080/api/messages", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "Authorization": "Bearer " + window.app.auth.token
     },
-    body: JSON.stringify({ senderUsername, content, repliedToId, retweetedId, imageUrl })
+    body: JSON.stringify({ senderUsername, content, repliedToId, repostedId, imageUrl })
   });
   return await response.json();
-@@Feed.postTweet.end
+@@Feed.postMessage.end
 
 @async @Feed.likeMessage{messageId: string}: any
 @@Feed.likeMessage.code
@@ -51,9 +51,9 @@ Feed --> AuthFE
   return await response.json();
 @@Feed.unlikeMessage.end
 
-@async @Feed.retweetMessage{originalId: string}: any
-@@Feed.retweetMessage.code
-  const response = await fetch('http://localhost:8080/api/retweet', {
+@async @Feed.repostMessage{originalId: string}: any
+@@Feed.repostMessage.code
+  const response = await fetch('http://localhost:8080/api/repost', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -64,7 +64,7 @@ Feed --> AuthFE
   
   const data = await response.json();
   return { ok: response.ok, status: response.status, data };
-@@Feed.retweetMessage.end
+@@Feed.repostMessage.end
 
 @async @Feed.viewMessage{messageId: string}: any
 @@Feed.viewMessage.code
@@ -85,7 +85,7 @@ Feed --> AuthFE
 @@Feed.getTimeline.code
   const l = limit || 10;
   const o = offset || 0;
-  const res = await fetch("http://localhost:8080/api/tweets?limit=" + l + "&offset=" + o, {
+  const res = await fetch("http://localhost:8080/api/messages?limit=" + l + "&offset=" + o, {
     headers: {
       "Authorization": "Bearer " + (window.app.auth ? window.app.auth.token : "")
     }
@@ -93,33 +93,33 @@ Feed --> AuthFE
   return await res.json();
 @@Feed.getTimeline.end
 
-@async @Feed.getTweet{id: string}: any
-@@Feed.getTweet.code
-  const res = await fetch("http://localhost:8080/api/tweets?id=" + id, {
+@async @Feed.getMessage{id: string}: any
+@@Feed.getMessage.code
+  const res = await fetch("http://localhost:8080/api/messages?id=" + id, {
     headers: {
       "Authorization": "Bearer " + (window.app.auth ? window.app.auth.token : "")
     }
   });
-  if (!res.ok) throw new Error("Tweet not found");
+  if (!res.ok) throw new Error("Message not found");
   return await res.json();
-@@Feed.getTweet.end
+@@Feed.getMessage.end
  
  @async @Feed.getHashtagFeed{tag: string, limit: number, offset: number}: any
  @@Feed.getHashtagFeed.code
    const l = limit || 10;
    const o = offset || 0;
-   const res = await fetch("http://localhost:8080/api/tweets/hashtag?tag=" + encodeURIComponent(tag) + "&limit=" + l + "&offset=" + o);
+   const res = await fetch("http://localhost:8080/api/messages/hashtag?tag=" + encodeURIComponent(tag) + "&limit=" + l + "&offset=" + o);
    return await res.json();
  @@Feed.getHashtagFeed.end
 
-@async @Feed.getUserTweets{username: string, limit: number, offset: number}: any
-@@Feed.getUserTweets.code
+@async @Feed.getUserMessages{username: string, limit: number, offset: number}: any
+@@Feed.getUserMessages.code
   const l = limit || 10;
   const o = offset || 0;
-  const response = await fetch('http://localhost:8080/api/tweets?username=' + username + '&limit=' + l + '&offset=' + o);
+  const response = await fetch('http://localhost:8080/api/messages?username=' + username + '&limit=' + l + '&offset=' + o);
   if (!response.ok) throw new Error("Failed to fetch user tweets");
   return await response.json();
-@@Feed.getUserTweets.end
+@@Feed.getUserMessages.end
 @async @Feed.getReplies{messageId: string}: any
 @@Feed.getReplies.code
   const response = await fetch('http://localhost:8080/api/replies?id=' + messageId);
@@ -244,8 +244,8 @@ Feed --> AuthFE
   return await response.json();
 @@Feed.markNotificationsRead.end
 
-@async @Feed.reportTweet{messageId: string}: any
-@@Feed.reportTweet.code
+@async @Feed.reportMessage{messageId: string}: any
+@@Feed.reportMessage.code
   const response = await fetch("http://localhost:8080/api/report", {
     method: "POST",
     headers: {
@@ -256,7 +256,7 @@ Feed --> AuthFE
   });
   if (!response.ok) throw new Error("Failed to report tweet");
   return await response.json();
-@@Feed.reportTweet.end
+@@Feed.reportMessage.end
 
 @async @Feed.getReports{}: any
 @@Feed.getReports.code
@@ -269,9 +269,9 @@ Feed --> AuthFE
   return await response.json();
 @@Feed.getReports.end
 
-@async @Feed.deleteTweet{tweetId: string}: any
-@@Feed.deleteTweet.code
-  const response = await fetch("http://localhost:8080/api/admin/tweets/" + tweetId, {
+@async @Feed.deleteMessage{messageId: string}: any
+@@Feed.deleteMessage.code
+  const response = await fetch("http://localhost:8080/api/admin/messages/" + messageId, {
     method: "DELETE",
     headers: {
       "Authorization": "Bearer " + window.app.auth.token
@@ -279,7 +279,7 @@ Feed --> AuthFE
   });
   if (!response.ok) throw new Error("Failed to delete tweet");
   return await response.json();
-@@Feed.deleteTweet.end
+@@Feed.deleteMessage.end
 
 @async @Feed.markReportSafe{messageId: string}: any
 @@Feed.markReportSafe.code

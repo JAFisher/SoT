@@ -62,9 +62,9 @@
     </div>
 
     <script type="module">
-        import { TwitterApp } from './compiled.js';
+        import { MessageApp } from './compiled.js';
 
-        window.app = new TwitterApp();
+        window.app = new MessageApp();
         await window.app.init();
 
         const urlParams = new URLSearchParams(window.location.search);

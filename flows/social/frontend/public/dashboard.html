@@ -50,7 +50,7 @@
                 <div class="post-box">
                     <div id="replyLabel"
                         style="display: none; font-size: 13px; color: var(--text-muted); margin-bottom: 8px;"></div>
-                    <textarea id="tweetContent" placeholder="What is happening?!" maxlength="300"></textarea>
+                    <textarea id="messageContent" placeholder="What is happening?!" maxlength="300"></textarea>
                     <div id="imagePreview" style="display: none; margin-bottom: 10px; position: relative;">
                         <img id="previewImg" src="" alt="Image Preview"
                             style="max-width: 100%; border-radius: var(--radius-md);">
@@ -126,9 +126,9 @@
     </div>
 
     <script type="module">
-        import { TwitterApp } from './compiled.js';
+        import { MessageApp } from './compiled.js';
 
-        window.app = new TwitterApp();
+        window.app = new MessageApp();
         await window.app.init();
 
         if (!window.app.auth.currentUser) {
@@ -304,7 +304,7 @@
         });
 
         // --- Post Button & Character Limit Logic ---
-        const box = document.getElementById('tweetContent');
+        const box = document.getElementById('messageContent');
         const charCountElem = document.getElementById('charCount');
 
         box.addEventListener('input', () => {
@@ -333,7 +333,7 @@
                     }
                 }
 
-                await window.app.postNewTweet(window.app.auth.currentUser.username, content, repliedToId, '', imageUrl);
+                await window.app.postNewMessage(window.app.auth.currentUser.username, content, repliedToId, '', imageUrl);
                 await window.app.renderTimeline('timeline');
 
                 // Reset

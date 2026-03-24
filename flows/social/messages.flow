@@ -10,7 +10,7 @@ Messaging --> AuthFE
   this.messages = [];
 @@Messaging.constructor.end
 
-@async @Messaging.sendMessage{senderUsername: string, receiverUsername: string, content: string, repliedToId: string, retweetedId: string}: Message
+@async @Messaging.sendMessage{senderUsername: string, receiverUsername: string, content: string, repliedToId: string, repostedId: string}: Message
 @@Messaging.sendMessage.code
   const token = localStorage.getItem('token');
   const response = await fetch('http://localhost:8080/api/messages', {
@@ -19,7 +19,7 @@ Messaging --> AuthFE
       'Content-Type': 'application/json',
       'Authorization': 'Bearer ' + token
     },
-    body: JSON.stringify({ receiverUsername, content, repliedToId, retweetedId })
+    body: JSON.stringify({ receiverUsername, content, repliedToId, repostedId })
   });
   if (!response.ok) throw new Error("Failed to send message");
   return await response.json();

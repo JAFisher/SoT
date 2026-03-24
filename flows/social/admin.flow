@@ -37,7 +37,7 @@ AdminPage --> Feed
     reports.forEach(r => {
       html += "<div class=\"report-item\" style=\"border-bottom: 1px solid var(--border-color); padding: 15px 0;\">" +
                 "<div style=\"display: flex; justify-content: space-between; margin-bottom: 8px;\">" +
-                  "<span style=\"font-weight: bold; color: var(--text-primary);\">Reported Tweet</span>" +
+                  "<span style=\"font-weight: bold; color: var(--text-primary);\">Reported Message</span>" +
                   "<span style=\"font-size: 0.8em; color: var(--text-secondary);\">" + new Date(r.timestamp).toLocaleString() + "</span>" +
                 "</div>" +
                 "<div style=\"margin-bottom: 10px; padding: 10px; background: var(--bg-primary); border-radius: var(--radius-md);\">" +
@@ -51,8 +51,8 @@ AdminPage --> Feed
                 "<div style=\"font-size: 0.85em; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center;\">" +
                   "<span>Reports: <span style=\"font-weight: 500; color: var(--primary-color);\">" + r.reportCount + "</span></span>" +
                   "<div>" +
-                    "<button class=\"tweet-btn safe-btn\" style=\"background: var(--accent-color, #1da1f2); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-bottom:12px; font-weight: bold; margin-right: 8px;\" onclick=\"window.app.adminPage.markReportSafe('" + r.messageId + "', 'reports-container')\">Mark as Safe</button>" +
-                    "<button class=\"tweet-btn delete-btn\" style=\"background: #ff4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-bottom:12px; font-weight: bold;\" onclick=\"window.app.adminPage.deleteTweet('" + r.messageId + "', 'reports-container')\">Delete & Cascade</button>" +
+                    "<button class=\"message-btn safe-btn\" style=\"background: var(--accent-color, #1da1f2); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-bottom:12px; font-weight: bold; margin-right: 8px;\" onclick=\"window.app.adminPage.markReportSafe('" + r.messageId + "', 'reports-container')\">Mark as Safe</button>" +
+                    "<button class=\"message-btn delete-btn\" style=\"background: #ff4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; margin-bottom:12px; font-weight: bold;\" onclick=\"window.app.adminPage.deleteMessage('" + r.messageId + "', 'reports-container')\">Delete & Cascade</button>" +
                   "</div>" +
                 "</div>" +
               "</div>";
@@ -74,16 +74,16 @@ AdminPage --> Feed
   }
 @@AdminPage.markReportSafe.end
 
-@async @AdminPage.deleteTweet{tweetId: string, containerId: string}: void
-@@AdminPage.deleteTweet.code
-  if (!confirm("Are you sure you want to delete this tweet and ALL its replies/reposts? This action cannot be undone and will also remove associated images.")) return;
+@async @AdminPage.deleteMessage{messageId: string, containerId: string}: void
+@@AdminPage.deleteMessage.code
+  if (!confirm("Are you sure you want to delete this message and ALL its replies/reposts? This action cannot be undone and will also remove associated images.")) return;
   
   try {
-    await this.feed.deleteTweet(tweetId);
+    await this.feed.deleteMessage(messageId);
     await this.renderReports(containerId);
   } catch (e) {
-    alert("Failed to delete tweet: " + e.message);
+    alert("Failed to delete message: " + e.message);
   }
-@@AdminPage.deleteTweet.end
+@@AdminPage.deleteMessage.end
 
 

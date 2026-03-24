@@ -96,7 +96,7 @@ Server --> Auth
       return;
     }
 
-    if (req.method === 'GET' && req.url.startsWith('/api/tweets/hashtag')) {
+    if (req.method === 'GET' && req.url.startsWith('/api/messages/hashtag')) {
       const url = new URL(req.url, "http://" + req.headers.host);
       const tag = url.searchParams.get('tag');
       const limit = parseInt(url.searchParams.get('limit') || '25');
@@ -106,9 +106,9 @@ Server --> Auth
         return;
       }
       try {
-        const tweets = await this.auth.db.getMessagesByHashtag(tag, limit, offset);
+        const messages = await this.auth.db.getMessagesByHashtag(tag, limit, offset);
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(tweets));
+        res.end(JSON.stringify(messages));
       } catch (e) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: e.message }));
@@ -116,32 +116,32 @@ Server --> Auth
       return;
     }
 
-    if (req.method === 'GET' && req.url.startsWith('/api/tweets')) {
+    if (req.method === 'GET' && req.url.startsWith('/api/messages')) {
       const url = new URL(req.url, "http://" + req.headers.host);
       const limit = parseInt(url.searchParams.get('limit') || '25');
       const offset = parseInt(url.searchParams.get('offset') || '0');
       const username = url.searchParams.get('username');
-      const tweetId = url.searchParams.get('id');
+      const messageId = url.searchParams.get('id');
       const authUser = getAuthUser(req);
 
       try {
-        let tweets;
-        if (tweetId) {
-          tweets = await this.auth.db.getTweet(tweetId);
-          if (!tweets) {
+        let messages;
+        if (messageId) {
+          messages = await this.auth.db.getMessage(messageId);
+          if (!messages) {
             res.writeHead(404);
-            res.end(JSON.stringify({ error: "Tweet not found" }));
+            res.end(JSON.stringify({ error: "Message not found" }));
             return;
           }
         } else if (username) {
-          tweets = await this.auth.db.getUserTweets(username, limit, offset);
+          messages = await this.auth.db.getUserMessages(username, limit, offset);
         } else if (authUser) {
-          tweets = await this.auth.db.getPersonalizedTweets(authUser.username, limit, offset);
+          messages = await this.auth.db.getPersonalizedMessages(authUser.username, limit, offset);
         } else {
-          tweets = await this.auth.db.getPublicTweets(limit, offset);
+          messages = await this.auth.db.getPublicMessages(limit, offset);
         }
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(tweets));
+        res.end(JSON.stringify(messages));
       } catch (e) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: e.message }));
@@ -149,7 +149,7 @@ Server --> Auth
       return;
     }
 
-    if (req.method === 'POST' && req.url === '/api/tweets') {
+    if (req.method === 'POST' && req.url === '/api/messages') {
       const user = getAuthUser(req);
       if (!user) {
         res.writeHead(401);
@@ -160,10 +160,10 @@ Server --> Auth
       req.on('data', chunk => { body += chunk; });
       req.on('end', async () => {
         try {
-          const { content, repliedToId, retweetedId, imageUrl } = JSON.parse(body);
-          const tweet = await this.auth.db.insertMessage(user.username, '', content, Date.now(), repliedToId, retweetedId, imageUrl);
+          const { content, repliedToId, repostedId, imageUrl } = JSON.parse(body);
+          const message = await this.auth.db.insertMessage(user.username, '', content, Date.now(), repliedToId, repostedId, imageUrl);
           res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify(tweet));
+          res.end(JSON.stringify(message));
         } catch (e) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: e.message }));
@@ -195,7 +195,7 @@ Server --> Auth
           const buffer = Buffer.from(pureBase64, 'base64');
           
           const newFilename = "upload_" + Date.now() + "_" + Math.floor(Math.random() * 1000) + ext;
-          // process.cwd() is src/twitter/server
+          // process.cwd() is src/social/server
           const uploadPath = path.join(process.cwd(), 'public', 'images', newFilename);
           
           if (!fs.existsSync(path.dirname(uploadPath))) {
@@ -262,8 +262,8 @@ Server --> Auth
       req.on('data', chunk => { body += chunk; });
       req.on('end', async () => {
         try {
-          const { receiverUsername, content, repliedToId, retweetedId } = JSON.parse(body);
-          const msg = await this.auth.db.insertMessage(user.username, receiverUsername, content, Date.now(), repliedToId, retweetedId);
+          const { receiverUsername, content, repliedToId, repostedId } = JSON.parse(body);
+          const msg = await this.auth.db.insertMessage(user.username, receiverUsername, content, Date.now(), repliedToId, repostedId);
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify(msg));
         } catch (e) {
@@ -329,7 +329,7 @@ Server --> Auth
       return;
     }
 
-    if (req.method === 'POST' && req.url === '/api/retweet') {
+    if (req.method === 'POST' && req.url === '/api/repost') {
       const user = getAuthUser(req);
       if (!user) { res.writeHead(401); res.end(); return; }
       let body = '';
@@ -337,10 +337,10 @@ Server --> Auth
       req.on('end', async () => {
         try {
           const { originalId } = JSON.parse(body);
-          const retweet = await this.auth.db.retweetMessage(user.username, originalId, Date.now());
-          res.writeHead(200); res.end(JSON.stringify(retweet));
+          const repost = await this.auth.db.repostMessage(user.username, originalId, Date.now());
+          res.writeHead(200); res.end(JSON.stringify(repost));
         } catch (e) {
-          const status = e.message.includes("already retweeted") ? 409 : 400;
+          const status = e.message.includes("already reposted") ? 409 : 400;
           res.writeHead(status); 
           res.end(JSON.stringify({ error: e.message }));
         }
@@ -450,13 +450,13 @@ Server --> Auth
     }
 
     if (req.method === 'GET' && req.url.startsWith('/api/replies')) {
-      const tweetId = new URL(req.url, "http://" + req.headers.host).searchParams.get('id');
-      if (!tweetId) {
+      const messageId = new URL(req.url, "http://" + req.headers.host).searchParams.get('id');
+      if (!messageId) {
         res.writeHead(400); res.end(JSON.stringify({ error: "Missing 'id' parameter" }));
         return;
       }
       try {
-        const replies = await this.auth.db.getReplies(tweetId);
+        const replies = await this.auth.db.getReplies(messageId);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(replies));
       } catch (e) {
@@ -596,7 +596,7 @@ Server --> Auth
       return;
     }
 
-    if (req.method === 'DELETE' && req.url.startsWith('/api/admin/tweets/')) {
+    if (req.method === 'DELETE' && req.url.startsWith('/api/admin/messages/')) {
       const user = getAuthUser(req);
       if (!user || !user.isAdmin) {
         res.writeHead(403);
@@ -604,14 +604,14 @@ Server --> Auth
         return;
       }
       
-      const tweetId = req.url.split('/').pop();
-      if (!tweetId) {
-        res.writeHead(400); res.end(JSON.stringify({ error: "Missing tweetId" }));
+      const messageId = req.url.split('/').pop();
+      if (!messageId) {
+        res.writeHead(400); res.end(JSON.stringify({ error: "Missing messageId" }));
         return;
       }
       
       try {
-        const result = await this.auth.db.deleteTweetCascade(tweetId);
+        const result = await this.auth.db.deleteMessageCascade(messageId);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ 
           success: true, 

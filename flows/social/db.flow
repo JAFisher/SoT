@@ -1,5 +1,5 @@
-cliscripts->build_docker docker build -t twitter-db .
-cliscripts->start_docker docker run -p 5432:5432 twitter-db
+cliscripts->build_docker docker build -t social-db .
+cliscripts->start_docker docker run -p 5432:5432 social-db
 
 docker->start
 FROM postgres:latest
@@ -37,7 +37,7 @@ Database[Database.ts{pool: any}]
   await this.pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS banner_url TEXT;");
   await this.pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT FALSE;");
   
-  await this.pool.query("CREATE TABLE IF NOT EXISTS messages (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), sender_username VARCHAR(255) NOT NULL, receiver_username VARCHAR(255) NOT NULL,content TEXT NOT NULL,timestamp BIGINT NOT NULL,replied_to_id UUID,retweeted_id UUID,liked_count INT DEFAULT 0, retweet_count INT DEFAULT 0, image_url TEXT);");
+  await this.pool.query("CREATE TABLE IF NOT EXISTS messages (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), sender_username VARCHAR(255) NOT NULL, receiver_username VARCHAR(255) NOT NULL,content TEXT NOT NULL,timestamp BIGINT NOT NULL,replied_to_id UUID,reposted_id UUID,liked_count INT DEFAULT 0, repost_count INT DEFAULT 0, image_url TEXT);");
   await this.pool.query("ALTER TABLE messages ADD COLUMN IF NOT EXISTS view_count INT DEFAULT 0;");
   await this.pool.query("CREATE TABLE IF NOT EXISTS likes ( id SERIAL PRIMARY KEY, message_id UUID NOT NULL REFERENCES messages(id), username VARCHAR(255) NOT NULL, UNIQUE(message_id, username));");
   await this.pool.query("CREATE TABLE IF NOT EXISTS views (id SERIAL PRIMARY KEY, message_id UUID NOT NULL REFERENCES messages(id), username VARCHAR(255) NOT NULL, UNIQUE(message_id, username));");
@@ -68,7 +68,7 @@ Database[Database.ts{pool: any}]
 
 @@Database.init.end
 
-@async @Database.insertMessage{senderUsername: string, receiverUsername: string, content: string, timestamp: number, repliedToId: string, retweetedId: string, imageUrl: string}: any
+@async @Database.insertMessage{senderUsername: string, receiverUsername: string, content: string, timestamp: number, repliedToId: string, repostedId: string, imageUrl: string}: any
 @@Database.insertMessage.code
   if (content && content.length > 300) {
     throw new Error("Message content exceeds 300 characters");
@@ -77,8 +77,8 @@ Database[Database.ts{pool: any}]
   try {
     await client.query('BEGIN');
     const res = await client.query(
-      "INSERT INTO messages (sender_username, receiver_username, content, timestamp, replied_to_id, retweeted_id, image_url) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
-      [senderUsername, receiverUsername, content, timestamp, repliedToId || null, retweetedId || null, imageUrl || null]
+      "INSERT INTO messages (sender_username, receiver_username, content, timestamp, replied_to_id, reposted_id, image_url) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
+      [senderUsername, receiverUsername, content, timestamp, repliedToId || null, repostedId || null, imageUrl || null]
     );
     const message = res.rows[0];
     
@@ -131,14 +131,14 @@ Database[Database.ts{pool: any}]
   }
 @@Database.insertMessage.end
 
-@async @Database.getTweet{id: string}: any
-@@Database.getTweet.code
+@async @Database.getMessage{id: string}: any
+@@Database.getMessage.code
   const res = await this.pool.query(
-    "SELECT m1.*, m2.sender_username as retweeted_author, u1.avatar_url as author_avatar, u1.follower_count as author_follower_count, " +
+    "SELECT m1.*, m2.sender_username as reposted_author, u1.avatar_url as author_avatar, u1.follower_count as author_follower_count, " +
     "m4.sender_username as parent_author, m4.content as parent_content, " +
     "(SELECT COUNT(*) FROM messages m3 WHERE m3.replied_to_id = m1.id) as reply_count " +
     "FROM messages m1 " +
-    "LEFT JOIN messages m2 ON m1.retweeted_id = m2.id " +
+    "LEFT JOIN messages m2 ON m1.reposted_id = m2.id " +
     "LEFT JOIN users u1 ON m1.sender_username = u1.username " +
     "LEFT JOIN messages m4 ON m1.replied_to_id = m4.id " +
     "WHERE m1.id = $1",
@@ -156,15 +156,15 @@ Database[Database.ts{pool: any}]
     repliedToId: row.replied_to_id,
     repliedToUsername: row.parent_author,
     parentContent: row.parent_content,
-    retweetedId: row.retweeted_id,
-    retweetedAuthor: row.retweeted_author,
+    repostedId: row.reposted_id,
+    repostedAuthor: row.reposted_author,
     likedCount: row.liked_count,
-    retweetCount: row.retweet_count,
+    repostCount: row.repost_count,
     repliesCount: Number(row.reply_count),
     imageUrl: row.image_url,
     viewCount: row.view_count || 0
   };
-@@Database.getTweet.end
+@@Database.getMessage.end
 
 @async @Database.getMessagesBetween{user1: string, user2: string}: any
 @@Database.getMessagesBetween.code
@@ -179,23 +179,23 @@ Database[Database.ts{pool: any}]
     content: row.content,
     timestamp: Number(row.timestamp),
     repliedToId: row.replied_to_id,
-    retweetedId: row.retweeted_id,
+    repostedId: row.reposted_id,
     likedCount: row.liked_count,
-    retweetCount: row.retweet_count,
+    repostCount: row.repost_count,
     viewCount: row.view_count || 0
   }));
 @@Database.getMessagesBetween.end
 
-@async @Database.getPublicTweets{limit: number, offset: number}: any
-@@Database.getPublicTweets.code
+@async @Database.getPublicMessages{limit: number, offset: number}: any
+@@Database.getPublicMessages.code
   const l = limit || 10;
   const o = offset || 0;
   const res = await this.pool.query(
-    "SELECT m1.*, m2.sender_username as retweeted_author, u1.avatar_url as author_avatar, u1.follower_count as author_follower_count, " +
+    "SELECT m1.*, m2.sender_username as reposted_author, u1.avatar_url as author_avatar, u1.follower_count as author_follower_count, " +
     "m4.sender_username as parent_author, m4.content as parent_content, " +
     "(SELECT COUNT(*) FROM messages m3 WHERE m3.replied_to_id = m1.id) as reply_count " +
     "FROM messages m1 " +
-    "LEFT JOIN messages m2 ON m1.retweeted_id = m2.id " +
+    "LEFT JOIN messages m2 ON m1.reposted_id = m2.id " +
     "LEFT JOIN users u1 ON m1.sender_username = u1.username " +
     "LEFT JOIN messages m4 ON m1.replied_to_id = m4.id " +
     "WHERE m1.receiver_username = '' " +
@@ -213,18 +213,18 @@ Database[Database.ts{pool: any}]
     repliedToId: row.replied_to_id,
     repliedToUsername: row.parent_author,
     parentContent: row.parent_content,
-    retweetedId: row.retweeted_id,
-    retweetedAuthor: row.retweeted_author,
+    repostedId: row.reposted_id,
+    repostedAuthor: row.reposted_author,
     likedCount: row.liked_count,
-    retweetCount: row.retweet_count,
+    repostCount: row.repost_count,
     repliesCount: Number(row.reply_count),
     imageUrl: row.image_url,
     viewCount: row.view_count || 0
   }));
-@@Database.getPublicTweets.end
+@@Database.getPublicMessages.end
 
-@async @Database.getPersonalizedTweets{currentUser: string, limit: number, offset: number}: any
-@@Database.getPersonalizedTweets.code
+@async @Database.getPersonalizedMessages{currentUser: string, limit: number, offset: number}: any
+@@Database.getPersonalizedMessages.code
   const l = limit || 10;
   const o = offset || 0;
   // Weighting logic:
@@ -232,12 +232,12 @@ Database[Database.ts{pool: any}]
   // 2. Higher follower count increases weight (logarithmic scale)
   // 3. Score = weight * timestamp (keeps it chronological-ish but allows important content to bubble up)
   const res = await this.pool.query(
-    "SELECT m1.*, m2.sender_username as retweeted_author, u1.avatar_url as author_avatar, u1.follower_count as author_follower_count, " +
+    "SELECT m1.*, m2.sender_username as reposted_author, u1.avatar_url as author_avatar, u1.follower_count as author_follower_count, " +
     "m4.sender_username as parent_author, m4.content as parent_content, " +
     "(SELECT COUNT(*) FROM messages m3 WHERE m3.replied_to_id = m1.id) as reply_count, " +
     "((CASE WHEN f.follower_username IS NOT NULL THEN 172800000.0 ELSE 0.0 END) + (ln(COALESCE(u1.follower_count, 0) + 1.0) * 3600000.0)) as weight_bonus " +
     "FROM messages m1 " +
-    "LEFT JOIN messages m2 ON m1.retweeted_id = m2.id " +
+    "LEFT JOIN messages m2 ON m1.reposted_id = m2.id " +
     "LEFT JOIN users u1 ON m1.sender_username = u1.username " +
     "LEFT JOIN messages m4 ON m1.replied_to_id = m4.id " +
     "LEFT JOIN follows f ON f.follower_username = $1 AND f.following_username = u1.username " +
@@ -256,26 +256,26 @@ Database[Database.ts{pool: any}]
     repliedToId: row.replied_to_id,
     repliedToUsername: row.parent_author,
     parentContent: row.parent_content,
-    retweetedId: row.retweeted_id,
-    retweetedAuthor: row.retweeted_author,
+    repostedId: row.reposted_id,
+    repostedAuthor: row.reposted_author,
     likedCount: row.liked_count,
-    retweetCount: row.retweet_count,
+    repostCount: row.repost_count,
     repliesCount: Number(row.reply_count),
     imageUrl: row.image_url,
     viewCount: row.view_count || 0
   }));
-@@Database.getPersonalizedTweets.end
+@@Database.getPersonalizedMessages.end
 
-@async @Database.getUserTweets{username: string, limit: number, offset: number}: any
-@@Database.getUserTweets.code
+@async @Database.getUserMessages{username: string, limit: number, offset: number}: any
+@@Database.getUserMessages.code
   const l = limit || 10;
   const o = offset || 0;
   const res = await this.pool.query(
-    "SELECT m1.*, m2.sender_username as retweeted_author, u1.avatar_url as author_avatar, u1.follower_count as author_follower_count, " +
+    "SELECT m1.*, m2.sender_username as reposted_author, u1.avatar_url as author_avatar, u1.follower_count as author_follower_count, " +
     "m4.sender_username as parent_author, m4.content as parent_content, " +
     "(SELECT COUNT(*) FROM messages m3 WHERE m3.replied_to_id = m1.id) as reply_count " +
     "FROM messages m1 " +
-    "LEFT JOIN messages m2 ON m1.retweeted_id = m2.id " +
+    "LEFT JOIN messages m2 ON m1.reposted_id = m2.id " +
     "LEFT JOIN users u1 ON m1.sender_username = u1.username " +
     "LEFT JOIN messages m4 ON m1.replied_to_id = m4.id " +
     "WHERE m1.sender_username = $1 AND m1.receiver_username = '' " +
@@ -293,15 +293,15 @@ Database[Database.ts{pool: any}]
     repliedToId: row.replied_to_id,
     repliedToUsername: row.parent_author,
     parentContent: row.parent_content,
-    retweetedId: row.retweeted_id,
-    retweetedAuthor: row.retweeted_author,
+    repostedId: row.reposted_id,
+    repostedAuthor: row.reposted_author,
     likedCount: row.liked_count,
-    retweetCount: row.retweet_count,
+    repostCount: row.repost_count,
     repliesCount: Number(row.reply_count),
     imageUrl: row.image_url,
     viewCount: row.view_count || 0
   }));
-@@Database.getUserTweets.end
+@@Database.getUserMessages.end
 
 @async @Database.likeMessage{messageId: string, username: string}: void
 @@Database.likeMessage.code
@@ -371,8 +371,8 @@ Database[Database.ts{pool: any}]
   }
 @@Database.incrementViewCount.end
 
-@async @Database.retweetMessage{sender: string, originalId: string, ts: number}: any
-@@Database.retweetMessage.code
+@async @Database.repostMessage{sender: string, originalId: string, ts: number}: any
+@@Database.repostMessage.code
   const client = await this.pool.connect();
   try {
     await client.query('BEGIN');
@@ -384,74 +384,74 @@ Database[Database.ts{pool: any}]
     }
     const origRow = origRes.rows[0];
 
-    // 2. Prevent self-retweet
+    // 2. Prevent self-repost
     if (origRow.sender_username === sender) {
-      throw new Error("You cannot retweet your own tweet");
+      throw new Error("You cannot repost your own tweet");
     }
 
-    // 3. Check for existing retweet by this user
+    // 3. Check for existing repost by this user
     const existing = await client.query(
-      'SELECT id FROM messages WHERE sender_username = $1 AND retweeted_id = $2',
+      'SELECT id FROM messages WHERE sender_username = $1 AND reposted_id = $2',
       [sender, originalId]
     );
     if (existing.rows.length > 0) {
-      throw new Error("You have already retweeted this message");
+      throw new Error("You have already reposted this message");
     }
 
-    // 4. Create retweet record
-    const retweet = await client.query(
-      "INSERT INTO messages (sender_username, receiver_username, content, timestamp, retweeted_id, image_url) VALUES ($1, '', $2, $3, $4, $5) RETURNING *",
+    // 4. Create repost record
+    const repost = await client.query(
+      "INSERT INTO messages (sender_username, receiver_username, content, timestamp, reposted_id, image_url) VALUES ($1, '', $2, $3, $4, $5) RETURNING *",
       [sender, origRow.content, ts, originalId, origRow.image_url]
     );
     
-    // 5. Create hashtags for retweet
+    // 5. Create hashtags for repost
     const hashtags = origRow.content.match(/#(\w+)/g);
-    const retweetRow = retweet.rows[0];
+    const repostRow = repost.rows[0];
     if (hashtags) {
       for (const t of hashtags) {
         const tag = t.substring(1).toLowerCase();
         await client.query(
           "INSERT INTO hashtags (tag, message_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
-          [tag, retweetRow.id]
+          [tag, repostRow.id]
         );
       }
     }
     
-    // 6. Increment original retweet count
-    await client.query('UPDATE messages SET retweet_count = retweet_count + 1 WHERE id = $1', [originalId]);
+    // 6. Increment original repost count
+    await client.query('UPDATE messages SET repost_count = repost_count + 1 WHERE id = $1', [originalId]);
     
-    // Notification for retweet
+    // Notification for repost
     if (origRow.sender_username !== sender) {
        await client.query(
          "INSERT INTO notifications (sender_username, receiver_username, action, message_id, timestamp) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING",
-         [sender, origRow.sender_username, 'retweet', originalId, ts]
+         [sender, origRow.sender_username, 'repost', originalId, ts]
        );
     }
 
     await client.query('COMMIT');
     
-    const row = retweet.rows[0];
+    const row = repost.rows[0];
     return {
       id: row.id,
       authorUsername: row.sender_username,
       content: row.content,
       timestamp: Number(row.timestamp),
-      retweetedId: row.retweeted_id,
-      retweetedAuthor: origRow.sender_username,
+      repostedId: row.reposted_id,
+      repostedAuthor: origRow.sender_username,
       likedCount: 0,
-      retweetCount: 0,
+      repostCount: 0,
       repliesCount: 0,
       imageUrl: row.image_url,
       viewCount: row.view_count || 0
     };
   } catch (e) {
     if (client) await client.query('ROLLBACK');
-    console.error("[DB ERROR] retweetMessage:", e.name, e.message);
+    console.error("[DB ERROR] repostMessage:", e.name, e.message);
     throw e;
   } finally {
     if (client) client.release();
   }
-@@Database.retweetMessage.end
+@@Database.repostMessage.end
 
 @async @Database.getReplies{messageId: string}: any
 @@Database.getReplies.code
@@ -475,7 +475,7 @@ Database[Database.ts{pool: any}]
     repliedToUsername: row.parent_author,
     parentContent: row.parent_content,
     likedCount: row.liked_count,
-    retweetCount: row.retweet_count,
+    repostCount: row.repost_count,
     repliesCount: Number(row.reply_count),
     imageUrl: row.image_url,
     viewCount: row.view_count || 0
@@ -487,12 +487,12 @@ Database[Database.ts{pool: any}]
   const l = limit || 10;
   const o = offset || 0;
   const res = await this.pool.query(
-    "SELECT m1.*, m2.sender_username as retweeted_author, u1.avatar_url as author_avatar, u1.follower_count as author_follower_count, " +
+    "SELECT m1.*, m2.sender_username as reposted_author, u1.avatar_url as author_avatar, u1.follower_count as author_follower_count, " +
     "m4.sender_username as parent_author, m4.content as parent_content, " +
     "(SELECT COUNT(*) FROM messages m3 WHERE m3.replied_to_id = m1.id) as reply_count " +
     "FROM messages m1 " +
     "JOIN hashtags h ON m1.id = h.message_id " +
-    "LEFT JOIN messages m2 ON m1.retweeted_id = m2.id " +
+    "LEFT JOIN messages m2 ON m1.reposted_id = m2.id " +
     "LEFT JOIN users u1 ON m1.sender_username = u1.username " +
     "LEFT JOIN messages m4 ON m1.replied_to_id = m4.id " +
     "WHERE h.tag = $1 AND m1.receiver_username = '' " +
@@ -510,10 +510,10 @@ Database[Database.ts{pool: any}]
     repliedToId: row.replied_to_id,
     repliedToUsername: row.parent_author,
     parentContent: row.parent_content,
-    retweetedId: row.retweeted_id,
-    retweetedAuthor: row.retweeted_author,
+    repostedId: row.reposted_id,
+    repostedAuthor: row.reposted_author,
     likedCount: row.liked_count,
-    retweetCount: row.retweet_count,
+    repostCount: row.repost_count,
     repliesCount: Number(row.reply_count),
     imageUrl: row.image_url,
     viewCount: row.view_count || 0
@@ -727,9 +727,9 @@ Database[Database.ts{pool: any}]
     content: r.content, 
     timestamp: Number(r.timestamp), 
     repliedToId: r.replied_to_id, 
-    retweetedId: r.retweeted_id, 
+    repostedId: r.reposted_id, 
     likedCount: r.liked_count, 
-    retweetCount: r.retweet_count, 
+    repostCount: r.repost_count, 
     repliesCount: Number(r.replies_count), 
     imageUrl: r.image_url,
     viewCount: r.view_count || 0
@@ -762,9 +762,9 @@ Database[Database.ts{pool: any}]
       content: row.content,
       timestamp: Number(row.timestamp),
       repliedToId: row.replied_to_id,
-      retweetedId: row.retweeted_id,
+      repostedId: row.reposted_id,
       likedCount: row.liked_count,
-      retweetCount: row.retweet_count,
+      repostCount: row.repost_count,
       repliesCount: Number(row.reply_count),
       imageUrl: row.image_url,
       viewCount: row.view_count || 0
@@ -809,8 +809,8 @@ Database[Database.ts{pool: any}]
   await this.pool.query("UPDATE reports SET marked_as_safe = TRUE WHERE message_id = $1", [messageId]);
 @@Database.markReportSafe.end
 
-@async @Database.deleteTweetCascade{tweetId: string}: {deletedCount: number, imageUrls: string[]}
-@@Database.deleteTweetCascade.code
+@async @Database.deleteMessageCascade{messageId: string}: {deletedCount: number, imageUrls: string[]}
+@@Database.deleteMessageCascade.code
   const client = await this.pool.connect();
   try {
     await client.query('BEGIN');
@@ -821,16 +821,16 @@ Database[Database.ts{pool: any}]
       "  SELECT id, image_url FROM messages WHERE id = $1 " +
       "  UNION ALL " +
       "  SELECT m.id, m.image_url FROM messages m " +
-      "  JOIN message_tree mt ON m.replied_to_id = mt.id OR m.retweeted_id = mt.id " +
+      "  JOIN message_tree mt ON m.replied_to_id = mt.id OR m.reposted_id = mt.id " +
       ") " +
       "SELECT id, image_url FROM message_tree;";
     
-    const treeRes = await client.query(findTreeQuery, [tweetId]);
+    const treeRes = await client.query(findTreeQuery, [messageId]);
     const ids = treeRes.rows.map(r => r.id);
     const imageUrls = treeRes.rows.map(r => r.image_url).filter(Boolean);
 
     if (ids.length === 0) {
-      throw new Error("Tweet not found");
+      throw new Error("Message not found");
     }
 
     // 2. Delete dependent rows
@@ -874,7 +874,7 @@ Database[Database.ts{pool: any}]
   } finally {
     client.release();
   }
-@@Database.deleteTweetCascade.end
+@@Database.deleteMessageCascade.end
 
 @async @Database.query{text: string, params: any}: any
 @@Database.query.code

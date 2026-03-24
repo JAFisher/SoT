@@ -34,7 +34,7 @@
             <div id="app-box">
                 <div class="post-box" style="margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 20px;">
                     <div id="replyLabel" style="font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Replying to this conversation</div>
-                    <textarea id="tweetContent" placeholder="Post your reply" maxlength="300"></textarea>
+                    <textarea id="messageContent" placeholder="Post your reply" maxlength="300"></textarea>
                     <div id="imagePreview" style="display: none; margin-bottom: 10px; position: relative;">
                         <img id="previewImg" src="" alt="Image Preview"
                             style="max-width: 100%; border-radius: var(--radius-md);">
@@ -80,9 +80,9 @@
     </div>
 
     <script type="module">
-        import { TwitterApp } from './compiled.js';
+        import { MessageApp } from './compiled.js';
 
-        window.app = new TwitterApp();
+        window.app = new MessageApp();
         await window.app.init();
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -116,7 +116,7 @@
 
         // --- Reply Functionality ---
         let selectedImageBase64 = null;
-        const box = document.getElementById('tweetContent');
+        const box = document.getElementById('messageContent');
         const charCountElem = document.getElementById('charCount');
 
         document.getElementById('addImgBtn').addEventListener('click', () => {
@@ -194,7 +194,7 @@
                     }
                 }
 
-                await window.app.postNewTweet(window.app.auth.currentUser.username, content, messageId, '', imageUrl);
+                await window.app.postNewMessage(window.app.auth.currentUser.username, content, messageId, '', imageUrl);
                 
                 // Reset UI
                 box.value = '';

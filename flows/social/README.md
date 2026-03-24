@@ -1,6 +1,6 @@
-# Twitter Clone Flows
+# MessageApp Flows
 
-This folder contains the `.flow` files for the Twitter clone application.
+This folder contains the `.flow` files for the MessageApp clone application.
 
 ## .env Setup
 
@@ -77,4 +77,4 @@ The application includes a built-in moderation system.
 2. **Moderation Features**:
    - **Reports List**: View and manage all reported tweets, grouped by message ID.
    - **Mark as Safe**: Archive a reported tweet if it's deemed appropriate. This hides the tweet from the dashboard for all associated reports.
-   - **Delete & Cascade**: Permanently remove a tweet, all its replies, retweets, and associated images from the server.
+   - **Delete & Cascade**: Permanently remove a tweet, all its replies, reposts, and associated images from the server.

@@ -11,7 +11,7 @@
 <body>
     <div class="container auth-wrapper">
         <div class="auth-box">
-            <div class="auth-logo">Mini Twitter</div>
+            <div class="auth-logo">MessageApp</div>
             <h3>Join today.</h3>
 
             <input type="text" id="username" class="input-field" placeholder="Username">
@@ -23,9 +23,9 @@
     </div>
 
     <script type="module">
-        import { TwitterApp } from './compiled.js';
+        import { MessageApp } from './compiled.js';
 
-        window.app = new TwitterApp();
+        window.app = new MessageApp();
         await window.app.init();
 
         if (window.app.auth.currentUser) {

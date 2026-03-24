@@ -72,11 +72,11 @@
   </div>
 
   <script type="module">
-    import { TwitterApp } from './compiled.js';
+    import { MessageApp } from './compiled.js';
 
     window.addEventListener('DOMContentLoaded', async () => {
       try {
-        window.app = new TwitterApp();
+        window.app = new MessageApp();
         await window.app.init();
         await window.app.adminPage.init();
         await window.app.adminPage.renderReports('reports-container');

@@ -6,15 +6,15 @@ include->paint.flow
 
 cliscripts->start node -e "require('fs').copyFileSync('compiled.js', 'public/compiled.js')" && npx -y http-server public -p 3000
 
-TwitterApp[TwitterApp.ts{auth: any, feed: any, paint: any, messaging: any, initialized: boolean, followedUsers: Set<string>, currentSocialUser: string, currentSocialType: string}]
-TwitterApp --> AuthFE
-TwitterApp --> Feed
-TwitterApp --> Messaging
-TwitterApp --> AdminPage
-TwitterApp --> Painters
+MessageApp[MessageApp.ts{auth: any, feed: any, paint: any, messaging: any, initialized: boolean, followedUsers: Set<string>, currentSocialUser: string, currentSocialType: string}]
+MessageApp --> AuthFE
+MessageApp --> Feed
+MessageApp --> Messaging
+MessageApp --> AdminPage
+MessageApp --> Painter
 
-@TwitterApp.constructor{}
-@@TwitterApp.constructor.code
+@MessageApp.constructor{}
+@@MessageApp.constructor.code
   this.auth = new AuthFE();
   this.feed = new Feed();
   this.messaging = new Messaging();
@@ -22,19 +22,19 @@ TwitterApp --> Painters
   this.paint = new Painter();
   this.initialized = false;
   this.renderCount = 0;
-  this.tweetsOffset = 0;
-  this.profileTweetsOffset = 0;
+  this.messagesOffset = 0;
+  this.profileMessagesOffset = 0;
   this.notificationsOffset = 0;
-  this.tweetsLimit = 25;
+  this.messagesLimit = 25;
   this.followedUsers = new Set();
   this.currentSocialUser = "";
   this.currentSocialType = "";
   this.searchOffset = 0;
   this.currentSearchQuery = "";
-@@TwitterApp.constructor.end
+@@MessageApp.constructor.end
 
-@async @TwitterApp.init{}: void
-@@TwitterApp.init.code
+@async @MessageApp.init{}: void
+@@MessageApp.init.code
   if (this.initialized) return;
   this.initialized = true;
 
@@ -69,43 +69,43 @@ TwitterApp --> Painters
     this.paint.init('paintCanvas');
   }
   }
-@@TwitterApp.init.end
+@@MessageApp.init.end
 
-@TwitterApp.toggleTheme{}: void
-@@TwitterApp.toggleTheme.code
+@MessageApp.toggleTheme{}: void
+@@MessageApp.toggleTheme.code
   document.body.classList.toggle('light-mode');
   const isLight = document.body.classList.contains('light-mode');
   localStorage.setItem('theme', isLight ? 'light' : 'dark');
   this.updateThemeIcon(isLight);
-@@TwitterApp.toggleTheme.end
+@@MessageApp.toggleTheme.end
 
-@TwitterApp.updateThemeIcon{isLight: boolean}: void
-@@TwitterApp.updateThemeIcon.code
+@MessageApp.updateThemeIcon{isLight: boolean}: void
+@@MessageApp.updateThemeIcon.code
   const moon = document.getElementById('theme-icon-moon');
   const sun = document.getElementById('theme-icon-sun');
   if (moon && sun) {
       moon.style.display = isLight ? 'none' : 'block';
       sun.style.display = isLight ? 'block' : 'none';
   }
-@@TwitterApp.updateThemeIcon.end
+@@MessageApp.updateThemeIcon.end
 
-@async @TwitterApp.renderTimeline{containerId: string}: void
-@@TwitterApp.renderTimeline.code
+@async @MessageApp.renderTimeline{containerId: string}: void
+@@MessageApp.renderTimeline.code
   await this.loadTimeline(containerId, false);
-@@TwitterApp.renderTimeline.end
+@@MessageApp.renderTimeline.end
 
-@async @TwitterApp.renderThread{containerId: string, tweetId: string}: void
-@@TwitterApp.renderThread.code
+@async @MessageApp.renderThread{containerId: string, messageId: string}: void
+@@MessageApp.renderThread.code
     const container = document.getElementById(containerId);
     if (!container) return;
     
     container.innerHTML = "<div class='loading'>Loading conversation...</div>";
 
     try {
-      const tweet = await this.feed.getTweet(tweetId);
-      const replies = await this.feed.getReplies(tweetId);
+      const message = await this.feed.getMessage(messageId);
+      const replies = await this.feed.getReplies(messageId);
       
-      let html = this.renderSingleTweet(tweet);
+      let html = this.renderSingleMessage(message);
       
       if (replies.length > 0) {
         html += "<div class='thread-replies' style='margin-top: 20px; border-top: 2px solid var(--border-color); padding-top: 20px;'>";
@@ -120,31 +120,31 @@ TwitterApp --> Painters
       
       container.innerHTML = html;
       
-      // Auto-expand the main tweet's view count
-      this.feed.viewMessage(tweetId).catch(e => console.error(e));
+      // Auto-expand the main message's view count
+      this.feed.viewMessage(messageId).catch(e => console.error(e));
       
     } catch (e) {
       this.showToast(e.message, 'error');
       container.innerHTML = "<div class='error'>Failed to load message: " + e.message + "</div>";
     }
-@@TwitterApp.renderThread.end
+@@MessageApp.renderThread.end
 
-@async @TwitterApp.renderUserTimeline{containerId: string, username: string, append: boolean}: void
-@@TwitterApp.renderUserTimeline.code
+@async @MessageApp.renderUserTimeline{containerId: string, username: string, append: boolean}: void
+@@MessageApp.renderUserTimeline.code
     const container = document.getElementById(containerId);
     if (!container) return;
     
     if (!append) {
-      this.profileTweetsOffset = 0;
+      this.profileMessagesOffset = 0;
       container.innerHTML = "<div class='loading'>Loading timeline...</div>";
     }
 
     try {
-      const tweets = await this.feed.getUserTweets(username, this.tweetsLimit, this.profileTweetsOffset); 
+      const messages = await this.feed.getUserMessages(username, this.messagesLimit, this.profileMessagesOffset); 
       
       if (!append) container.innerHTML = "";
       
-      if (tweets.length === 0) {
+      if (messages.length === 0) {
         if (!append) {
           container.innerHTML = "<div class='empty-timeline'>No messages yet.</div>";
         } else {
@@ -156,8 +156,8 @@ TwitterApp --> Painters
       }
 
       let html = "";
-      for (const t of tweets) {
-        html += this.renderSingleTweet(t);
+      for (const t of messages) {
+        html += this.renderSingleMessage(t);
       }
       
       if (append) {
@@ -166,28 +166,28 @@ TwitterApp --> Painters
         container.innerHTML = html;
       }
       
-      this.profileTweetsOffset += tweets.length;
+      this.profileMessagesOffset += messages.length;
       
       // Update Load More button
       const loadMoreBtn = document.getElementById('loadMoreBtn');
       if (loadMoreBtn) {
-        loadMoreBtn.style.display = tweets.length < this.tweetsLimit ? 'none' : 'block';
+        loadMoreBtn.style.display = messages.length < this.messagesLimit ? 'none' : 'block';
         loadMoreBtn.onclick = () => this.renderUserTimeline(containerId, username, true);
       }
     } catch (e) {
       this.showToast(e.message, 'error');
     }
-@@TwitterApp.renderUserTimeline.end
+@@MessageApp.renderUserTimeline.end
 
-@async @TwitterApp.getUserInfo{username: string}: any
-@@TwitterApp.getUserInfo.code
+@async @MessageApp.getUserInfo{username: string}: any
+@@MessageApp.getUserInfo.code
     const res = await fetch("http://localhost:8080/api/user?username=" + username);
     if (!res.ok) throw new Error("User not found");
     return await res.json();
-@@TwitterApp.getUserInfo.end
+@@MessageApp.getUserInfo.end
 
-  @async @TwitterApp.renderTrending{containerId: string}: void
-  @@TwitterApp.renderTrending.code
+  @async @MessageApp.renderTrending{containerId: string}: void
+  @@MessageApp.renderTrending.code
     const container = document.getElementById(containerId);
     if (!container) return;
 
@@ -201,7 +201,7 @@ TwitterApp --> Painters
           html += 
             "<div class='trending-item' onclick='window.location.href=\"dashboard.html?hashtag=" + t.tag + "\"'>" +
               "<div class='trending-tag'>#" + t.tag + "</div>" +
-              "<div class='trending-count'>" + t.count + " Tweets</div>" +
+              "<div class='trending-count'>" + t.count + " Messages</div>" +
             "</div>";
         });
       }
@@ -230,10 +230,10 @@ TwitterApp --> Painters
       console.error("Failed to render trending:", e);
       container.style.display = 'none';
     }
-  @@TwitterApp.renderTrending.end
+  @@MessageApp.renderTrending.end
 
-  @async @TwitterApp.performSearch{query: string, append: boolean}: void
-  @@TwitterApp.performSearch.code
+  @async @MessageApp.performSearch{query: string, append: boolean}: void
+  @@MessageApp.performSearch.code
     if (!query) return;
     const container = document.getElementById('search-list');
     if (!container) return;
@@ -245,7 +245,7 @@ TwitterApp --> Painters
     }
 
     try {
-      const results = await this.feed.search(query, this.tweetsLimit, this.searchOffset);
+      const results = await this.feed.search(query, this.messagesLimit, this.searchOffset);
       
       if (!append) container.innerHTML = "";
 
@@ -268,10 +268,10 @@ TwitterApp --> Painters
           html += 
             "<div class='trending-item' style='margin-bottom: 10px; cursor: pointer;' onclick='window.app.showHashtagTimeline(\"" + r.tag + "\")'>" +
               "<div class='trending-tag' style='font-size: 1.1em;'>#" + r.tag + "</div>" +
-              "<div class='trending-count' style='color: var(--text-secondary);'>" + r.count + " Tweets</div>" +
+              "<div class='trending-count' style='color: var(--text-secondary);'>" + r.count + " Messages</div>" +
             "</div>";
         } else if (r.type === 'message') {
-          html += this.renderSingleTweet({
+          html += this.renderSingleMessage({
              id: r.id, 
              authorUsername: r.sender_username, 
              authorName: r.sender_name, 
@@ -279,9 +279,9 @@ TwitterApp --> Painters
              content: r.content, 
              timestamp: r.timestamp,
              repliedToId: r.repliedToId, 
-             retweetedId: r.retweetedId,
+             repostedId: r.repostedId,
              likedCount: r.likedCount,
-             retweetCount: r.retweetCount, 
+             repostCount: r.repostCount, 
              repliesCount: r.repliesCount,
              imageUrl: r.imageUrl
           });
@@ -298,7 +298,7 @@ TwitterApp --> Painters
 
       const loadMoreBtn = document.getElementById('searchLoadMoreBtn');
       if (loadMoreBtn) {
-        loadMoreBtn.style.display = results.length < this.tweetsLimit ? 'none' : 'block';
+        loadMoreBtn.style.display = results.length < this.messagesLimit ? 'none' : 'block';
         loadMoreBtn.onclick = () => this.performSearch(this.currentSearchQuery, true);
       }
     } catch (e) {
@@ -306,10 +306,10 @@ TwitterApp --> Painters
       this.showToast("Search failed: " + e.message, "error");
       if (!append) container.innerHTML = "<div class='error'>Failed to load search results.</div>";
     }
-  @@TwitterApp.performSearch.end
+  @@MessageApp.performSearch.end
 
-  @async @TwitterApp.renderNotifications{containerId: string, append: boolean}: void
-  @@TwitterApp.renderNotifications.code
+  @async @MessageApp.renderNotifications{containerId: string, append: boolean}: void
+  @@MessageApp.renderNotifications.code
     const container = document.getElementById(containerId);
     if (!container) return;
 
@@ -319,7 +319,7 @@ TwitterApp --> Painters
     }
 
     try {
-      const notifications = await this.feed.getNotifications(this.tweetsLimit, this.notificationsOffset);
+      const notifications = await this.feed.getNotifications(this.messagesLimit, this.notificationsOffset);
       
       if (!append) container.innerHTML = "";
 
@@ -341,7 +341,7 @@ TwitterApp --> Painters
         let icon = "";
         if (n.action === 'like') { actionText = "liked your message"; icon = "<svg viewBox='0 0 24 24' width='16' height='16' fill='#e0245e' stroke='none' style='vertical-align: text-bottom;'><path d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'></path></svg>"; }
         else if (n.action === 'follow') { actionText = "followed you"; icon = "<svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom;'><path d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'></path><circle cx='12' cy='7' r='4'></circle></svg>"; }
-        else if (n.action === 'retweet') { actionText = "reposted your message"; icon = "<svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='#17bf63' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom;'><path d='M17 1l4 4-4 4'></path><path d='M3 11V9a4 4 0 0 1 4-4h14'></path><path d='M7 23l-4-4 4-4'></path><path d='M21 13v2a4 4 0 0 1-4 4H3'></path></svg>"; }
+        else if (n.action === 'repost') { actionText = "reposted your message"; icon = "<svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='#17bf63' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom;'><path d='M17 1l4 4-4 4'></path><path d='M3 11V9a4 4 0 0 1 4-4h14'></path><path d='M7 23l-4-4 4-4'></path><path d='M21 13v2a4 4 0 0 1-4 4H3'></path></svg>"; }
         else if (n.action === 'reply') { actionText = "replied to your message"; icon = "<svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom;'><path d='M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.1a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z'></path></svg>"; }
         else if (n.action === 'mention') { actionText = "mentioned you"; icon = "<svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom;'><path d='M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9'></path><path d='M13.73 21a2 2 0 0 1-3.46 0'></path></svg>"; }
 
@@ -377,17 +377,17 @@ TwitterApp --> Painters
       // Update Load More button
       const loadMoreBtn = document.getElementById('loadMoreBtn');
       if (loadMoreBtn) {
-        loadMoreBtn.style.display = notifications.length < this.tweetsLimit ? 'none' : 'block';
+        loadMoreBtn.style.display = notifications.length < this.messagesLimit ? 'none' : 'block';
         loadMoreBtn.onclick = () => this.renderNotifications(containerId, true);
       }
     } catch (e) {
       console.error("Failed to render notifications:", e);
       this.showToast("Error loading notifications", "error");
     }
-  @@TwitterApp.renderNotifications.end
+  @@MessageApp.renderNotifications.end
 
-  @async @TwitterApp.checkNotifications{}: void
-  @@TwitterApp.checkNotifications.code
+  @async @MessageApp.checkNotifications{}: void
+  @@MessageApp.checkNotifications.code
     try {
       const notifications = await this.feed.getNotifications();
       const unreadCount = notifications.filter(n => !n.isRead).length;
@@ -403,21 +403,21 @@ TwitterApp --> Painters
     } catch (e) {
       console.error("Failed to check notifications:", e);
     }
-  @@TwitterApp.checkNotifications.end
+  @@MessageApp.checkNotifications.end
 
-@async @TwitterApp.loadTimeline{containerId: string, append: boolean}: void
-@@TwitterApp.loadTimeline.code
+@async @MessageApp.loadTimeline{containerId: string, append: boolean}: void
+@@MessageApp.loadTimeline.code
   const container = document.getElementById(containerId);
   if (!container) return;
   
   if (!append) {
-    this.tweetsOffset = 0;
+    this.messagesOffset = 0;
     container.innerHTML = '';
   }
   
-  const tweets = await this.feed.getTimeline(this.tweetsLimit, this.tweetsOffset);
+  const messages = await this.feed.getTimeline(this.messagesLimit, this.messagesOffset);
   
-  if (tweets.length === 0) {
+  if (messages.length === 0) {
     if (append) {
       this.showToast("No more messages to load", "info");
       const loadMoreBtn = document.getElementById('loadMoreBtn');
@@ -428,9 +428,10 @@ TwitterApp --> Painters
     return;
   }
   
+  console.log(messages);
   let html = '';
-  tweets.forEach(t => {
-    html += this.renderSingleTweet(t);
+  messages.forEach(t => {
+    html += this.renderSingleMessage(t);
   });
   
   if (append) {
@@ -439,117 +440,117 @@ TwitterApp --> Painters
     container.innerHTML = html;
   }
   
-  this.tweetsOffset += tweets.length;
+  this.messagesOffset += messages.length;
   
   // Show/Hide load more button based on if we got a full page
   const loadMoreBtn = document.getElementById('loadMoreBtn');
   if (loadMoreBtn) {
-    loadMoreBtn.style.display = tweets.length < this.tweetsLimit ? 'none' : 'block';
+    loadMoreBtn.style.display = messages.length < this.messagesLimit ? 'none' : 'block';
     loadMoreBtn.onclick = () => this.loadMore(containerId);
   }
-@@TwitterApp.loadTimeline.end
+@@MessageApp.loadTimeline.end
 
-@async @TwitterApp.loadMore{containerId: string}: void
-@@TwitterApp.loadMore.code
+@async @MessageApp.loadMore{containerId: string}: void
+@@MessageApp.loadMore.code
   await this.loadTimeline(containerId, true);
-@@TwitterApp.loadMore.end
+@@MessageApp.loadMore.end
 
-@TwitterApp.renderSingleTweet{t: any}: string
-@@TwitterApp.renderSingleTweet.code
+@MessageApp.renderSingleMessage{t: any}: string
+@@MessageApp.renderSingleMessage.code
   const instanceId = ++this.renderCount;
   const name = t.authorName || t.authorUsername;
-  const isRetweet = !!t.retweetedId;
-  const retweetTag = isRetweet ? "<span class=\"retweet-tag\"><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom; margin-right: 4px;'><path d='M17 1l4 4-4 4'></path><path d='M3 11V9a4 4 0 0 1 4-4h14'></path><path d='M7 23l-4-4 4-4'></path><path d='M21 13v2a4 4 0 0 1-4 4H3'></path></svg> Reposted from @" + t.retweetedAuthor + "</span>" : "";
+  const isRemessage = !!t.repostedId;
+  const repostTag = isRemessage ? "<span class=\"repost-tag\"><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom; margin-right: 4px;'><path d='M17 1l4 4-4 4'></path><path d='M3 11V9a4 4 0 0 1 4-4h14'></path><path d='M7 23l-4-4 4-4'></path><path d='M21 13v2a4 4 0 0 1-4 4H3'></path></svg> Reposted from @" + t.repostedAuthor + "</span>" : "";
     const currentUser = this.auth.getCurrentUser();
-    const retweetBtn = (t.authorUsername !== this.auth.currentUser?.username) ? 
-    "<button class=\"tweet-btn retweet-btn\" id=\"retweet-btn-instance-" + instanceId + "\" onclick=\"window.app.retweet('" + t.id + "', " + instanceId + ")\"><svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom; margin-right: 4px;'><path d='M17 1l4 4-4 4'></path><path d='M3 11V9a4 4 0 0 1 4-4h14'></path><path d='M7 23l-4-4 4-4'></path><path d='M21 13v2a4 4 0 0 1-4 4H3'></path></svg> <span class='retweet-count'>" + (t.retweetCount || 0) + "</span></button>" : "";
+    const repostBtn = (t.authorUsername !== this.auth.currentUser?.username) ? 
+    "<button class=\"message-btn repost-btn\" id=\"repost-btn-instance-" + instanceId + "\" onclick=\"window.app.repost('" + t.id + "', " + instanceId + ")\"><svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom; margin-right: 4px;'><path d='M17 1l4 4-4 4'></path><path d='M3 11V9a4 4 0 0 1 4-4h14'></path><path d='M7 23l-4-4 4-4'></path><path d='M21 13v2a4 4 0 0 1-4 4H3'></path></svg> <span class='repost-count'>" + (t.repostCount || 0) + "</span></button>" : "";
     
     const avatarUrl = t.authorAvatar || 'http://localhost:8080/images/userprofiledefault.png';
-    const avatarHtml = "<a href=\"profile.html?username=" + t.authorUsername + "\"><img src=\"" + avatarUrl + "\" alt=\"" + t.authorUsername + "'s avatar\" class=\"tweet-avatar\"></a>";
-    const imageHtml = t.imageUrl ? "<div class=\"tweet-image-container\"><img src=\"" + t.imageUrl + "\" alt=\"Tweet image\" class=\"tweet-image\"></div>" : "";
+    const avatarHtml = "<a href=\"profile.html?username=" + t.authorUsername + "\"><img src=\"" + avatarUrl + "\" alt=\"" + t.authorUsername + "'s avatar\" class=\"message-avatar\"></a>";
+    const imageHtml = t.imageUrl ? "<div class=\"message-image-container\"><img src=\"" + t.imageUrl + "\" alt=\"Message image\" class=\"message-image\"></div>" : "";
 
     const isFollowing = this.followedUsers.has(t.authorUsername);
     const isSelf = currentUser && currentUser.username === t.authorUsername;
     const followBtn = (!isSelf && currentUser) ? 
-      "<button class=\"tweet-btn follow-btn\" id=\"twitter-follow-" + t.authorUsername + "\" onclick=\"window.app.toggleFollow('" + t.authorUsername + "', " + (t.authorFollowerCount || 0) + ")\">" + (isFollowing ? "Unfollow" : "Follow") + "</button>" : "";
+      "<button class=\"message-btn follow-btn\" id=\"social-follow-" + t.authorUsername + "\" onclick=\"window.app.toggleFollow('" + t.authorUsername + "', " + (t.authorFollowerCount || 0) + ")\">" + (isFollowing ? "Unfollow" : "Follow") + "</button>" : "";
 
-    const highlightedContent = t.content.replace(/#(\w+)/g, '<span class="hashtag" onclick="event.stopPropagation(); window.app.showHashtagTimeline(\'$1\')">#$1</span>').replace(/@(\w+)/g, '<a href="profile.html?username=$1" class="tweet-name-link" style="color: var(--accent-color); text-decoration: none;" onclick="event.stopPropagation()">@$1</a>');
+    const highlightedContent = t.content.replace(/#(\w+)/g, '<span class="hashtag" onclick="event.stopPropagation(); window.app.showHashtagTimeline(\'$1\')">#$1</span>').replace(/@(\w+)/g, '<a href="profile.html?username=$1" class="message-name-link" style="color: var(--accent-color); text-decoration: none;" onclick="event.stopPropagation()">@$1</a>');
     const replyContextHtml = t.repliedToUsername ? 
-      "<div class='tweet-reply-context' style='margin-bottom: 8px; font-size: 0.9em;'>" +
+      "<div class='message-reply-context' style='margin-bottom: 8px; font-size: 0.9em;'>" +
         "<span style='color: var(--text-secondary);'>Replying to </span>" +
-        "<a href='profile.html?username=" + t.repliedToUsername + "' class='tweet-name-link' style='color: var(--primary-color); font-weight: bold;'>@" + t.repliedToUsername + "</a>" +
-        (t.parentContent ? "<div class='tweet-parent-preview'>\"" + t.parentContent + "\"</div>" : "") +
+        "<a href='profile.html?username=" + t.repliedToUsername + "' class='message-name-link' style='color: var(--primary-color); font-weight: bold;'>@" + t.repliedToUsername + "</a>" +
+        (t.parentContent ? "<div class='message-parent-preview'>\"" + t.parentContent + "\"</div>" : "") +
       "</div>" : "";
 
-    return "<div class=\"tweet\" id=\"tweet-instance-" + instanceId + "\">" +
-    "<div class=\"tweet-header\">" +
+    return "<div class=\"message\" id=\"message-instance-" + instanceId + "\">" +
+    "<div class=\"message-header\">" +
     avatarHtml +
-    "<div class=\"tweet-header-info\">" +
-    "<div class=\"tweet-header-top\">" +
-    "<a href=\"profile.html?username=" + t.authorUsername + "\" class=\"tweet-name-link\"><span class=\"tweet-name\">" + name + "</span></a>" +
-    "<a href=\"profile.html?username=" + t.authorUsername + "\" style=\"text-decoration:none; color:inherit;\"><span class=\"tweet-username\">@" + t.authorUsername + "</span></a>" +
-    "<span class=\"tweet-username\">· " + this.formatRelativeTime(t.timestamp) + "</span>" +
-    "<span class=\"tweet-followers\" id=\"followers-count-" + instanceId + "\"><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom; margin-right: 4px;'><path d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'></path><circle cx='12' cy='7' r='4'></circle></svg> <span>" + (t.authorFollowerCount || 0) + "</span></span>" +
+    "<div class=\"message-header-info\">" +
+    "<div class=\"message-header-top\">" +
+    "<a href=\"profile.html?username=" + t.authorUsername + "\" class=\"message-name-link\"><span class=\"message-name\">" + name + "</span></a>" +
+    "<a href=\"profile.html?username=" + t.authorUsername + "\" style=\"text-decoration:none; color:inherit;\"><span class=\"message-username\">@" + t.authorUsername + "</span></a>" +
+    "<span class=\"message-username\">· " + this.formatRelativeTime(t.timestamp) + "</span>" +
+    "<span class=\"message-followers\" id=\"followers-count-" + instanceId + "\"><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom; margin-right: 4px;'><path d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'></path><circle cx='12' cy='7' r='4'></circle></svg> <span>" + (t.authorFollowerCount || 0) + "</span></span>" +
     "</div>" +
-    retweetTag +
+    repostTag +
     "</div>" +
     followBtn +
     "</div>" +
-    "<div class=\"tweet-content\">" + replyContextHtml + highlightedContent + "</div>" +
+    "<div class=\"message-content\">" + replyContextHtml + highlightedContent + "</div>" +
     imageHtml +
-    "<div class=\"tweet-footer\">" +
-        "<button class=\"tweet-btn reply-btn\" onclick=\"window.app.startReply('" + t.id + "', '" + t.authorUsername + "', " + instanceId + ")\"><svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom; margin-right: 4px;'><path d='M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.1a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z'></path></svg> <span class='reply-count'>" + (t.repliesCount || 0) + "</span></button>" +
-        retweetBtn +
-        "<button class=\"tweet-btn like-btn\" id=\"like-btn-instance-" + instanceId + "\" onclick=\"window.app.like('" + t.id + "', " + instanceId + ")\"><svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom;'><path d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'></path></svg> <span class='like-count'>" + (t.likedCount || 0) + "</span></button>" +
-        "<span class=\"tweet-btn view-count-label\" id=\"view-count-instance-" + instanceId + "\"><svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom; margin-right: 4px;'><line x1='18' y1='20' x2='18' y2='10'></line><line x1='12' y1='20' x2='12' y2='4'></line><line x1='6' y1='20' x2='6' y2='14'></line></svg> <span class='view-count'>" + (t.viewCount || 0) + "</span></span>" +
-        "<button class=\"tweet-btn view-replies-btn\" onclick=\"window.app.toggleReplies('" + t.id + "', " + instanceId + ", '" + t.authorUsername + "')\">View Replies</button>" +
-        "<a href=\"message.html?id=" + t.id + "\" class=\"tweet-btn view-thread-btn\" style=\"text-decoration: none; display: inline-flex; align-items: center;\"><svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom; margin-right: 4px;'><path d='M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.1a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z'></path></svg> View Conversation</a>" +
-        "<button class=\"tweet-btn report-btn\" onclick=\"window.app.reportTweet('" + t.id + "', " + instanceId + ")\"><svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom; margin-right: 4px;'><path d='M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z'></path><line x1='4' y1='22' x2='4' y2='15'></line></svg> Report</button>" +
+    "<div class=\"message-footer\">" +
+        "<button class=\"message-btn reply-btn\" onclick=\"window.app.startReply('" + t.id + "', '" + t.authorUsername + "', " + instanceId + ")\"><svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom; margin-right: 4px;'><path d='M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.1a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z'></path></svg> <span class='reply-count'>" + (t.repliesCount || 0) + "</span></button>" +
+        repostBtn +
+        "<button class=\"message-btn like-btn\" id=\"like-btn-instance-" + instanceId + "\" onclick=\"window.app.like('" + t.id + "', " + instanceId + ")\"><svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom;'><path d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'></path></svg> <span class='like-count'>" + (t.likedCount || 0) + "</span></button>" +
+        "<span class=\"message-btn view-count-label\" id=\"view-count-instance-" + instanceId + "\"><svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom; margin-right: 4px;'><line x1='18' y1='20' x2='18' y2='10'></line><line x1='12' y1='20' x2='12' y2='4'></line><line x1='6' y1='20' x2='6' y2='14'></line></svg> <span class='view-count'>" + (t.viewCount || 0) + "</span></span>" +
+        "<button class=\"message-btn view-replies-btn\" onclick=\"window.app.toggleReplies('" + t.id + "', " + instanceId + ", '" + t.authorUsername + "')\">View Replies</button>" +
+        "<a href=\"message.html?id=" + t.id + "\" class=\"message-btn view-thread-btn\" style=\"text-decoration: none; display: inline-flex; align-items: center;\"><svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom; margin-right: 4px;'><path d='M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.1a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z'></path></svg> View Conversation</a>" +
+        "<button class=\"message-btn report-btn\" onclick=\"window.app.reportMessage('" + t.id + "', " + instanceId + ")\"><svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom; margin-right: 4px;'><path d='M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z'></path><line x1='4' y1='22' x2='4' y2='15'></line></svg> Report</button>" +
       "</div>" +
       "<div id=\"replies-instance-" + instanceId + "\" class=\"replies-container\" style=\"display: none;\"></div>" +
     "</div>";
-@@TwitterApp.renderSingleTweet.end
+@@MessageApp.renderSingleMessage.end
 
-@TwitterApp.renderSingleReply{r: any}: string
-@@TwitterApp.renderSingleReply.code
+@MessageApp.renderSingleReply{r: any}: string
+@@MessageApp.renderSingleReply.code
   const rInstanceId = ++this.renderCount;
     const currentUser = this.auth.getCurrentUser();
-    const retweetBtn = (r.sender_username !== this.auth.currentUser?.username) ? 
-    "<button class=\"tweet-btn retweet-btn btn-compact\" onclick=\"window.app.retweet('" + r.id + "', " + rInstanceId + ")\"><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom; margin-right: 4px;'><path d='M17 1l4 4-4 4'></path><path d='M3 11V9a4 4 0 0 1 4-4h14'></path><path d='M7 23l-4-4 4-4'></path><path d='M21 13v2a4 4 0 0 1-4 4H3'></path></svg> <span class='retweet-count'>" + (r.retweetCount || 0) + "</span></button>" : "";
+    const repostBtn = (r.sender_username !== this.auth.currentUser?.username) ? 
+    "<button class=\"message-btn repost-btn btn-compact\" onclick=\"window.app.repost('" + r.id + "', " + rInstanceId + ")\"><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom; margin-right: 4px;'><path d='M17 1l4 4-4 4'></path><path d='M3 11V9a4 4 0 0 1 4-4h14'></path><path d='M7 23l-4-4 4-4'></path><path d='M21 13v2a4 4 0 0 1-4 4H3'></path></svg> <span class='repost-count'>" + (r.repostCount || 0) + "</span></button>" : "";
 
     const avatarUrl = r.authorAvatar || 'http://localhost:8080/images/userprofiledefault.png';
-    const avatarHtml = "<a href=\"profile.html?username=" + r.sender_username + "\"><img src=\"" + avatarUrl + "\" alt=\"" + r.sender_username + "'s avatar\" class=\"tweet-avatar\"></a>";
-    const imageHtml = r.imageUrl ? "<div class=\"tweet-image-container\"><img src=\"" + r.imageUrl + "\" alt=\"Reply image\" class=\"tweet-image\"></div>" : "";
+    const avatarHtml = "<a href=\"profile.html?username=" + r.sender_username + "\"><img src=\"" + avatarUrl + "\" alt=\"" + r.sender_username + "'s avatar\" class=\"message-avatar\"></a>";
+    const imageHtml = r.imageUrl ? "<div class=\"message-image-container\"><img src=\"" + r.imageUrl + "\" alt=\"Reply image\" class=\"message-image\"></div>" : "";
 
-    const highlightedContent = r.content.replace(/#(\w+)/g, '<span class="hashtag" onclick="event.stopPropagation(); window.app.showHashtagTimeline(\'$1\')">#$1</span>').replace(/@(\w+)/g, '<a href="profile.html?username=$1" class="tweet-name-link" style="color: var(--accent-color); text-decoration: none;" onclick="event.stopPropagation()">@$1</a>');
+    const highlightedContent = r.content.replace(/#(\w+)/g, '<span class="hashtag" onclick="event.stopPropagation(); window.app.showHashtagTimeline(\'$1\')">#$1</span>').replace(/@(\w+)/g, '<a href="profile.html?username=$1" class="message-name-link" style="color: var(--accent-color); text-decoration: none;" onclick="event.stopPropagation()">@$1</a>');
     const replyContextHtml = r.repliedToUsername ? 
-      "<div class='tweet-reply-context' style='margin-bottom: 5px; font-size: 0.8em; opacity: 0.8;'>" +
+      "<div class='message-reply-context' style='margin-bottom: 5px; font-size: 0.8em; opacity: 0.8;'>" +
         "<span>Replying to </span>" +
         "<a href='profile.html?username=" + r.repliedToUsername + "' style='color: var(--primary-color); text-decoration: none;'>@" + r.repliedToUsername + "</a>" +
         (r.parentContent ? "<div style='opacity: 0.6; padding-left: 8px; border-left: 1px solid var(--border-color); margin-top: 2px;'>\"" + r.parentContent + "\"</div>" : "") +
       "</div>" : "";
 
-    return "<div class=\"reply\" id=\"tweet-instance-" + rInstanceId + "\">" +
-    "<div class=\"reply-header\"><div class=\"reply-header-info\">" + avatarHtml + "<a href=\"profile.html?username=" + r.sender_username + "\"><span>@" + r.sender_username + "</span></a><span class=\"tweet-date\">· " + this.formatRelativeTime(r.timestamp) + "</span></div></div>" +
+    return "<div class=\"reply\" id=\"message-instance-" + rInstanceId + "\">" +
+    "<div class=\"reply-header\"><div class=\"reply-header-info\">" + avatarHtml + "<a href=\"profile.html?username=" + r.sender_username + "\"><span>@" + r.sender_username + "</span></a><span class=\"message-date\">· " + this.formatRelativeTime(r.timestamp) + "</span></div></div>" +
     "<div class=\"reply-content\">" + replyContextHtml + highlightedContent + "</div>" +
     imageHtml +
     "<div class=\"reply-footer\">" +
-      "<button class=\"tweet-btn reply-btn btn-compact\" onclick=\"window.app.startReply('" + r.id + "', '" + r.sender_username + "', " + rInstanceId + ")\"><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom; margin-right: 4px;'><path d='M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.1a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z'></path></svg> <span class='reply-count'>" + (r.repliesCount || 0) + "</span></button>" +
-      retweetBtn +
-      "<button class=\"tweet-btn like-btn btn-compact\" id=\"like-btn-instance-" + rInstanceId + "\" onclick=\"window.app.like('" + r.id + "', " + rInstanceId + ")\"><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom;'><path d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'></path></svg> <span class='like-count'>" + (r.likedCount || 0) + "</span></button>" +
-      "<span class=\"tweet-btn view-count-label btn-compact\" id=\"view-count-instance-" + rInstanceId + "\"><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom; margin-right: 4px;'><line x1='18' y1='20' x2='18' y2='10'></line><line x1='12' y1='20' x2='12' y2='4'></line><line x1='6' y1='20' x2='6' y2='14'></line></svg> <span class='view-count'>" + (r.viewCount || 0) + "</span></span>" +
-      "<button class=\"tweet-btn view-replies-btn btn-compact\" onclick=\"window.app.toggleReplies('" + r.id + "', " + rInstanceId + ", '" + r.sender_username + "')\">View Replies</button>" +
-      "<a href=\"message.html?id=" + r.id + "\" class=\"tweet-btn view-thread-btn btn-compact\" style=\"text-decoration: none; display: inline-flex; align-items: center;\" title=\"View Conversation\"><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom;'><path d='M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.1a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z'></path></svg></a>" +
-      "<button class=\"tweet-btn report-btn btn-compact\" title=\"Report\" onclick=\"window.app.reportTweet('" + r.id + "', " + rInstanceId + ")\"><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom;'><path d='M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z'></path><line x1='4' y1='22' x2='4' y2='15'></line></svg></button>" +
+      "<button class=\"message-btn reply-btn btn-compact\" onclick=\"window.app.startReply('" + r.id + "', '" + r.sender_username + "', " + rInstanceId + ")\"><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom; margin-right: 4px;'><path d='M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.1a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z'></path></svg> <span class='reply-count'>" + (r.repliesCount || 0) + "</span></button>" +
+      repostBtn +
+      "<button class=\"message-btn like-btn btn-compact\" id=\"like-btn-instance-" + rInstanceId + "\" onclick=\"window.app.like('" + r.id + "', " + rInstanceId + ")\"><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom;'><path d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'></path></svg> <span class='like-count'>" + (r.likedCount || 0) + "</span></button>" +
+      "<span class=\"message-btn view-count-label btn-compact\" id=\"view-count-instance-" + rInstanceId + "\"><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom; margin-right: 4px;'><line x1='18' y1='20' x2='18' y2='10'></line><line x1='12' y1='20' x2='12' y2='4'></line><line x1='6' y1='20' x2='6' y2='14'></line></svg> <span class='view-count'>" + (r.viewCount || 0) + "</span></span>" +
+      "<button class=\"message-btn view-replies-btn btn-compact\" onclick=\"window.app.toggleReplies('" + r.id + "', " + rInstanceId + ", '" + r.sender_username + "')\">View Replies</button>" +
+      "<a href=\"message.html?id=" + r.id + "\" class=\"message-btn view-thread-btn btn-compact\" style=\"text-decoration: none; display: inline-flex; align-items: center;\" title=\"View Conversation\"><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom;'><path d='M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.1a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z'></path></svg></a>" +
+      "<button class=\"message-btn report-btn btn-compact\" title=\"Report\" onclick=\"window.app.reportMessage('" + r.id + "', " + rInstanceId + ")\"><svg viewBox='0 0 24 24' width='14' height='14' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align: text-bottom;'><path d='M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z'></path><line x1='4' y1='22' x2='4' y2='15'></line></svg></button>" +
     "</div>" +
     "<div id=\"replies-instance-" + rInstanceId + "\" class=\"replies-container\" style=\"display: none;\"></div>" +
   "</div>";
-@@TwitterApp.renderSingleReply.end
+@@MessageApp.renderSingleReply.end
 
-@async @TwitterApp.showHashtagTimeline{tag: string}: void
-@@TwitterApp.showHashtagTimeline.code
+@async @MessageApp.showHashtagTimeline{tag: string}: void
+@@MessageApp.showHashtagTimeline.code
   this.currentTag = tag;
-  this.tweetsOffset = 0;
+  this.messagesOffset = 0;
   document.getElementById('search-container').style.display = 'none';
   document.getElementById('searchInput').value = '';
   document.getElementById('timeline-container').style.display = 'block';
@@ -559,7 +560,7 @@ TwitterApp --> Painters
     container.innerHTML = 
       "<div class=\"trend-header\">" +
         "<span>Watching trends: <span class=\"trend-tag\">#" + tag + "</span></span>" +
-        "<button class=\"tweet-btn back-btn\" onclick=\"window.app.goBackToTimeline()\">Go back to timeline</button>" +
+        "<button class=\"message-btn back-btn\" onclick=\"window.app.goBackToTimeline()\">Go back to timeline</button>" +
       "</div>" +
       "<div id=\"hashtag-timeline-content\"></div>";
     
@@ -574,12 +575,12 @@ TwitterApp --> Painters
     // If not on dashboard, redirect to dashboard with hashtag param
     window.location.href = 'dashboard.html?hashtag=' + encodeURIComponent(tag);
   }
-@@TwitterApp.showHashtagTimeline.end
+@@MessageApp.showHashtagTimeline.end
 
-@async @TwitterApp.goBackToTimeline{}: void
-@@TwitterApp.goBackToTimeline.code
+@async @MessageApp.goBackToTimeline{}: void
+@@MessageApp.goBackToTimeline.code
   this.currentTag = null;
-  this.tweetsOffset = 0;
+  this.messagesOffset = 0;
   const container = document.getElementById('timeline');
   if (container) {
     container.innerHTML = '';
@@ -592,25 +593,25 @@ TwitterApp --> Painters
     window.history.replaceState('dashboard', 'dashboard', '/dashboard.html');
 
   }
-@@TwitterApp.goBackToTimeline.end
+@@MessageApp.goBackToTimeline.end
 
-@async @TwitterApp.loadHashtagTimeline{tag: string, append: boolean}: void
-@@TwitterApp.loadHashtagTimeline.code
+@async @MessageApp.loadHashtagTimeline{tag: string, append: boolean}: void
+@@MessageApp.loadHashtagTimeline.code
   const container = document.getElementById('hashtag-timeline-content');
   if (!container) return;
   
   if (!append) {
-    this.tweetsOffset = 0;
+    this.messagesOffset = 0;
     container.innerHTML = '';
   }
   
-  const tweets = await this.feed.getHashtagFeed(tag, this.tweetsLimit, this.tweetsOffset);
+  const messages = await this.feed.getHashtagFeed(tag, this.messagesLimit, this.messagesOffset);
   
-  if (tweets.length === 0) {
+  if (messages.length === 0) {
     if (!append) {
-      container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">No tweets found for #' + tag + '</div>';
+      container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">No messages found for #' + tag + '</div>';
     } else {
-      this.showToast("No more tweets to load", "info");
+      this.showToast("No more messages to load", "info");
       const loadMoreBtn = document.getElementById('loadMoreBtn');
       if (loadMoreBtn) loadMoreBtn.style.display = 'none';
     }
@@ -618,8 +619,8 @@ TwitterApp --> Painters
   }
   
   let html = '';
-  tweets.forEach(t => {
-    html += this.renderSingleTweet(t);
+  messages.forEach(t => {
+    html += this.renderSingleMessage(t);
   });
   
   if (append) {
@@ -628,17 +629,17 @@ TwitterApp --> Painters
     container.innerHTML = html;
   }
   
-  this.tweetsOffset += tweets.length;
+  this.messagesOffset += messages.length;
   
   const loadMoreBtn = document.getElementById('loadMoreBtn');
   if (loadMoreBtn) {
-    loadMoreBtn.style.display = tweets.length < this.tweetsLimit ? 'none' : 'block';
+    loadMoreBtn.style.display = messages.length < this.messagesLimit ? 'none' : 'block';
     loadMoreBtn.onclick = () => this.loadHashtagTimeline(tag, true);
   }
-@@TwitterApp.loadHashtagTimeline.end
+@@MessageApp.loadHashtagTimeline.end
 
-@TwitterApp.formatRelativeTime{timestamp: number}: string
-@@TwitterApp.formatRelativeTime.code
+@MessageApp.formatRelativeTime{timestamp: number}: string
+@@MessageApp.formatRelativeTime.code
   if (!timestamp) return "just now";
   const now = Date.now();
   const diff = now - timestamp;
@@ -659,10 +660,10 @@ TwitterApp --> Painters
   if (weeks < 4) return weeks + "w ago";
   if (months < 12) return months + "mo ago";
   return years + "y ago";
-@@TwitterApp.formatRelativeTime.end
+@@MessageApp.formatRelativeTime.end
 
-@async @TwitterApp.toggleReplies{tweetId: string, instanceId: number, authorUsername: string}: void
-@@TwitterApp.toggleReplies.code
+@async @MessageApp.toggleReplies{messageId: string, instanceId: number, authorUsername: string}: void
+@@MessageApp.toggleReplies.code
   const container = document.getElementById("replies-instance-" + instanceId);
   if (!container) return;
   
@@ -671,7 +672,7 @@ TwitterApp --> Painters
     return;
   }
   
-  this.feed.viewMessage(tweetId).then((res) => {
+  this.feed.viewMessage(messageId).then((res) => {
     // Only conditionally increment if current user is not author visually and it was their first time viewing
     if (res && res.incremented) {
        const viewElem = document.getElementById("view-count-instance-" + instanceId);
@@ -683,7 +684,7 @@ TwitterApp --> Painters
     }
   }).catch(e => console.error(e));
 
-  const replies = await this.feed.getReplies(tweetId);
+  const replies = await this.feed.getReplies(messageId);
 
   if (replies.length === 0) {
     container.innerHTML = '<div style="padding: 10px; color: #888;">No replies yet</div>';
@@ -691,19 +692,19 @@ TwitterApp --> Painters
     container.innerHTML = replies.map(r => this.renderSingleReply(r)).join('');
   }
   container.style.display = 'block';
-@@TwitterApp.toggleReplies.end
+@@MessageApp.toggleReplies.end
 
-@async @TwitterApp.postNewTweet{authorUsername: string, content: string, repliedToId: string, retweetedId: string, imageUrl: string}: any
-@@TwitterApp.postNewTweet.code
-  const res = await this.feed.postTweet(authorUsername, content, repliedToId, retweetedId, imageUrl);
+@async @MessageApp.postNewMessage{authorUsername: string, content: string, repliedToId: string, repostedId: string, imageUrl: string}: any
+@@MessageApp.postNewMessage.code
+  const res = await this.feed.postMessage(authorUsername, content, repliedToId, repostedId, imageUrl);
   if (res) {
-    this.showToast("Tweet posted!", "success");
+    this.showToast("Message posted!", "success");
   }
   return res;
-@@TwitterApp.postNewTweet.end
+@@MessageApp.postNewMessage.end
 
-@async @TwitterApp.updateAvatar{avatarUrl: string}: void
-@@TwitterApp.updateAvatar.code
+@async @MessageApp.updateAvatar{avatarUrl: string}: void
+@@MessageApp.updateAvatar.code
   const response = await fetch("http://localhost:8080/api/user/avatar", {
     method: "POST",
     headers: {
@@ -726,10 +727,10 @@ TwitterApp --> Painters
   } else {
     this.showToast("Failed to update avatar", "error");
   }
-@@TwitterApp.updateAvatar.end
+@@MessageApp.updateAvatar.end
 
-@async @TwitterApp.updateBanner{bannerUrl: string}: void
-@@TwitterApp.updateBanner.code
+@async @MessageApp.updateBanner{bannerUrl: string}: void
+@@MessageApp.updateBanner.code
   const response = await fetch("http://localhost:8080/api/user/banner", {
     method: "POST",
     headers: {
@@ -754,10 +755,10 @@ TwitterApp --> Painters
   } else {
     this.showToast("Failed to update banner", "error");
   }
-@@TwitterApp.updateBanner.end
+@@MessageApp.updateBanner.end
 
-@TwitterApp.startReply{tweetId: string, author: string, instanceId: string}: void
-@@TwitterApp.startReply.code
+@MessageApp.startReply{messageId: string, author: string, instanceId: string}: void
+@@MessageApp.startReply.code
   const container = document.getElementById("replies-instance-" + instanceId);
   if (!container) return;
   
@@ -780,7 +781,7 @@ TwitterApp --> Painters
         "<input type=\"file\" id=\"img-input-instance-" + instanceId + "\" accept=\"image/png, image/jpeg\" style=\"display: none;\">" +
         "<div id=\"reply-char-count-" + instanceId + "\" class=\"char-counter\">0 / 300</div>" +
         "<button id=\"add-img-btn-instance-" + instanceId + "\" class=\"add-image-btn btn btn-outline\" style=\"display: inline-flex; align-items: center;\"><svg viewBox='0 0 24 24' width='16' height='16' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='margin-right: 4px;'><rect x='3' y='3' width='18' height='18' rx='2' ry='2'></rect><circle cx='8.5' cy='8.5' r='1.5'></circle><polyline points='21 15 16 10 5 21'></polyline></svg> Image</button>" +
-        "<button class=\"btn btn-primary\" onclick=\"window.app.postInlineReply('" + tweetId + "', '" + instanceId + "', '" + author + "')\">Reply</button>" +
+        "<button class=\"btn btn-primary\" onclick=\"window.app.postInlineReply('" + messageId + "', '" + instanceId + "', '" + author + "')\">Reply</button>" +
       "</div>";
     container.prepend(inputDiv);
     
@@ -824,10 +825,10 @@ TwitterApp --> Painters
   } else {
     document.getElementById("input-instance-" + instanceId).focus();
   }
-@@TwitterApp.startReply.end
+@@MessageApp.startReply.end
 
-@async @TwitterApp.postInlineReply{parentTweetId: string, instanceId: string, parentAuthor: string}: void
-@@TwitterApp.postInlineReply.code
+@async @MessageApp.postInlineReply{parentMessageId: string, instanceId: string, parentAuthor: string}: void
+@@MessageApp.postInlineReply.code
   const textarea = document.getElementById("input-instance-" + instanceId);
   const content = textarea.value;
   const base64Img = window.app["_inlineImg_" + instanceId];
@@ -846,7 +847,7 @@ TwitterApp --> Painters
     }
   }
 
-  const res = await this.feed.postTweet(author, content, parentTweetId, '', imageUrl);
+  const res = await this.feed.postMessage(author, content, parentMessageId, '', imageUrl);
   window.app["_inlineImg_" + instanceId] = null;
   
   const inputDiv = document.getElementById("reply-input-instance-" + instanceId);
@@ -861,7 +862,7 @@ TwitterApp --> Painters
     repliedToUsername: parentAuthor, // Add parent author for context
     parentContent: '', // We don't have parent content here, but it's good to include the field
     repliesCount: 0,
-    retweetCount: 0,
+    repostCount: 0,
     likedCount: 0,
     imageUrl: imageUrl,
     videoUrl: ''
@@ -875,18 +876,18 @@ TwitterApp --> Painters
   container.prepend(newReplyDiv.firstElementChild);
   this.showToast("Reply posted!", "success");
   
-  const replyBtn = document.querySelector("#tweet-instance-" + instanceId + " .reply-btn");
+  const replyBtn = document.querySelector("#message-instance-" + instanceId + " .reply-btn");
   if (replyBtn) {
     const countSpan = replyBtn.querySelector('.reply-count');
     const current = countSpan ? (parseInt(countSpan.innerText) || 0) : 0;
     if (countSpan) countSpan.innerText = (current + 1).toString();
   }
-@@TwitterApp.postInlineReply.end
+@@MessageApp.postInlineReply.end
 
-@async @TwitterApp.like{tweetId: string, instanceId: number}: void
-@@TwitterApp.like.code
+@async @MessageApp.like{messageId: string, instanceId: number}: void
+@@MessageApp.like.code
   try {
-    await this.feed.likeMessage(tweetId);
+    await this.feed.likeMessage(messageId);
     const btnId = "like-btn-instance-" + instanceId;
     const btn = document.getElementById("like-btn-instance-" + instanceId);
     if (btn) {
@@ -907,29 +908,29 @@ TwitterApp --> Painters
   } catch (e) {
     this.showToast("Failed to like", "error");
   }
-@@TwitterApp.like.end
+@@MessageApp.like.end
 
-@async @TwitterApp.retweet{tweetId: string, instanceId: number}: void
-@@TwitterApp.retweet.code
+@async @MessageApp.repost{messageId: string, instanceId: number}: void
+@@MessageApp.repost.code
   try {
-    const result = await this.feed.retweetMessage(tweetId);
+    const result = await this.feed.repostMessage(messageId);
     
     if (!result.ok) {
       if (result.status === 409) {
-        this.showToast("You've already retweeted this", "error");
+        this.showToast("You've already reposted this", "error");
       } else {
-        this.showToast(result.data.error || "Failed to retweet", "error");
+        this.showToast(result.data.error || "Failed to repost", "error");
       }
       return;
     }
 
-    const retweet = result.data;
+    const repost = result.data;
     
     // Prepend to timeline
     const container = document.getElementById("timeline");
-    if (container && retweet) {
+    if (container && repost) {
       const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = this.renderSingleTweet(retweet);
+      tempDiv.innerHTML = this.renderSingleMessage(repost);
       if (tempDiv.firstElementChild) {
         container.prepend(tempDiv.firstElementChild);
         this.showToast("Reposted successfully!", "success");
@@ -937,10 +938,10 @@ TwitterApp --> Painters
     }
 
     // Update original button count
-    const btnId = "retweet-btn-instance-" + instanceId;
+    const btnId = "repost-btn-instance-" + instanceId;
     const btn = document.getElementById(btnId);
     if (btn) {
-      const countSpan = btn.querySelector('.retweet-count');
+      const countSpan = btn.querySelector('.repost-count');
       const current = countSpan ? (parseInt(countSpan.innerText) || 0) : 0;
       if (countSpan) countSpan.innerText = (current + 1);
       
@@ -954,10 +955,10 @@ TwitterApp --> Painters
   } catch (e) {
     this.showToast("Connection error", "error");
   }
-@@TwitterApp.retweet.end
+@@MessageApp.repost.end
 
-@TwitterApp.showToast{message: string, type: string}: void
-@@TwitterApp.showToast.code
+@MessageApp.showToast{message: string, type: string}: void
+@@MessageApp.showToast.code
   const container = document.getElementById('toast-container');
   if (!container) return;
 
@@ -971,20 +972,20 @@ TwitterApp --> Painters
     toast.style.transform = 'translate(-50%, 20px)';
     setTimeout(() => toast.remove(), 300);
   }, 3000);
-@@TwitterApp.showToast.end
+@@MessageApp.showToast.end
 
-@async @TwitterApp.fetchFollowing{}: void
-@@TwitterApp.fetchFollowing.code
+@async @MessageApp.fetchFollowing{}: void
+@@MessageApp.fetchFollowing.code
   try {
     const list = await this.feed.getFollowing();
     this.followedUsers = new Set(list.map((u: any) => u.username));
   } catch (e) {
     console.error("Failed to fetch following list", e);
   }
-@@TwitterApp.fetchFollowing.end
+@@MessageApp.fetchFollowing.end
 
-@async @TwitterApp.toggleFollow{username: string, currentCount: number}: void
-@@TwitterApp.toggleFollow.code
+@async @MessageApp.toggleFollow{username: string, currentCount: number}: void
+@@MessageApp.toggleFollow.code
   const isFollowing = this.followedUsers.has(username);
   
   try {
@@ -999,7 +1000,7 @@ TwitterApp --> Painters
     }
     
     // Update all follow buttons for this user
-    const buttons = document.querySelectorAll("[id='twitter-follow-" + username + "']");
+    const buttons = document.querySelectorAll("[id='message-follow-" + username + "']");
     buttons.forEach((btn: any) => {
       btn.innerText = isFollowing ? "Follow" : "Unfollow";
     });
@@ -1020,12 +1021,12 @@ TwitterApp --> Painters
     }
 
     // Update all follower counts for this user on the screen
-    const followerElements = document.querySelectorAll('.tweet-username');
+    const followerElements = document.querySelectorAll('.message-username');
     followerElements.forEach(el => {
       if (el.innerText === '@' + username) {
-         const headerTop = el.closest('.tweet-header-top');
+         const headerTop = el.closest('.message-header-top');
          if (headerTop) {
-           const countContainer = headerTop.querySelector('.tweet-followers');
+           const countContainer = headerTop.querySelector('.message-followers');
            if (countContainer) {
              const countSpan = countContainer.querySelector('span'); // target the inner span
              const current = countSpan ? (parseInt(countSpan.innerText) || 0) : 0;
@@ -1043,10 +1044,10 @@ TwitterApp --> Painters
   } catch (e) {
     this.showToast("Action failed: " + e.message, "error");
   }
-@@TwitterApp.toggleFollow.end
+@@MessageApp.toggleFollow.end
 
-@async @TwitterApp.renderSocialList{containerId: string, username: string, type: string}: void
-@@TwitterApp.renderSocialList.code
+@async @MessageApp.renderSocialList{containerId: string, username: string, type: string}: void
+@@MessageApp.renderSocialList.code
     const container = document.getElementById(containerId);
     if (!container) return;
  
@@ -1076,10 +1077,10 @@ TwitterApp --> Painters
       this.showToast(e.message, 'error');
       container.innerHTML = "<div class='error'>Error loading list.</div>";
     }
-@@TwitterApp.renderSocialList.end
+@@MessageApp.renderSocialList.end
 
-@TwitterApp.renderUserItem{user: any, listType: string}: string
-@@TwitterApp.renderUserItem.code
+@MessageApp.renderUserItem{user: any, listType: string}: string
+@@MessageApp.renderUserItem.code
     const avatarUrl = user.avatarUrl || 'http://localhost:8080/images/userprofiledefault.png';
     const isFollowing = this.followedUsers.has(user.username);
     const currentUser = this.auth.getCurrentUser();
@@ -1103,17 +1104,17 @@ TwitterApp --> Painters
              "</a>" +
              "<div class='user-item-actions'>" + followBtn + "</div>" +
            "</div>";
-@@TwitterApp.renderUserItem.end
+@@MessageApp.renderUserItem.end
 
-@async @TwitterApp.reportTweet{tweetId: string, instanceId: number}: void
-@@TwitterApp.reportTweet.code
-  if (!confirm("Are you sure you want to report this tweet?")) return;
+@async @MessageApp.reportMessage{messageId: string, instanceId: number}: void
+@@MessageApp.reportMessage.code
+  if (!confirm("Are you sure you want to report this message?")) return;
   try {
-    await this.feed.reportTweet(tweetId);
-    this.showToast("Tweet reported to administrators", "success");
+    await this.feed.reportMessage(messageId);
+    this.showToast("Message reported to administrators", "success");
   } catch (e) {
-    this.showToast("Failed to report tweet: " + e.message, "error");
+    this.showToast("Failed to report message: " + e.message, "error");
   }
-@@TwitterApp.reportTweet.end
+@@MessageApp.reportMessage.end
 
-Rollup->{AuthFE.ts, Feed.ts, Messaging.ts, TwitterApp.ts}
+Rollup->{AuthFE.ts, Feed.ts, Messaging.ts, MessageApp.ts}
