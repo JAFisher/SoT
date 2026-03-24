@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Message - Social Network</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div class="layout-wrapper">
+        <div class="container">
+            <div class="header">
+                <div class="profile-section">
+                    <a id="profile-avatar-link" href="dashboard.html"><img id="sidebar-avatar"
+                            src="http://localhost:8080/images/userprofiledefault.png" alt="User Avatar"
+                            class="profile-avatar-sm"></a>
+                    <div class="profile-info">
+                        <a href="dashboard.html" style="text-decoration: none; color: inherit;"><span
+                                style="font-weight: bold;">Back to Feed</span></a>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button id="themeToggleBtn" class="btn btn-outline" onclick="window.app.toggleTheme()" style="padding: 6px; border-radius: 50%; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
+                        <svg id="theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px; display: block;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                        <svg id="theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 20px; height: 20px; display: none;"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                    </button>
+                    <button id="homeBtn" class="btn btn-outline">Home</button>
+                    <button id="logoutBtn" class="btn btn-outline">Log out</button>
+                </div>
+            </div>
+
+            <div id="app-box">
+                <div class="post-box" style="margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 20px;">
+                    <div id="replyLabel" style="font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Replying to this conversation</div>
+                    <textarea id="tweetContent" placeholder="Post your reply" maxlength="300"></textarea>
+                    <div id="imagePreview" style="display: none; margin-bottom: 10px; position: relative;">
+                        <img id="previewImg" src="" alt="Image Preview"
+                            style="max-width: 100%; border-radius: var(--radius-md);">
+                        <button id="removeImgBtn" class="btn"
+                            style="position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border-radius: 50%; padding: 0; background: rgba(0,0,0,0.6); color: white; display: flex; align-items: center; justify-content: center;">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                    </div>
+                    <div class="post-actions">
+                        <input type="file" id="imgInput" accept="image/png, image/jpeg" style="display: none;">
+                        <div id="charCount" class="char-counter">0 / 300</div>
+                        <button id="addImgBtn" class="add-image-btn btn btn-outline" style="display: inline-flex; align-items: center;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg> Image</button>
+                        <button id="postBtn" class="btn btn-primary">Reply</button>
+                    </div>
+                </div>
+                <div id="thread-container" role="main">
+                    <div id="thread"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-sidebar">
+            <div id="trending-container" style="display:none" class="trending-box"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { TwitterApp } from './compiled.js';
+
+        window.app = new TwitterApp();
+        await window.app.init();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const messageId = urlParams.get('id');
+
+        if (!window.app.auth.currentUser) {
+            window.location.href = 'login.html';
+        } else {
+            const currentUsername = window.app.auth.currentUser.username;
+            if (window.app.auth.currentUser.avatarUrl) {
+                document.getElementById('sidebar-avatar').src = window.app.auth.currentUser.avatarUrl;
+            }
+
+            if (messageId) {
+                await window.app.renderThread('thread', messageId);
+            } else {
+                window.location.href = 'dashboard.html';
+            }
+
+            await window.app.renderTrending('trending-container');
+        }
+
+        document.getElementById('homeBtn').addEventListener('click', () => {
+            window.location.href = 'dashboard.html';
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            window.app.auth.logout();
+            window.location.href = 'login.html';
+        });
+
+        // --- Reply Functionality ---
+        let selectedImageBase64 = null;
+        const box = document.getElementById('tweetContent');
+        const charCountElem = document.getElementById('charCount');
+
+        document.getElementById('addImgBtn').addEventListener('click', () => {
+            document.getElementById('imgInput').click();
+        });
+
+        document.getElementById('imgInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (re) => {
+                    selectedImageBase64 = re.target.result;
+                    document.getElementById('previewImg').src = selectedImageBase64;
+                    document.getElementById('imagePreview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        document.getElementById('removeImgBtn').addEventListener('click', () => {
+            selectedImageBase64 = null;
+            document.getElementById('imgInput').value = '';
+            document.getElementById('imagePreview').style.display = 'none';
+        });
+
+        box.addEventListener('input', () => {
+            const len = box.value.length;
+            charCountElem.innerText = len + " / 300";
+            if (len >= 300) {
+                charCountElem.classList.add('limit-reached');
+            } else {
+                charCountElem.classList.remove('limit-reached');
+            }
+        });
+
+        document.getElementById('postBtn').addEventListener('click', async () => {
+            const content = box.value;
+            if ((content.trim() || selectedImageBase64) && window.app.auth.currentUser && messageId) {
+                let imageUrl = '';
+                if (selectedImageBase64) {
+                    try {
+                        const uploadRes = await window.app.feed.uploadImage(selectedImageBase64);
+                        imageUrl = uploadRes.url;
+                    } catch (e) {
+                        window.app.showToast(e.message, 'error');
+                        return;
+                    }
+                }
+
+                await window.app.postNewTweet(window.app.auth.currentUser.username, content, messageId, '', imageUrl);
+                
+                // Reset UI
+                box.value = '';
+                charCountElem.innerText = "0 / 300";
+                selectedImageBase64 = null;
+                document.getElementById('imgInput').value = '';
+                document.getElementById('imagePreview').style.display = 'none';
+
+                // Refresh thread
+                await window.app.renderThread('thread', messageId);
+                window.app.showToast('Reply posted!', 'success');
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1102,3 +1102,7 @@ h4 {
 #themeToggleBtn {
     margin: unset;
 }
+
+.thread-replies {
+    padding: 24px;
+}

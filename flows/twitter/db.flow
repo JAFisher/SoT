@@ -131,6 +131,41 @@ Database[Database.ts{pool: any}]
   }
 @@Database.insertMessage.end
 
+@async @Database.getTweet{id: string}: any
+@@Database.getTweet.code
+  const res = await this.pool.query(
+    "SELECT m1.*, m2.sender_username as retweeted_author, u1.avatar_url as author_avatar, u1.follower_count as author_follower_count, " +
+    "m4.sender_username as parent_author, m4.content as parent_content, " +
+    "(SELECT COUNT(*) FROM messages m3 WHERE m3.replied_to_id = m1.id) as reply_count " +
+    "FROM messages m1 " +
+    "LEFT JOIN messages m2 ON m1.retweeted_id = m2.id " +
+    "LEFT JOIN users u1 ON m1.sender_username = u1.username " +
+    "LEFT JOIN messages m4 ON m1.replied_to_id = m4.id " +
+    "WHERE m1.id = $1",
+    [id]
+  );
+  if (res.rows.length === 0) return null;
+  const row = res.rows[0];
+  return {
+    id: row.id,
+    authorUsername: row.sender_username,
+    authorAvatar: row.author_avatar,
+    authorFollowerCount: row.author_follower_count || 0,
+    content: row.content,
+    timestamp: Number(row.timestamp),
+    repliedToId: row.replied_to_id,
+    repliedToUsername: row.parent_author,
+    parentContent: row.parent_content,
+    retweetedId: row.retweeted_id,
+    retweetedAuthor: row.retweeted_author,
+    likedCount: row.liked_count,
+    retweetCount: row.retweet_count,
+    repliesCount: Number(row.reply_count),
+    imageUrl: row.image_url,
+    viewCount: row.view_count || 0
+  };
+@@Database.getTweet.end
+
 @async @Database.getMessagesBetween{user1: string, user2: string}: any
 @@Database.getMessagesBetween.code
   const res = await this.pool.query(

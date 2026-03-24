@@ -92,6 +92,17 @@ Feed --> AuthFE
   });
   return await res.json();
 @@Feed.getTimeline.end
+
+@async @Feed.getTweet{id: string}: any
+@@Feed.getTweet.code
+  const res = await fetch("http://localhost:8080/api/tweets?id=" + id, {
+    headers: {
+      "Authorization": "Bearer " + (window.app.auth ? window.app.auth.token : "")
+    }
+  });
+  if (!res.ok) throw new Error("Tweet not found");
+  return await res.json();
+@@Feed.getTweet.end
  
  @async @Feed.getHashtagFeed{tag: string, limit: number, offset: number}: any
  @@Feed.getHashtagFeed.code

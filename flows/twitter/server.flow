@@ -121,11 +121,19 @@ Server --> Auth
       const limit = parseInt(url.searchParams.get('limit') || '25');
       const offset = parseInt(url.searchParams.get('offset') || '0');
       const username = url.searchParams.get('username');
+      const tweetId = url.searchParams.get('id');
       const authUser = getAuthUser(req);
 
       try {
         let tweets;
-        if (username) {
+        if (tweetId) {
+          tweets = await this.auth.db.getTweet(tweetId);
+          if (!tweets) {
+            res.writeHead(404);
+            res.end(JSON.stringify({ error: "Tweet not found" }));
+            return;
+          }
+        } else if (username) {
           tweets = await this.auth.db.getUserTweets(username, limit, offset);
         } else if (authUser) {
           tweets = await this.auth.db.getPersonalizedTweets(authUser.username, limit, offset);
