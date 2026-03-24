@@ -1,0 +1,90 @@
+Painter[Painter.ts{canvas: HTMLCanvasElement,ctx: CanvasRenderingContext2D, isDrawing: boolean, color: string, lineWidth: number}]
+
+@Painter.init{canvasId: string}: void
+@@Painter.init.code
+  this.canvas = document.getElementById(canvasId) as HTMLCanvasElement;
+  this.ctx = this.canvas.getContext('2d')!;
+  this.isDrawing = false;
+  this.color = '#000000';
+  this.lineWidth = 2;
+
+  const startDrawing = (e: MouseEvent | TouchEvent) => {
+    this.isDrawing = true;
+    this.draw(e);
+  };
+
+  const stopDrawing = () => {
+    this.isDrawing = false;
+    this.ctx.beginPath();
+  };
+
+  this.canvas.addEventListener('mousedown', startDrawing);
+  this.canvas.addEventListener('mousemove', (e) => this.draw(e));
+  this.canvas.addEventListener('mouseup', stopDrawing);
+  this.canvas.addEventListener('mouseout', stopDrawing);
+
+  this.canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    startDrawing(e);
+  }, { passive: false });
+  this.canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    this.draw(e);
+  }, { passive: false });
+  this.canvas.addEventListener('touchend', stopDrawing);
+
+  // Set initial white background
+  this.clear();
+@@Painter.init.end
+
+@Painter.draw{e: any}: void
+@@Painter.draw.code
+  if (!this.isDrawing) return;
+
+  const rect = this.canvas.getBoundingClientRect();
+  const scaleX = this.canvas.width / rect.width;
+  const scaleY = this.canvas.height / rect.height;
+  let clientX, clientY;
+
+  if (e instanceof MouseEvent) {
+    clientX = e.clientX;
+    clientY = e.clientY;
+  } else {
+    clientX = e.touches[0].clientX;
+    clientY = e.touches[0].clientY;
+  }
+
+  const x = (clientX - rect.left) * scaleX;
+  const y = (clientY - rect.top) * scaleY;
+
+  this.ctx.lineWidth = this.lineWidth;
+  this.ctx.lineCap = 'round';
+  this.ctx.strokeStyle = this.color;
+
+  this.ctx.lineTo(x, y);
+  this.ctx.stroke();
+  this.ctx.beginPath();
+  this.ctx.moveTo(x, y);
+@@Painter.draw.end
+
+@Painter.setColor{color: string}: void
+@@Painter.setColor.code
+  this.color = color;
+@@Painter.setColor.end
+
+@Painter.setLineWidth{width: number}: void
+@@Painter.setLineWidth.code
+  this.lineWidth = width;
+@@Painter.setLineWidth.end
+
+@Painter.clear{}: void
+@@Painter.clear.code
+  this.ctx.fillStyle = '#ffffff';
+  this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+  this.ctx.beginPath();
+@@Painter.clear.end
+
+@Painter.getImage{}: string
+@@Painter.getImage.code
+  return this.canvas.toDataURL('image/png');
+@@Painter.getImage.end

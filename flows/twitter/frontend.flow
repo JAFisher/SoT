@@ -2,14 +2,16 @@ include->authfe.flow
 include->feeds.flow
 include->messages.flow
 include->admin.flow
+include->paint.flow
 
 cliscripts->start node -e "require('fs').copyFileSync('compiled.js', 'public/compiled.js')" && npx -y http-server public -p 3000
 
-TwitterApp[TwitterApp.ts{auth: any, feed: any, messaging: any, initialized: boolean, followedUsers: Set<string>, currentSocialUser: string, currentSocialType: string}]
+TwitterApp[TwitterApp.ts{auth: any, feed: any, paint: any, messaging: any, initialized: boolean, followedUsers: Set<string>, currentSocialUser: string, currentSocialType: string}]
 TwitterApp --> AuthFE
 TwitterApp --> Feed
 TwitterApp --> Messaging
 TwitterApp --> AdminPage
+TwitterApp --> Painters
 
 @TwitterApp.constructor{}
 @@TwitterApp.constructor.code
@@ -17,6 +19,7 @@ TwitterApp --> AdminPage
   this.feed = new Feed();
   this.messaging = new Messaging();
   this.adminPage = new AdminPage();
+  this.paint = new Painter();
   this.initialized = false;
   this.renderCount = 0;
   this.tweetsOffset = 0;
@@ -60,6 +63,11 @@ TwitterApp --> AdminPage
       // Optional: redirect to login if refresh fails
     }
     await this.fetchFollowing();
+  
+  // Initialize Painter if canvas exists (it might not on all pages)
+  if (document.getElementById('paintCanvas')) {
+    this.paint.init('paintCanvas');
+  }
   }
 @@TwitterApp.init.end
 

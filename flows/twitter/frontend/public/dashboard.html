@@ -63,7 +63,25 @@
                         <input type="file" id="imgInput" accept="image/png, image/jpeg" style="display: none;">
                         <div id="charCount" class="char-counter">0 / 300</div>
                         <button id="addImgBtn" class="add-image-btn btn btn-outline" style="display: inline-flex; align-items: center;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg> Image</button>
+                        <button id="addPaintBtn" class="add-image-btn btn btn-outline" style="display: inline-flex; align-items: center;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="M2 2l5 5"></path><path d="M11 11l1 1"></path></svg> Draw</button>
                         <button id="postBtn" class="btn btn-primary">Post</button>
+                    </div>
+                </div>
+
+                <!-- Paint Modal -->
+                <div id="paintModal" class="modal" style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); align-items: center; justify-content: center;">
+                    <div class="modal-content" style="background: var(--bg-primary); padding: 20px; border-radius: var(--radius-lg); width: 90%; max-width: 540px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h3 style="margin: 0;">Draw something</h3>
+                            <button id="closePaintBtn" class="btn-text">✕</button>
+                        </div>
+                        <canvas id="paintCanvas" width="500" height="400" style="border: 2px solid var(--border-color); background: white; cursor: crosshair; width: 100%; touch-action: none; border-radius: var(--radius-md);"></canvas>
+                        <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                            <input type="color" id="paintColor" value="#000000" style="width: 40px; height: 40px; border: none; padding: 0; border-radius: 50%; overflow: hidden; cursor: pointer;">
+                            <input type="range" id="paintWidth" min="1" max="20" value="2" style="flex-grow: 1;">
+                            <button id="clearPaintBtn" class="btn btn-outline">Clear</button>
+                            <button id="savePaintBtn" class="btn btn-primary">Attach</button>
+                        </div>
                     </div>
                 </div>
                 <div id="timeline-container" role="main">
@@ -215,6 +233,34 @@
 
         document.getElementById('addImgBtn').addEventListener('click', () => {
             document.getElementById('imgInput').click();
+        });
+
+        document.getElementById('addPaintBtn').addEventListener('click', () => {
+            document.getElementById('paintModal').style.display = 'flex';
+            window.app.paint.clear();
+        });
+
+        document.getElementById('closePaintBtn').addEventListener('click', () => {
+            document.getElementById('paintModal').style.display = 'none';
+        });
+
+        document.getElementById('clearPaintBtn').addEventListener('click', () => {
+            window.app.paint.clear();
+        });
+
+        document.getElementById('savePaintBtn').addEventListener('click', () => {
+            selectedImageBase64 = window.app.paint.getImage();
+            document.getElementById('previewImg').src = selectedImageBase64;
+            document.getElementById('imagePreview').style.display = 'block';
+            document.getElementById('paintModal').style.display = 'none';
+        });
+
+        document.getElementById('paintColor').addEventListener('input', (e) => {
+            window.app.paint.setColor(e.target.value);
+        });
+
+        document.getElementById('paintWidth').addEventListener('input', (e) => {
+            window.app.paint.setLineWidth(parseInt(e.target.value));
         });
 
         document.getElementById('updateAvatarBtn').addEventListener('click', () => {
