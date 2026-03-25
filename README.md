@@ -32,9 +32,10 @@ https://jafisher.github.io/SoT/
 
 ### Installation
 
-Ensure you have [Node.js](https://nodejs.org/) installed, then install the dependencies:
+Ensure you have [Node.js](https://nodejs.org/) installed, then install TypeScript globally and the project dependencies:
 
 ```bash
+npm install typescript -g
 npm install
 ```
 
