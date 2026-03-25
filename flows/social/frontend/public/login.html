@@ -14,11 +14,11 @@
             <div class="auth-logo">MessageApp</div>
             <h3>Join today.</h3>
 
-            <input type="text" id="username" class="input-field" placeholder="Username">
+            <input type="text" id="username" class="input-field" placeholder="Username or Email">
             <input type="password" id="password" class="input-field" placeholder="Password">
 
             <button id="loginBtn" class="btn btn-primary">Log in</button>
-            <button id="registerBtn" class="btn btn-outline">Sign up</button>
+            <button id="registerBtn" class="btn btn-outline" onclick="window.location.href='register.html'">Sign up</button>
         </div>
     </div>
 
@@ -41,23 +41,6 @@
                     window.location.href = 'dashboard.html';
                 } catch (e) {
                     alert("Login failed: " + e.message);
-                }
-            }
-        });
-
-        document.getElementById('registerBtn').addEventListener('click', async () => {
-            const user = document.getElementById('username').value;
-            const pass = document.getElementById('password').value;
-            if (user && pass) {
-                if (user.includes('@')) {
-                    alert("Username cannot contain the '@' symbol.");
-                    return;
-                }
-                try {
-                    await window.app.auth.register(user, user, pass);
-                    window.location.href = 'dashboard.html';
-                } catch (e) {
-                    alert("Registration failed: " + e.message);
                 }
             }
         });

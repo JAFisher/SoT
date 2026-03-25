@@ -1,4 +1,4 @@
-type->User {id: string, username: string, name: string, avatarUrl: string, isAdmin: boolean}
+type->User {id: string, username: string, email: string, name: string, avatarUrl: string, isAdmin: boolean}
 type->AuthResponse {token: string, refreshToken: string, user: User}
 
 AuthFE[AuthFE.ts{currentUser: any, token: string, refreshToken: string, serverURL: string}]
@@ -17,12 +17,12 @@ AuthFE[AuthFE.ts{currentUser: any, token: string, refreshToken: string, serverUR
   }
 @@AuthFE.constructor.end
 
-@async @AuthFE.register{username: string, name: string, pass: string}: AuthResponse
+@async @AuthFE.register{username: string, email: string, name: string, pass: string}: AuthResponse
 @@AuthFE.register.code
   const res = await fetch(this.serverURL + "/api/register", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, name, pass })
+    body: JSON.stringify({ username, email, name, pass })
   });
   if (!res.ok) throw new Error("Registration failed");
   const data = await res.json();

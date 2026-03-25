@@ -31,7 +31,8 @@ Database[Database.ts{pool: any}]
 @@Database.init.code
 
 
-  await this.pool.query("CREATE TABLE IF NOT EXISTS users (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), username VARCHAR(255) UNIQUE NOT NULL, name VARCHAR(255) NOT NULL, password_hash VARCHAR(255) NOT NULL, avatar_url TEXT);");
+  await this.pool.query("CREATE TABLE IF NOT EXISTS users (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), username VARCHAR(255) UNIQUE NOT NULL, email VARCHAR(255) UNIQUE NOT NULL, name VARCHAR(255) NOT NULL, password_hash VARCHAR(255) NOT NULL, avatar_url TEXT);");
+  await this.pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS email VARCHAR(255) UNIQUE;");
   await this.pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS follower_count INT DEFAULT 0;");
   await this.pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS following_count INT DEFAULT 0;");
   await this.pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS banner_url TEXT;");

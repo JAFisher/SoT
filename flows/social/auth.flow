@@ -2,7 +2,7 @@ include->db.flow
 extern->jwt from "jsonwebtoken"
 extern->bcrypt from "bcrypt"
 
-type->User {id: string, username: string, name: string, avatarUrl: string, followerCount: number, followingCount: number, isAdmin: boolean}
+type->User {id: string, username: string, email: string, name: string, avatarUrl: string, followerCount: number, followingCount: number, isAdmin: boolean}
 type->AuthResponse {token: string, refreshToken: string, user: User}
 
 Auth[Auth.ts{db: any, jwtSecret: string, jwtRefreshSecret: string}]
@@ -20,9 +20,10 @@ Auth --> Database
   await this.db.init();
 @@Auth.init.end
 
-@async @Auth.register{username: string, name: string, pass: string}: AuthResponse
+@async @Auth.register{username: string, email: string, name: string, pass: string}: AuthResponse
 @@Auth.register.code
   const lowerUsername = username.toLowerCase();
+  const lowerEmail = email.toLowerCase();
   
   if (lowerUsername.includes('@')) {
     throw new Error("Username cannot contain '@' symbol");
@@ -31,22 +32,22 @@ Auth --> Database
   const hash = await bcrypt.hash(pass, 10);
   try {
     const result = await this.db.query(
-      "INSERT INTO users (username, name, password_hash) VALUES ($1, $2, $3) RETURNING id, username, name, avatar_url, follower_count, following_count, is_admin",
-      [lowerUsername, name, hash]
+      "INSERT INTO users (username, email, name, password_hash) VALUES ($1, $2, $3, $4) RETURNING id, username, email, name, avatar_url, follower_count, following_count, is_admin",
+      [lowerUsername, lowerEmail, name, hash]
     );
     const row = result.rows[0];
-    const user = { id: row.id, username: row.username, name: row.name, avatarUrl: row.avatar_url, followerCount: row.follower_count || 0, followingCount: row.following_count || 0, isAdmin: !!row.is_admin };
+    const user = { id: row.id, username: row.username, email: row.email, name: row.name, avatarUrl: row.avatar_url, followerCount: row.follower_count || 0, followingCount: row.following_count || 0, isAdmin: !!row.is_admin };
 
     return this.generateTokens(user);
   } catch (error) {
-    throw new Error("User registration failed (possibly duplicate username)");
+    throw new Error("User registration failed (possibly duplicate username or email)");
   }
 @@Auth.register.end
 
 @async @Auth.login{username: string, pass: string}: AuthResponse
 @@Auth.login.code
-  const lowerUsername = username.toLowerCase();
-  const result = await this.db.query("SELECT * FROM users WHERE username = $1", [lowerUsername]);
+  const lowerIdentifier = username.toLowerCase();
+  const result = await this.db.query("SELECT * FROM users WHERE username = $1 OR email = $1", [lowerIdentifier]);
   if (result.rows.length === 0) {
     throw new Error("User not found");
   }
@@ -56,7 +57,7 @@ Auth --> Database
     throw new Error("Invalid password");
   }
   
-  const user = { id: userRow.id, username: userRow.username, name: userRow.name, avatarUrl: userRow.avatar_url, followerCount: userRow.follower_count || 0, followingCount: userRow.following_count || 0, isAdmin: !!userRow.is_admin };
+  const user = { id: userRow.id, username: userRow.username, email: userRow.email, name: userRow.name, avatarUrl: userRow.avatar_url, followerCount: userRow.follower_count || 0, followingCount: userRow.following_count || 0, isAdmin: !!userRow.is_admin };
   return this.generateTokens(user);
 @@Auth.login.end
 
@@ -74,7 +75,7 @@ Auth --> Database
     // the long-lived refresh token and returns a fresh 1h token. The client can call this
     // every 10 mins.
     const decoded = jwt.verify(refreshToken, this.jwtRefreshSecret);
-    const user = { id: decoded.id, username: decoded.username, name: decoded.name, avatarUrl: decoded.avatarUrl, followerCount: decoded.followerCount || 0, followingCount: decoded.followingCount || 0, isAdmin: !!decoded.isAdmin };
+    const user = { id: decoded.id, username: decoded.username, email: decoded.email, name: decoded.name, avatarUrl: decoded.avatarUrl, followerCount: decoded.followerCount || 0, followingCount: decoded.followingCount || 0, isAdmin: !!decoded.isAdmin };
     return this.generateTokens(user);
   } catch (err) {
     throw new Error("Invalid or expired refresh token");

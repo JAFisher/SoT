@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Network - Register</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div class="container auth-wrapper">
+        <div class="auth-box">
+            <div class="auth-logo">MessageApp</div>
+            <h3>Create your account.</h3>
+
+            <input type="email" id="email" class="input-field" placeholder="Email Address">
+            <input type="text" id="username" class="input-field" placeholder="Username (no @)">
+            <input type="text" id="name" class="input-field" placeholder="Full Name">
+            <input type="password" id="password" class="input-field" placeholder="Password">
+
+            <button id="registerBtn" class="btn btn-primary">Sign up</button>
+            <button id="loginLinkBtn" class="btn btn-outline" onclick="window.location.href='login.html'">Back to Login</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { MessageApp } from './compiled.js';
+
+        window.app = new MessageApp();
+        await window.app.init();
+
+        if (window.app.auth.currentUser) {
+            window.location.href = 'dashboard.html';
+        }
+
+        document.getElementById('registerBtn').addEventListener('click', async () => {
+            const email = document.getElementById('email').value;
+            const user = document.getElementById('username').value;
+            const name = document.getElementById('name').value;
+            const pass = document.getElementById('password').value;
+
+            if (email && user && name && pass) {
+                if (user.includes('@')) {
+                    alert("Username cannot contain the '@' symbol.");
+                    return;
+                }
+                if (!email.includes('@')) {
+                    alert("Invalid email address.");
+                    return;
+                }
+                
+                try {
+                    await window.app.auth.register(user, email, name, pass);
+                    window.location.href = 'dashboard.html';
+                } catch (e) {
+                    alert("Registration failed: " + e.message);
+                }
+            } else {
+                alert("Please fill in all fields.");
+            }
+        });
+    </script>
+</body>
+
+</html>
