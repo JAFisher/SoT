@@ -46,6 +46,7 @@ Database[Database.ts{pool: any}]
   await this.pool.query("CREATE TABLE IF NOT EXISTS hashtags (tag VARCHAR(255) NOT NULL, message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE, PRIMARY KEY (tag, message_id));");
   await this.pool.query("CREATE TABLE IF NOT EXISTS notifications (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), sender_username VARCHAR(255) NOT NULL, receiver_username VARCHAR(255) NOT NULL, action VARCHAR(255) NOT NULL, message_id UUID, timestamp BIGINT NOT NULL, is_read BOOLEAN DEFAULT FALSE, UNIQUE(sender_username, receiver_username, action, message_id));");
   await this.pool.query("CREATE TABLE IF NOT EXISTS reports (id SERIAL PRIMARY KEY, reporter_username VARCHAR(255) REFERENCES users(username), message_id UUID REFERENCES messages(id), timestamp BIGINT, marked_as_safe BOOLEAN DEFAULT FALSE, UNIQUE(reporter_username, message_id));");
+  await this.pool.query("CREATE TABLE IF NOT EXISTS password_resets (id SERIAL PRIMARY KEY, email VARCHAR(255) NOT NULL, token VARCHAR(255) NOT NULL, expires_at BIGINT NOT NULL, UNIQUE(email));");
   try {
     await this.pool.query("ALTER TABLE reports ADD COLUMN IF NOT EXISTS marked_as_safe BOOLEAN DEFAULT FALSE;");
   } catch (e) {}
@@ -454,6 +455,30 @@ Database[Database.ts{pool: any}]
   }
 @@Database.repostMessage.end
 
+@async @Database.upsertResetToken{email: string, token: string, expiresAt: number}: void
+@@Database.upsertResetToken.code
+  await this.pool.query(
+    "INSERT INTO password_resets (email, token, expires_at) VALUES ($1, $2, $3) ON CONFLICT (email) DO UPDATE SET token = $2, expires_at = $3",
+    [email.toLowerCase(), token, expiresAt]
+  );
+@@Database.upsertResetToken.end
+
+@async @Database.getResetToken{email: string}: any
+@@Database.getResetToken.code
+  const res = await this.pool.query("SELECT * FROM password_resets WHERE email = $1", [email.toLowerCase()]);
+  return res.rows[0] || null;
+@@Database.getResetToken.end
+
+@async @Database.deleteResetToken{email: string}: void
+@@Database.deleteResetToken.code
+  await this.pool.query("DELETE FROM password_resets WHERE email = $1", [email.toLowerCase()]);
+@@Database.deleteResetToken.end
+
+@async @Database.updatePassword{email: string, passwordHash: string}: void
+@@Database.updatePassword.code
+  await this.pool.query("UPDATE users SET password_hash = $1 WHERE email = $2", [passwordHash, email.toLowerCase()]);
+@@Database.updatePassword.end
+
 @async @Database.getReplies{messageId: string}: any
 @@Database.getReplies.code
   const res = await this.pool.query(
@@ -626,6 +651,12 @@ Database[Database.ts{pool: any}]
   const res = await this.pool.query("SELECT * FROM users WHERE username = $1", [username]);
   return res.rows[0] || null;
 @@Database.getUser.end
+
+@async @Database.getUserByEmail{email: string}: any
+@@Database.getUserByEmail.code
+  const res = await this.pool.query("SELECT * FROM users WHERE email = $1", [email.toLowerCase()]);
+  return res.rows[0] || null;
+@@Database.getUserByEmail.end
 
 @async @Database.updateUserAvatar{username: string, avatarUrl: string}: void
 @@Database.updateUserAvatar.code

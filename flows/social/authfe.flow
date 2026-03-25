@@ -98,3 +98,31 @@ AuthFE[AuthFE.ts{currentUser: any, token: string, refreshToken: string, serverUR
 @@AuthFE.getCurrentUser.code
   return this.currentUser;
 @@AuthFE.getCurrentUser.end
+
+@async @AuthFE.forgotPassword{email: string}: any
+@@AuthFE.forgotPassword.code
+  const res = await fetch(this.serverURL + "/api/forgot-password", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email })
+  });
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error || "Failed to request password reset");
+  }
+  return await res.json();
+@@AuthFE.forgotPassword.end
+
+@async @AuthFE.resetPassword{email: string, token: string, newPass: string}: any
+@@AuthFE.resetPassword.code
+  const res = await fetch(this.serverURL + "/api/reset-password", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, token, newPass })
+  });
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error || "Failed to reset password");
+  }
+  return await res.json();
+@@AuthFE.resetPassword.end

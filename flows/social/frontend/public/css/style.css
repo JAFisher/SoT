@@ -1127,6 +1127,13 @@ h4 {
 }
 
 #loginBtn,
+#sendBtn,
 #registerBtn {
     width: fit-content;
+}
+
+.auth-subtitle {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-bottom: 20px;
 }
