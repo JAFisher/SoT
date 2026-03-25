@@ -18,7 +18,8 @@
             <input type="password" id="password" class="input-field" placeholder="Password">
 
             <button id="loginBtn" class="btn btn-primary">Log in</button>
-            <button id="registerBtn" class="btn btn-outline" onclick="window.location.href='register.html'">Sign up</button>
+            <button id="registerBtn" class="btn btn-outline" onclick="window.location.href='register.html'">Sign
+                up</button>
         </div>
     </div>
 
@@ -40,8 +41,10 @@
                     await window.app.auth.login(user, pass);
                     window.location.href = 'dashboard.html';
                 } catch (e) {
-                    alert("Login failed: " + e.message);
+                    window.app.showToast(e.message, "error");
                 }
+            } else {
+                window.app.showToast("Please fill in all fields.", "error");
             }
         });
     </script>

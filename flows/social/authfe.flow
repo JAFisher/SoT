@@ -24,7 +24,10 @@ AuthFE[AuthFE.ts{currentUser: any, token: string, refreshToken: string, serverUR
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, email, name, pass })
   });
-  if (!res.ok) throw new Error("Registration failed");
+  if (!res.ok){ 
+    const data = await res.json();
+    throw new Error("Registration failed: " + data.error);
+  }
   const data = await res.json();
   this.currentUser = data.user;
   this.token = data.token;
@@ -42,7 +45,10 @@ AuthFE[AuthFE.ts{currentUser: any, token: string, refreshToken: string, serverUR
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, pass })
   });
-  if (!res.ok) throw new Error("Login failed");
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error("Login failed: " + data.error);
+  }
   const data = await res.json();
   this.currentUser = data.user;
   this.token = data.token;

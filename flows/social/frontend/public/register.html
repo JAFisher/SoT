@@ -20,7 +20,8 @@
             <input type="password" id="password" class="input-field" placeholder="Password">
 
             <button id="registerBtn" class="btn btn-primary">Sign up</button>
-            <button id="loginLinkBtn" class="btn btn-outline" onclick="window.location.href='login.html'">Back to Login</button>
+            <button id="loginLinkBtn" class="btn btn-outline" onclick="window.location.href='login.html'">Back to
+                Login</button>
         </div>
     </div>
 
@@ -42,22 +43,22 @@
 
             if (email && user && name && pass) {
                 if (user.includes('@')) {
-                    alert("Username cannot contain the '@' symbol.");
+                    window.app.showToast("Username cannot contain the '@' symbol.", "error");
                     return;
                 }
                 if (!email.includes('@')) {
-                    alert("Invalid email address.");
+                    window.app.showToast("Invalid email address.", "error");
                     return;
                 }
-                
+
                 try {
                     await window.app.auth.register(user, email, name, pass);
                     window.location.href = 'dashboard.html';
                 } catch (e) {
-                    alert("Registration failed: " + e.message);
+                    window.app.showToast(e.message, "error");
                 }
             } else {
-                alert("Please fill in all fields.");
+                window.app.showToast("Please fill in all fields.", "error");
             }
         });
     </script>
