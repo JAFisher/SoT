@@ -38,20 +38,27 @@ function parseFlowchart(definition, sourceDir = "./flows") {
     const cliScriptPattern = /cliscripts->(\w+)\s+(.+)/;
     const pkgOverridePattern = /pkg->(\w+)\s+(.+)/;
 
-    function addNode(id, file, props, namespace) {
+    function addNode(id, file, props, namespace, infrastructure = "class") {
         if (!nodes[id]) {
             const fileName = (file || id + ".ts").trim();
-            nodes[id] = { file: fileName, props: parseProps(props), namespace };
+            nodes[id] = { file: fileName, props: parseProps(props), namespace, infrastructure };
         } else {
             if (file) nodes[id].file = file.trim();
             if (props) nodes[id].props = parseProps(props);
             if (namespace !== undefined) nodes[id].namespace = namespace;
+            if (infrastructure) nodes[id].infrastructure = infrastructure;
         }
     }
 
-    function parseWorker(lines, currentDir, namespace) {
+    function parseWorker(lines, currentDir, namespace, infrastructure = "class") {
         for (let i = 0; i < lines.length; i++) {
             let line = lines[i];
+
+            const infrastructureMatch = line.match(/^!(object|class)\b/i);
+            if (infrastructureMatch) {
+                infrastructure = infrastructureMatch[1].toLowerCase();
+                continue;
+            }
 
             // Helper to check bracket balance
             const count = (str, char) => (str.match(new RegExp("\\" + char, "g")) || []).length;
@@ -142,8 +149,8 @@ function parseFlowchart(definition, sourceDir = "./flows") {
             const extendsMatch = line.match(new RegExp(`^${nodePattern.source}\\s*---\\|>\\s*${nodePattern.source}\\s*;?$`));
             if (extendsMatch) {
                 const [, childId, childFile, childProps, parentId, parentFile, parentProps] = extendsMatch;
-                addNode(childId, childFile, childProps, namespace);
-                addNode(parentId, parentFile, parentProps, namespace);
+                addNode(childId, childFile, childProps, namespace, infrastructure);
+                addNode(parentId, parentFile, parentProps, namespace, infrastructure);
                 extendsEdges.push({ childId, parentId });
                 continue;
             }
@@ -260,9 +267,9 @@ function parseFlowchart(definition, sourceDir = "./flows") {
             const compositionMatch = line.match(new RegExp(`^${nodePattern.source}(?:\\s*-->\\s*${nodePattern.source})?\\s*;?$`));
             if (compositionMatch) {
                 const [, fromId, fromFile, fromProps, toId, toFile, toProps] = compositionMatch;
-                addNode(fromId, fromFile, fromProps, namespace);
+                addNode(fromId, fromFile, fromProps, namespace, infrastructure);
                 if (toId) {
-                    addNode(toId, toFile, toProps, namespace);
+                    addNode(toId, toFile, toProps, namespace, infrastructure);
                     compositionEdges.push([fromId, toId]);
                 }
                 continue;
@@ -449,19 +456,20 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
     }
 
     // 3. Classes
-    for (const [id, { file: filename, props, namespace }] of Object.entries(nodes)) {
+    for (const [id, { file: filename, props, namespace, infrastructure = "class" }] of Object.entries(nodes)) {
 
         const className = toPascalCase(path.basename(filename, path.extname(filename)));
         const parentRelationship = extendsEdges.find((r) => r.childId === id);
         let extendsClause = "";
         let parentImport = "";
+        let parentClassName = "";
         const customImports = new Set();
         const externalImportLines = new Set();
 
         if (parentRelationship) {
             const parentId = parentRelationship.parentId;
             const parent = nodes[parentId];
-            const parentClassName = toPascalCase(path.basename(parent.file, path.extname(parent.file)));
+            parentClassName = toPascalCase(path.basename(parent.file, path.extname(parent.file)));
             const relPath = getRelativeImport(namespace, parent.namespace, parent.file);
             extendsClause = ` extends ${parentClassName}`;
             parentImport = `import { ${parentClassName} } from "${relPath}";`;
@@ -537,6 +545,37 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
         const allImports = [...new Set([parentImport, ...compositionImports, ...customImportStatements, ...externalImportLines])]
             .filter(Boolean);
 
+        const outPath = path.join(baseDir, namespace, filename);
+        fs.mkdirSync(path.dirname(outPath), { recursive: true });
+
+        if (infrastructure === "object") {
+            const ctorParams = methods[className]?.constructor?.params || [];
+            const factoryParams = (ctorParams.length > 0 ? ctorParams : props)
+                .map(p => `${p.name}: ${p.type}`)
+                .join(', ');
+            const objectMembers = [];
+
+            if (parentRelationship) objectMembers.push(`  ...${parentClassName}()`);
+            objectMembers.push(...props.map((p) => `  ${p.name}`));
+
+            const objectMethods = Object.entries(methods[className] || {})
+                .filter(([name]) => name !== "constructor")
+                .map(([mName, mData]) => {
+                    const paramsStr = (mData.params || []).map(p => `${p.name}: ${p.type}`).join(', ');
+                    const returnType = mData.returnType && mData.returnType !== "void" ? `: ${mData.returnType}` : "";
+                    return `  ${mData.async ? 'async ' : ''}${mName}(${paramsStr})${returnType} {\n${indent(mData.code || '', 4)}\n  }`;
+                });
+            objectMembers.push(...objectMethods);
+
+            const objectLiteral = objectMembers.length > 0
+                ? `({\n${objectMembers.join(",\n")}\n})`
+                : `({})`;
+            const content = `${allImports.join("\n")}${allImports.length ? "\n\n" : ""}export const ${className} = (${factoryParams}) => ${objectLiteral};\n\nexport type ${className}Type = ReturnType<typeof ${className}>;`;
+            fs.writeFileSync(outPath, content.trimStart(), "utf-8");
+            console.log("Object generated: " + className + " in " + (namespace || "root"));
+            continue;
+        }
+
         const fields = props.map((p) => `  ${p.name}: ${p.type};`).join("\n");
         let ctorContent = "";
         const hasCustomCtor = methods[className] && methods[className].constructor && methods[className].constructor.code;
@@ -552,8 +591,6 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
             .map(([mName, mData]) => `\n  public ${mData.async ? 'async ' : ''}${mName}(${(mData.params || []).map(p => `${p.name}: ${p.type}`).join(', ')}): ${mData.returnType || 'any'} {\n${indent(mData.code || '', 4)}\n  }`).join("");
 
         const content = `${allImports.join("\n")}${allImports.length ? "\n\n" : ""}export class ${className}${extendsClause} {\n${fields}${ctorContent}${methodsContent}\n}`;
-        const outPath = path.join(baseDir, namespace, filename);
-        fs.mkdirSync(path.dirname(outPath), { recursive: true });
         fs.writeFileSync(outPath, content.trimStart(), "utf-8");
         console.log("🏁 Class generated: " + className + " in " + (namespace || "root"));
     }

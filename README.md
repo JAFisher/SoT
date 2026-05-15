@@ -14,7 +14,7 @@ Tool Agnostic: Use tsx, bun, deno, or ts-node by overriding the CLI execution la
 
 ## Features
 
-- **Class Generation**: Define classes with properties and methods.
+- **Class/Object Generation**: Define classes by default, or switch a flow to object factories with `!object`.
 - **Inheritance & Composition**: Model relationships between your entities.
 - **Type & Interface Support**: Define data structures and contracts.
 - **Modular Flow Includes**: Reuse flow definitions across services with recursive `include->`.
@@ -93,8 +93,35 @@ npx tsx ./src/auth/main.ts
 
 The generator uses a custom syntax that extends Mermaid flowchart definitions.
 
-### 1. Nodes (Classes)
-Nodes define classes and the files they will be generated in.
+### 1. Infrastructure Mode
+Flows generate TypeScript classes by default. Put `!object` at the top of a `.flow` file to generate object factory functions instead.
+
+```text
+!object
+graph TD
+  User[User.ts{name: string}]
+
+  @async @User.save{}: void
+  @@User.save.code
+    console.log(this.name);
+  @@User.save.end
+```
+
+Generates:
+
+```ts
+export const User = (name: string) => ({
+  name,
+  async save() {
+    console.log(this.name);
+  }
+});
+
+export type UserType = ReturnType<typeof User>;
+```
+
+### 2. Nodes (Classes)
+Nodes define classes or object factories and the files they will be generated in.
 
 **Syntax:** `ID[FileName.ts{prop1: type, prop2: type}]`
 
@@ -102,7 +129,7 @@ Nodes define classes and the files they will be generated in.
 - **FileName.ts**: The name of the file to be created.
 - **Properties**: Optional properties defined inside curly braces `{}`.
 
-### 2. Relationships
+### 3. Relationships
 
 #### Inheritance (Extends)
 **Syntax:** `ChildID ---|> ParentID`
@@ -114,14 +141,14 @@ This creates a class extension: `class Child extends Parent`.
 
 This adds an import statement in the `From` class referencing the `To` class.
 
-### 3. Types and Interfaces
+### 4. Types and Interfaces
 You can define standalone TypeScript types and interfaces.
 
 **Syntax:**
 - `type->TypeName{prop: type, ...}`
 - `interface->InterfaceName{prop: type, ...}`
 
-### 4. External Dependencies
+### 5. External Dependencies
 Import NPM packages or Node.js built-ins directly into your flow. You can optionally specify a version using the `@` symbol; if omitted, it defaults to `"latest"`.
 
 **Syntax:** `extern->LibName from "package-name"[@version]`
@@ -135,12 +162,12 @@ extern->fs from "node:fs"
 
 The generator automatically adds these to the generated `package.json` with the specified version and manages imports in `main.ts` (keeping the import path clean).
 
-### 5. Asynchronous Support
+### 6. Asynchronous Support
 Mark methods or main blocks as asynchronous using the `@async` keyword.
 
 **Syntax:** `@async @ClassName.MethodName...`
 
-### 6. Methods and Logic
+### 7. Methods and Logic
 
 #### Method Signatures
 **Syntax:** `[@async] @ClassName.MethodName{param: type}: ReturnType`

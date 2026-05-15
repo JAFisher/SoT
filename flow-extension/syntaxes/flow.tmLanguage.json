@@ -45,6 +45,10 @@
           "match": "\\b(include|extern|type|interface|web|docker|Rollup|cliscripts|pkg|main)\\b"
         },
         {
+          "name": "storage.modifier.infrastructure.flow",
+          "match": "!(object|class)\\b"
+        },
+        {
           "name": "keyword.operator.flow",
           "match": "->"
         },

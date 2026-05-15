@@ -24,6 +24,7 @@ window.FlowHighlighter = {
       { pattern: /-&gt;|---&gt;|---\|&gt;/g, class: "flow-operator" },
       
       // Decorators/Modifiers
+      { pattern: /!(object|class)\b/g, class: "flow-modifier" },
       { pattern: /@async\b/g, class: "flow-modifier" },
       
       // Class/Method markers
