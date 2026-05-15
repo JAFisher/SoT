@@ -341,7 +341,7 @@ function indent(code, n = 4) {
     const pad = " ".repeat(n);
     return code.split("\n").map((line) => (line.length ? pad + line : line)).join("\n");
 }
-function stripTs(p) { return p.replace(/\.ts$/i, ""); }
+function stripTs(p) { return p.replace(/\.tsx?$/i, ""); }
 function toPascalCase(str) { return str.replace(/-(.)/g, (_, c) => c.toUpperCase()).replace(/^\w/, (c) => c.toUpperCase()); }
 
 /**
@@ -549,6 +549,15 @@ function generateFiles(baseDir, { nodes, compositionEdges, extendsEdges, methods
         fs.mkdirSync(path.dirname(outPath), { recursive: true });
 
         if (infrastructure === "object") {
+            const hasCustomCtor = methods[className] && methods[className].constructor && methods[className].constructor.code;
+            if (hasCustomCtor) {
+                const paramsStr = (methods[className].constructor.params || []).map(p => `${p.name}: ${p.type}`).join(', ');
+                const content = `${allImports.join("\n")}${allImports.length ? "\n\n" : ""}export const ${className} = (${paramsStr}) => {\n${indent(methods[className].constructor.code, 2)}\n};\n\nexport type ${className}Type = ReturnType<typeof ${className}>;`;
+                fs.writeFileSync(outPath, content.trimStart(), "utf-8");
+                console.log("Object generated: " + className + " in " + (namespace || "root"));
+                continue;
+            }
+
             const ctorParams = methods[className]?.constructor?.params || [];
             const factoryParams = (ctorParams.length > 0 ? ctorParams : props)
                 .map(p => `${p.name}: ${p.type}`)
