@@ -1,0 +1,1119 @@
+!object
+graph TD
+  cliscripts->start npx -y http-server -p 3003 -c-1
+
+  CalendarTheme[CalendarTheme.ts{accent: string, deep: string, highlight: string}]
+  CalendarEvent[CalendarEvent.ts{id: string, title: string, time: string, category: string, date: string, desc: string}]
+  CalendarState[CalendarState.ts{events: CalendarEvent[]}]
+
+  Badge[Badge.tsx{}]
+  EventCard[EventCard.tsx{}]
+  Sidebar[Sidebar.tsx{}]
+  DayCell[DayCell.tsx{}]
+  CalendarGrid[CalendarGrid.tsx{}]
+  StatWidget[StatWidget.tsx{}]
+  CalendarDashboard[CalendarDashboard.tsx{}]
+
+  CalendarState --> CalendarEvent
+  CalendarDashboard --> CalendarTheme
+  CalendarDashboard --> CalendarState
+  CalendarDashboard --> Sidebar
+  CalendarDashboard --> CalendarGrid
+  CalendarDashboard --> StatWidget
+  Sidebar --> EventCard
+  Sidebar --> Badge
+  CalendarGrid --> DayCell
+  EventCard --> Badge
+  StatWidget --> Badge
+
+  @CalendarTheme.tokens{}: any
+  @@CalendarTheme.tokens.code
+    return {
+      shell: `radial-gradient(circle at 50% 50%, #1e1b4b 0%, #09090b 100%)`,
+      accent: this.accent,
+      deep: this.deep,
+      highlight: this.highlight,
+      glass: "rgba(255, 255, 255, 0.03)",
+      border: "1px solid rgba(255, 255, 255, 0.08)",
+      blur: "backdrop-filter: blur(16px)"
+    };
+  @@CalendarTheme.tokens.end
+
+  @Badge.constructor{props: any}
+  @@Badge.constructor.code
+    const React = window.React;
+    const { label, tone } = props;
+    const colors = {
+      work: { bg: "rgba(34, 211, 238, 0.08)", border: "rgba(34, 211, 238, 0.2)", text: "#22d3ee" },
+      personal: { bg: "rgba(192, 132, 252, 0.08)", border: "rgba(192, 132, 252, 0.2)", text: "#c084fc" },
+      health: { bg: "rgba(52, 211, 153, 0.08)", border: "rgba(52, 211, 153, 0.2)", text: "#34d399" },
+      urgent: { bg: "rgba(244, 63, 94, 0.08)", border: "rgba(244, 63, 94, 0.2)", text: "#f43f5e" },
+      social: { bg: "rgba(251, 191, 36, 0.08)", border: "rgba(251, 191, 36, 0.2)", text: "#fbbf24" }
+    };
+    const current = colors[tone.toLowerCase()] || colors.work;
+    return (
+      <span className="event-badge" style={{ backgroundColor: current.bg, border: `1px solid ${current.border}`, color: current.text }}>
+        <span className="badge-dot" style={{ backgroundColor: current.text }} />
+        {label}
+      </span>
+    );
+  @@Badge.constructor.end
+
+  @EventCard.constructor{props: any}
+  @@EventCard.constructor.code
+    const React = window.React;
+    const { event, onDelete } = props;
+    return (
+      <div className="event-card">
+        <div className="event-card-header">
+          <span className="event-time">{event.time}</span>
+          <Badge label={event.category} tone={event.category} />
+        </div>
+        <h4 className="event-title">{event.title}</h4>
+        {event.desc && <p className="event-desc">{event.desc}</p>}
+        <button className="delete-btn" onClick={() => onDelete(event.id)} aria-label="Delete Event">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+        </button>
+      </div>
+    );
+  @@EventCard.constructor.end
+
+  @Sidebar.constructor{props: any}
+  @@Sidebar.constructor.code
+    const React = window.React;
+    const { selectedDate, events, onDelete, onAdd } = props;
+    const [title, setTitle] = React.useState("");
+    const [category, setCategory] = React.useState("Work");
+    const [time, setTime] = React.useState("12:00");
+    const [desc, setDesc] = React.useState("");
+
+    const handleSubmit = (e) => {
+      e.preventDefault();
+      if (!title.trim()) return;
+      onAdd({
+        title,
+        category,
+        time,
+        desc,
+        date: selectedDate.getFullYear() + "-" + (selectedDate.getMonth() + 1).toString().padStart(2, '0') + "-" + selectedDate.getDate().toString().padStart(2, '0')
+      });
+
+      setTitle("");
+      setDesc("");
+      setTime("12:00");
+      setCategory("Work");
+    };
+
+    const formattedDate = selectedDate.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+
+    return (
+      <div className="sidebar-container">
+        <div className="sidebar-header">
+          <h3>Selected Date</h3>
+          <p className="selected-date-str">{formattedDate}</p>
+        </div>
+
+        <div className="events-list-section">
+          <h4>Events ({events.length})</h4>
+          {events.length === 0 ? (
+            <div className="no-events">No events scheduled. Perfect day to relax!</div>
+          ) : (
+            <div className="events-scroll">
+              {events.map(ev => (
+                <EventCard key={ev.id} event={ev} onDelete={onDelete} />
+              ))}
+            </div>
+          )}
+        </div>
+
+        <form className="add-event-form" onSubmit={handleSubmit}>
+          <h4>Add Event</h4>
+          <div className="form-group">
+            <input type="text" placeholder="Event Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+          </div>
+          <div className="form-row">
+            <div className="form-group half">
+              <select value={category} onChange={(e) => setCategory(e.target.value)}>
+                <option value="Work">Work</option>
+                <option value="Personal">Personal</option>
+                <option value="Health">Health</option>
+                <option value="Urgent">Urgent</option>
+                <option value="Social">Social</option>
+              </select>
+            </div>
+            <div className="form-group half">
+              <input type="time" value={time} onChange={(e) => setTime(e.target.value)} required />
+            </div>
+          </div>
+          <div className="form-group">
+            <textarea placeholder="Description (optional)" value={desc} onChange={(e) => setDesc(e.target.value)} rows={2} />
+          </div>
+          <button className="submit-btn" type="submit">Schedule Event</button>
+        </form>
+      </div>
+    );
+  @@Sidebar.constructor.end
+
+  @DayCell.constructor{props: any}
+  @@DayCell.constructor.code
+    const React = window.React;
+    const { day, date, isSelected, isToday, events = [], onClick } = props;
+
+    if (day === null) {
+      return <div className="day-cell day-empty" />;
+    }
+
+    const maxDots = 3;
+    const hasMore = events.length > maxDots;
+    const dotsToShow = hasMore ? events.slice(0, 2) : events.slice(0, maxDots);
+    const moreCount = events.length - dotsToShow.length;
+
+    const categoryColors = {
+      work: "#22d3ee",
+      personal: "#c084fc",
+      health: "#34d399",
+      urgent: "#f43f5e",
+      social: "#fbbf24"
+    };
+
+    return (
+      <div 
+        className={"day-cell " + (isSelected ? 'selected' : '') + " " + (isToday ? 'today' : '') + " " + (events.length > 0 ? 'has-events' : '')}
+        onClick={() => onClick(date)}
+      >
+        <span className="day-number">{day}</span>
+        <div className="day-dots">
+          {dotsToShow.map((ev) => (
+            <span 
+              key={ev.id} 
+              className="day-dot" 
+              style={{ backgroundColor: categoryColors[ev.category.toLowerCase()] || "#a7f3d0" }} 
+            />
+          ))}
+          {hasMore && (
+            <span className="day-more-indicator">
+              {" +" + moreCount}
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  @@DayCell.constructor.end
+
+  @CalendarGrid.constructor{props: any}
+  @@CalendarGrid.constructor.code
+    const React = window.React;
+    const { currentDate, selectedDate, events, onDateClick, onMonthChange } = props;
+
+    const [showSelector, setShowSelector] = React.useState(false);
+    const [selectorYear, setSelectorYear] = React.useState(currentDate.getFullYear());
+
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+
+    const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7;
+    const totalDays = new Date(year, month + 1, 0).getDate();
+
+    const cells = [];
+    for (let i = 0; i < firstDayIndex; i++) {
+      cells.push(null);
+    }
+    for (let i = 1; i <= totalDays; i++) {
+      cells.push(i);
+    }
+
+    const handlePrevMonth = () => {
+      onMonthChange(new Date(year, month - 1, 1));
+    };
+
+    const handleNextMonth = () => {
+      onMonthChange(new Date(year, month + 1, 1));
+    };
+
+    const handleToday = () => {
+      const now = new Date();
+      onMonthChange(now);
+      onDateClick(now);
+    };
+
+    const today = new Date();
+
+    const handleToggleSelector = () => {
+      setSelectorYear(year);
+      setShowSelector(!showSelector);
+    };
+
+    return (
+      <div className="calendar-grid-container" style={{ position: "relative" }}>
+        <div className="calendar-grid-header">
+          <h2 onClick={handleToggleSelector} style={{ cursor: "pointer", display: "inline-flex", alignItems: "center" }}>
+            {monthNames[month]} <span className="year-dim" style={{ marginLeft: "8px" }}>{year}</span>
+            <svg className={"chevron-icon " + (showSelector ? "open" : "")} viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: "8px", transition: "transform 0.2s" }}><path d="M6 9l6 6 6-6"/></svg>
+          </h2>
+          <div className="grid-nav">
+            <button className="nav-btn" onClick={handlePrevMonth} aria-label="Previous Month">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <button className="nav-btn today-btn" onClick={handleToday}>Today</button>
+            <button className="nav-btn" onClick={handleNextMonth} aria-label="Next Month">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+          </div>
+        </div>
+
+        {showSelector ? (
+          <div className="month-year-selector-overlay">
+            <div className="selector-year-nav">
+              <button className="nav-btn" onClick={() => setSelectorYear(selectorYear - 1)}>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+              <h3>{selectorYear}</h3>
+              <button className="nav-btn" onClick={() => setSelectorYear(selectorYear + 1)}>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+            </div>
+            <div className="selector-months-grid">
+              {monthNames.map((mName, mIdx) => (
+                <button 
+                  key={mName} 
+                  className={"selector-month-btn " + (mIdx === month && selectorYear === year ? "active" : "")}
+                  onClick={() => {
+                    onMonthChange(new Date(selectorYear, mIdx, 1));
+                    setShowSelector(false);
+                  }}
+                >
+                  {mName.substring(0, 3)}
+                </button>
+              ))}
+            </div>
+            <button className="selector-cancel-btn" onClick={() => setShowSelector(false)}>
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="week-days">
+              <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+            </div>
+
+            <div className="days-grid">
+              {cells.map((day, idx) => {
+                if (day === null) {
+                  return <DayCell key={"empty-" + idx} day={null} />;
+                }
+                const cellDate = new Date(year, month, day);
+                const cellDateStr = cellDate.getFullYear() + "-" + (cellDate.getMonth() + 1).toString().padStart(2, '0') + "-" + cellDate.getDate().toString().padStart(2, '0');
+                const dayEvents = events.filter(e => e.date === cellDateStr);
+
+                const isSelected = selectedDate && 
+                  selectedDate.getDate() === day && 
+                  selectedDate.getMonth() === month && 
+                  selectedDate.getFullYear() === year;
+
+                const isTodayCell = today.getDate() === day && 
+                  today.getMonth() === month && 
+                  today.getFullYear() === year;
+
+                return (
+                  <DayCell 
+                    key={"day-" + day}
+                    day={day}
+                    date={cellDate}
+                    isSelected={isSelected}
+                    isToday={isTodayCell}
+                    events={dayEvents}
+                    onClick={onDateClick}
+                  />
+                );
+              })}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  @@CalendarGrid.constructor.end
+
+  @StatWidget.constructor{props: any}
+  @@StatWidget.constructor.code
+    const React = window.React;
+    const { events = [], currentDate } = props;
+
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+
+    const monthEvents = events.filter(e => {
+      const evDate = new Date(e.date);
+      return evDate.getMonth() === month && evDate.getFullYear() === year;
+    });
+
+    const categories = ["Work", "Personal", "Health", "Urgent", "Social"];
+    const categoryColors = {
+      Work: "#22d3ee",
+      Personal: "#c084fc",
+      Health: "#34d399",
+      Urgent: "#f43f5e",
+      Social: "#fbbf24"
+    };
+
+    const counts = categories.reduce((acc, cat) => {
+      acc[cat] = monthEvents.filter(e => e.category === cat).length;
+      return acc;
+    }, {});
+
+    const total = monthEvents.length;
+
+    return (
+      <div className="stat-widget-container">
+        <div className="stat-widget-header">
+          <h3>Monthly Analytics</h3>
+          <div className="stat-badge">{total} Active</div>
+        </div>
+
+        <div className="stat-metrics">
+          <div className="stat-hero">
+            <strong>{total}</strong>
+            <span>Total Scheduled Events</span>
+          </div>
+          <div className="stat-occupancy">
+            <strong>{Math.round((total / 30) * 100)}%</strong>
+            <span>Month Load Capacity</span>
+          </div>
+        </div>
+
+        <div className="category-bars">
+          <h4>Category Breakdown</h4>
+          {categories.map(cat => {
+            const count = counts[cat];
+            const pct = total > 0 ? (count / total) * 100 : 0;
+            const color = categoryColors[cat];
+
+            return (
+              <div key={cat} className="category-bar-item">
+                <div className="bar-label">
+                  <span>{cat}</span>
+                  <strong>{count} ({Math.round(pct)}%)</strong>
+                 </div>
+                 <div className="bar-track">
+                   <div 
+                     className="bar-fill" 
+                     style={{ 
+                       width: pct + "%", 
+                       backgroundColor: color,
+                       boxShadow: "0 0 10px " + color
+                     }} 
+                   />
+                 </div>
+               </div>
+             );
+           })}
+         </div>
+       </div>
+     );
+  @@StatWidget.constructor.end
+
+  @CalendarDashboard.constructor{props: any}
+  @@CalendarDashboard.constructor.code
+    const React = window.React;
+    const { theme, initialState } = props;
+
+    const [currentDate, setCurrentDate] = React.useState(new Date());
+    const [selectedDate, setSelectedDate] = React.useState(new Date());
+    const [events, setEvents] = React.useState(initialState.events);
+
+    const handleAddEvent = (newEvent) => {
+      const eventWithId = {
+        ...newEvent,
+        id: Date.now().toString()
+      };
+      setEvents(prev => [...prev, eventWithId]);
+    };
+
+    const handleDeleteEvent = (id) => {
+      setEvents(prev => prev.filter(e => e.id !== id));
+    };
+
+    const selectedDateStr = selectedDate.getFullYear() + "-" + (selectedDate.getMonth() + 1).toString().padStart(2, '0') + "-" + selectedDate.getDate().toString().padStart(2, '0');
+    const filteredEvents = events.filter(e => e.date === selectedDateStr);
+
+    const tokens = theme.tokens();
+
+    return (
+      <div className="dashboard-shell" style={{ background: tokens.shell }}>
+        <div className="glow-sphere sphere-one" style={{ background: "radial-gradient(circle, " + tokens.accent + " 0%, transparent 70%)" }} />
+        <div className="glow-sphere sphere-two" style={{ background: "radial-gradient(circle, #3b82f6 0%, transparent 70%)" }} />
+
+        <header className="dashboard-header">
+          <div className="header-brand">
+            <div className="brand-icon">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 4H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zM16 2v4M8 2v4M3 10h18"/></svg>
+            </div>
+            <div>
+              <h1>Aetheris</h1>
+              <span className="brand-tagline">Quantum Calendar & Analytics Console</span>
+            </div>
+          </div>
+        </header>
+
+        <main className="dashboard-grid">
+          <section className="dashboard-main">
+            <div className="glass-panel main-calendar-panel">
+              <CalendarGrid 
+                currentDate={currentDate}
+                selectedDate={selectedDate}
+                events={events}
+                onDateClick={setSelectedDate}
+                onMonthChange={setCurrentDate}
+              />
+            </div>
+            
+            <div className="glass-panel main-stats-panel">
+              <StatWidget 
+                events={events}
+                currentDate={currentDate}
+              />
+            </div>
+          </section>
+
+          <section className="dashboard-sidebar">
+            <div className="glass-panel sidebar-panel">
+              <Sidebar 
+                selectedDate={selectedDate}
+                events={filteredEvents}
+                onDelete={handleDeleteEvent}
+                onAdd={handleAddEvent}
+              />
+            </div>
+          </section>
+        </main>
+      </div>
+    );
+  @@CalendarDashboard.constructor.end
+
+  Rollup->{CalendarTheme.ts, Badge.tsx, EventCard.tsx, Sidebar.tsx, DayCell.tsx, CalendarGrid.tsx, StatWidget.tsx, CalendarDashboard.tsx}
+
+  web->index.html.code
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aetheris - Quantum Calendar & Analytics</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: #09090b;
+        color: #e4e4e7;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+      button, input, select, textarea {
+        font-family: inherit;
+        color: inherit;
+      }
+      .glow-sphere {
+        position: absolute;
+        width: 600px;
+        height: 600px;
+        border-radius: 50%;
+        opacity: 0.12;
+        filter: blur(120px);
+        pointer-events: none;
+        z-index: 0;
+      }
+      .sphere-one {
+        top: -200px;
+        left: -200px;
+      }
+      .sphere-two {
+        bottom: -200px;
+        right: -200px;
+      }
+      .dashboard-shell {
+        position: relative;
+        width: 100%;
+        min-height: 100vh;
+        padding: clamp(20px, 4vw, 40px);
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+        z-index: 1;
+      }
+      .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding-bottom: 20px;
+      }
+      .header-brand {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+      .brand-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #ffffff;
+        box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+      }
+      .header-brand h1 {
+        font-size: 1.8rem;
+        font-weight: 800;
+        letter-spacing: -0.025em;
+        background: linear-gradient(to right, #ffffff, #a78bfa);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .brand-tagline {
+        font-size: 0.85rem;
+        color: #a1a1aa;
+      }
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        gap: 30px;
+        align-items: start;
+      }
+      .dashboard-main {
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+      }
+      @media (max-width: 1024px) {
+        .dashboard-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .glass-panel {
+        background: rgba(20, 20, 25, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        transition: border-color 0.3s ease;
+      }
+      .glass-panel:hover {
+        border-color: rgba(255, 255, 255, 0.12);
+      }
+      .calendar-grid-container {
+        padding: 30px;
+      }
+      .calendar-grid-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+      }
+      .calendar-grid-header h2 {
+        font-size: 1.6rem;
+        font-weight: 700;
+      }
+      .year-dim {
+        color: #71717a;
+        font-weight: 400;
+      }
+      .grid-nav {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .nav-btn {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .nav-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #ffffff;
+        border-color: rgba(255, 255, 255, 0.2);
+      }
+      .today-btn {
+        width: auto;
+        padding: 0 16px;
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+      .week-days {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        text-align: center;
+        color: #71717a;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 15px;
+      }
+      .days-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 10px;
+      }
+      .day-cell {
+        aspect-ratio: 1.1;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        border-radius: 12px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .day-cell:hover {
+        background: rgba(255, 255, 255, 0.06);
+        transform: translateY(-2px);
+        border-color: rgba(255, 255, 255, 0.15);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      }
+      .day-empty {
+        background: transparent;
+        border: none;
+        cursor: default;
+        pointer-events: none;
+      }
+      .day-number {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #a1a1aa;
+      }
+      .day-cell:hover .day-number {
+        color: #ffffff;
+      }
+      .day-cell.selected {
+        background: rgba(139, 92, 246, 0.12);
+        border-color: rgba(139, 92, 246, 0.5);
+        box-shadow: 0 0 15px rgba(139, 92, 246, 0.25);
+      }
+      .day-cell.selected .day-number {
+        color: #c084fc;
+      }
+      .day-cell.today {
+        background: rgba(255, 255, 255, 0.06);
+        border: 2px solid #ffffff;
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.15);
+      }
+      .day-cell.today .day-number {
+        color: #ffffff;
+        font-weight: 800;
+      }
+      .day-dots {
+        display: flex;
+        justify-content: center;
+        gap: 4px;
+        margin-top: auto;
+      }
+      .day-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+      }
+      .day-more-indicator {
+        font-size: 0.65rem;
+        font-weight: 700;
+        color: #a1a1aa;
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        margin-left: 2px;
+      }
+      .sidebar-panel {
+        min-height: 600px;
+      }
+      .sidebar-container {
+        padding: 30px;
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+      }
+      .sidebar-header h3 {
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #71717a;
+        margin-bottom: 5px;
+      }
+      .selected-date-str {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #ffffff;
+      }
+      .events-list-section h4, .add-event-form h4 {
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #a1a1aa;
+        margin-bottom: 15px;
+        border-left: 3px solid #8b5cf6;
+        padding-left: 10px;
+      }
+      .events-scroll {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-height: 280px;
+        overflow-y: auto;
+        padding-right: 5px;
+      }
+      .events-scroll::-webkit-scrollbar {
+        width: 6px;
+      }
+      .events-scroll::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .events-scroll::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+      }
+      .no-events {
+        padding: 25px;
+        text-align: center;
+        background: rgba(255, 255, 255, 0.01);
+        border: 1px dashed rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        color: #71717a;
+        font-size: 0.9rem;
+        line-height: 1.4;
+      }
+      .event-card {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 14px;
+        position: relative;
+        transition: all 0.2s;
+      }
+      .event-card:hover {
+        background: rgba(255, 255, 255, 0.04);
+        border-color: rgba(255, 255, 255, 0.1);
+      }
+      .event-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .event-time {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #8b5cf6;
+      }
+      .event-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+      .badge-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+      }
+      .event-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #ffffff;
+        margin-bottom: 6px;
+        padding-right: 25px;
+      }
+      .event-desc {
+        font-size: 0.8rem;
+        color: #a1a1aa;
+        line-height: 1.4;
+      }
+      .delete-btn {
+        position: absolute;
+        right: 12px;
+        bottom: 12px;
+        background: transparent;
+        border: none;
+        color: #71717a;
+        cursor: pointer;
+        opacity: 0;
+        transition: all 0.2s;
+      }
+      .event-card:hover .delete-btn {
+        opacity: 1;
+      }
+      .delete-btn:hover {
+        color: #f43f5e;
+      }
+      .add-event-form {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: auto;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        padding-top: 20px;
+      }
+      .form-group input, .form-group select, .form-group textarea {
+        width: 100%;
+        background: rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+      }
+      .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+        border-color: #8b5cf6;
+        outline: none;
+        box-shadow: 0 0 10px rgba(139, 92, 246, 0.2);
+      }
+      .form-row {
+        display: flex;
+        gap: 10px;
+      }
+      .form-group.half {
+        flex: 1;
+      }
+      .submit-btn {
+        background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+        border: none;
+        border-radius: 10px;
+        padding: 12px;
+        font-weight: 700;
+        color: #ffffff;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        transition: all 0.2s;
+      }
+      .submit-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5);
+      }
+      .stat-widget-container {
+        padding: 30px;
+      }
+      .stat-widget-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+      }
+      .stat-widget-header h3 {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #ffffff;
+      }
+      .stat-badge {
+        background: rgba(139, 92, 246, 0.15);
+        border: 1px solid rgba(139, 92, 246, 0.3);
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #c084fc;
+        text-transform: uppercase;
+      }
+      .stat-metrics {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        margin-bottom: 30px;
+      }
+      .stat-hero, .stat-occupancy {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        border-radius: 16px;
+        padding: 20px;
+        text-align: center;
+      }
+      .stat-hero strong, .stat-occupancy strong {
+        display: block;
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: #ffffff;
+        line-height: 1;
+        margin-bottom: 6px;
+      }
+      .stat-hero span, .stat-occupancy span {
+        font-size: 0.8rem;
+        color: #71717a;
+        font-weight: 500;
+      }
+      .category-bars {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .category-bars h4 {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #71717a;
+        margin-bottom: 5px;
+      }
+      .category-bar-item {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .bar-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85rem;
+      }
+      .bar-label span {
+        color: #a1a1aa;
+        font-weight: 500;
+      }
+      .bar-label strong {
+        color: #ffffff;
+      }
+      .bar-track {
+        height: 8px;
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .bar-fill {
+        height: 100%;
+        border-radius: 999px;
+        transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .month-year-selector-overlay {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(20px);
+        border-radius: 16px;
+        padding: 25px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        min-height: 320px;
+        justify-content: center;
+      }
+      .selector-year-nav {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+      }
+      .selector-year-nav h3 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #ffffff;
+        min-width: 80px;
+        text-align: center;
+      }
+      .selector-months-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+      }
+      .selector-month-btn {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        color: #a1a1aa;
+        border-radius: 10px;
+        padding: 12px 6px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: center;
+      }
+      .selector-month-btn:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.15);
+        color: #ffffff;
+      }
+      .selector-month-btn.active {
+        background: rgba(139, 92, 246, 0.2);
+        border-color: rgba(139, 92, 246, 0.5);
+        color: #c084fc;
+        font-weight: 700;
+        box-shadow: 0 0 10px rgba(139, 92, 246, 0.2);
+      }
+      .selector-cancel-btn {
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #71717a;
+        padding: 10px;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .selector-cancel-btn:hover {
+        border-color: rgba(255, 255, 255, 0.15);
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.02);
+      }
+      .chevron-icon.open {
+        transform: rotate(180deg);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script type="module">
+      import { CalendarTheme, CalendarDashboard } from "./compiled.js?v=2";
+
+      const theme = CalendarTheme("#8b5cf6", "#0f172a", "rgba(139, 92, 246, 0.15)");
+
+      const today = new Date();
+      const y = today.getFullYear();
+      const m = today.getMonth();
+      const padZero = (n) => n.toString().padStart(2, '0');
+      const makeDate = (offsetDays) => {
+        const d = new Date(y, m, today.getDate() + offsetDays);
+        return `${d.getFullYear()}-${padZero(d.getMonth() + 1)}-${padZero(d.getDate())}`;
+      };
+
+      const initialState = {
+        events: [
+          { id: "1", title: "ISS Overpass Sighting", time: "22:15", category: "Social", date: makeDate(0), desc: "Visual sighting of ISS over northern horizon. Peak elevation 68°." },
+          { id: "2", title: "Neural-link Sync Session", time: "09:30", category: "Health", date: makeDate(0), desc: "Bi-weekly calibration of deep-brain interface modules." },
+          { id: "3", title: "Quantum Key Rotation", time: "11:00", category: "Urgent", date: makeDate(1), desc: "Rotate sub-space communications encryption keys." },
+          { id: "4", title: "Galaxy Mapping Review", time: "14:00", category: "Work", date: makeDate(-2), desc: "Analyze stellar drift anomalies in Outer Arm Quadrant-4." },
+          { id: "5", title: "Deep-Space Telemetry Sync", time: "16:45", category: "Work", date: makeDate(3), desc: "Consolidate telemetry payloads from Alpha Centauri relays." },
+          { id: "6", title: "Hydroponics Harvest", time: "08:00", category: "Personal", date: makeDate(-4), desc: "Harvest fresh spirulina cultures and premium cherry tomatoes." }
+        ]
+      };
+
+      ReactDOM.createRoot(document.getElementById("root")).render(
+        React.createElement(CalendarDashboard, { theme, initialState })
+      );
+    </script>
+  </body>
+  </html>
+  web->index.html.end
