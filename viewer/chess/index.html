@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Chess Simulator — SoT Engine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #c8bada;
+            --panel-bg: rgba(18, 18, 24, 0.7);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --accent-cyan: #06b6d4;
+            --accent-purple: #8b5cf6;
+            --accent-yellow: #facc15;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: var(--bg-color);
+            font-family: 'Outfit', sans-serif;
+            color: var(--text-main);
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Glassmorphic Side Panel */
+        #hud {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            z-index: 10;
+            width: 320px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            pointer-events: auto;
+        }
+
+        h1 {
+            margin: 0 0 4px 0;
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff 30%, var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* Status & Badge */
+        .status-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+        }
+
+        .status-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-muted);
+        }
+
+        .turn-badge {
+            background: var(--accent-yellow);
+            color: #000;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(250, 204, 21, 0.3);
+        }
+
+        /* Action Buttons */
+        .btn-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--panel-border);
+            color: var(--text-main);
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn-primary {
+            background: transparent;
+            border: 1px solid var(--accent-purple);
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.15);
+        }
+
+        .btn-primary:hover {
+            background: rgba(139, 92, 246, 0.1);
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+        }
+
+        /* Instructions list */
+        .instructions {
+            border-top: 1px solid var(--panel-border);
+            padding-top: 16px;
+        }
+
+        .instructions h3 {
+            margin: 0 0 10px 0;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .inst-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .inst-key {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-family: monospace;
+            font-size: 10px;
+            color: #fff;
+        }
+
+        /* Fullscreen Victory Overlay */
+        #victory-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(11, 11, 15, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.4s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .victory-card {
+            background: rgba(24, 24, 35, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 48px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            max-width: 400px;
+            width: 90%;
+            animation: scaleUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        @keyframes scaleUp {
+            from { transform: scale(0.9) translateY(20px); }
+            to { transform: scale(1) translateY(0); }
+        }
+
+        .crown-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            animation: bounce 2s infinite ease-in-out;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .victory-title {
+            font-size: 32px;
+            font-weight: 800;
+            margin: 0 0 8px 0;
+            background: linear-gradient(135deg, #fff, var(--accent-yellow));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .victory-desc {
+            font-size: 15px;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- HUD Panel -->
+    <div id="hud">
+        <h1>SoT 3D Chess</h1>
+        <div class="subtitle">Procedural Chess Engine</div>
+
+        <div class="status-container">
+            <div class="status-label" id="status-txt">Active Turn:</div>
+            <div class="turn-badge" id="turn-badge">WHITE</div>
+        </div>
+
+        <div class="btn-stack">
+            <button class="btn btn-primary" id="btn-mode">Mode: Solo VS AI</button>
+            <button class="btn" id="btn-undo">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+                Undo Move
+            </button>
+            <button class="btn" id="btn-rotate">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                Rotate Board
+            </button>
+            <button class="btn" id="btn-reset">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                Restart Game
+            </button>
+        </div>
+
+        <div class="instructions">
+            <h3>Camera Controls</h3>
+            <div class="inst-item">
+                <span class="inst-key">Left Click</span> Select / Move Pieces
+            </div>
+            <div class="inst-item">
+                <span class="inst-key">Right Drag</span> Orbit / Rotate Camera
+            </div>
+            <div class="inst-item">
+                <span class="inst-key">Scroll</span> Zoom In / Out
+            </div>
+        </div>
+    </div>
+
+    <!-- Victory Modal -->
+    <div id="victory-overlay">
+        <div class="victory-card">
+            <div class="crown-icon">👑</div>
+            <div class="victory-title" id="winner-txt">White Wins!</div>
+            <div class="victory-desc">The opponent's king has been completely dethroned.</div>
+            <button class="btn btn-primary" style="width: 100%;" id="btn-play-again">Play Again</button>
+        </div>
+    </div>
+
+    <!-- App Initialization -->
+    <script type="module">
+        import { ChessGame } from './compiled.js';
+        
+        const game = new ChessGame();
+        game.animate();
+        
+        // Wire up control buttons
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            game.setupPieces();
+            document.getElementById('victory-overlay').style.display = 'none';
+        });
+        
+        document.getElementById('btn-undo').addEventListener('click', () => {
+            game.undoMove();
+        });
+        
+        const modeBtn = document.getElementById('btn-mode');
+        modeBtn.addEventListener('click', () => {
+            game.isAIOpponent = !game.isAIOpponent;
+            modeBtn.innerText = game.isAIOpponent ? "Mode: Solo VS AI" : "Mode: Local PVP";
+            modeBtn.style.borderColor = game.isAIOpponent ? '#8b5cf6' : '#10b981';
+            game.setupPieces();
+            document.getElementById('victory-overlay').style.display = 'none';
+        });
+        
+        document.getElementById('btn-play-again').addEventListener('click', () => {
+            game.setupPieces();
+            document.getElementById('victory-overlay').style.display = 'none';
+        });
+
+        document.getElementById('btn-rotate').addEventListener('click', () => {
+            game.camAngleXZ += Math.PI; // Rotate 180 degrees
+            game.updateCamera();
+        });
+    </script>
+</body>
+
+</html>
