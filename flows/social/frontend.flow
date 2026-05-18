@@ -428,7 +428,6 @@ MessageApp --> Painter
     return;
   }
   
-  console.log(messages);
   let html = '';
   messages.forEach(t => {
     html += this.renderSingleMessage(t);
