@@ -1,0 +1,488 @@
+extern->three from "three"
+cliscripts->start npx -y http-server -p 3003
+cliscripts->build tsc main.ts --outDir dist --skipLibCheck
+
+Grid[Grid.ts{width: number, height: number, cells: number[][]}]
+@Grid.constructor{w: number, h: number}
+@@Grid.constructor.code
+  this.width = w;
+  this.height = h;
+  this.cells = [];
+  for(let x=0; x<w; x++) {
+    this.cells[x] = [];
+    for(let z=0; z<h; z++) {
+      this.cells[x][z] = 0; // 0 = empty, 1 = tower
+    }
+  }
+@@Grid.constructor.end
+
+@Grid.getShortestPath{sx: number, sz: number, ex: number, ez: number}: any[]
+@@Grid.getShortestPath.code
+  const openSet = [];
+  const closedSet = new Set();
+  const startNode = { x: sx, z: sz, g: 0, h: Math.abs(ex - sx) + Math.abs(ez - sz), f: 0, parent: null };
+  startNode.f = startNode.g + startNode.h;
+  openSet.push(startNode);
+  
+  while(openSet.length > 0) {
+    let lowestIdx = 0;
+    for(let i=1; i<openSet.length; i++) {
+      if (openSet[i].f < openSet[lowestIdx].f) lowestIdx = i;
+    }
+    const current = openSet[lowestIdx];
+    if (current.x === ex && current.z === ez) {
+      const path = [];
+      let temp = current;
+      while(temp) {
+        path.push({x: temp.x, z: temp.z});
+        temp = temp.parent;
+      }
+      return path.reverse();
+    }
+    openSet.splice(lowestIdx, 1);
+    closedSet.add(`${current.x},${current.z}`);
+    const dirs = [[0,-1], [1,0], [0,1], [-1,0]];
+    for(let d of dirs) {
+      const nx = current.x + d[0];
+      const nz = current.z + d[1];
+      if (nx < 0 || nx >= this.width || nz < 0 || nz >= this.height) continue;
+      if (this.cells[nx][nz] === 1) continue; 
+      if (closedSet.has(`${nx},${nz}`)) continue;
+      const gScore = current.g + 1;
+      let neighbor = openSet.find(n => n.x === nx && n.z === nz);
+      if (!neighbor) {
+        neighbor = { x: nx, z: nz, g: gScore, h: Math.abs(ex - nx) + Math.abs(ez - nz), f: 0, parent: current };
+        neighbor.f = neighbor.g + neighbor.h;
+        openSet.push(neighbor);
+      } else if (gScore < neighbor.g) {
+        neighbor.g = gScore;
+        neighbor.parent = current;
+        neighbor.f = neighbor.g + neighbor.h;
+      }
+    }
+  }
+  return [];
+@@Grid.getShortestPath.end
+
+@Grid.canPlaceTower{x: number, z: number, sx: number, sz: number, ex: number, ez: number}: boolean
+@@Grid.canPlaceTower.code
+  if (this.cells[x][z] === 1) return false;
+  if ((x === sx && z === sz) || (x === ex && z === ez)) return false;
+  this.cells[x][z] = 1;
+  const path = this.getShortestPath(sx, sz, ex, ez);
+  this.cells[x][z] = 0;
+  return path.length > 0;
+@@Grid.canPlaceTower.end
+
+Enemy[Enemy.ts{id: number, mesh: any, health: number, maxHealth: number, baseSpeed: number, speed: number, path: any[], pathIndex: number, active: boolean, effects: any[], hpBar: any}]
+@Enemy.constructor{scene: any, id: number, hp: number, spd: number, path: any[]}
+@@Enemy.constructor.code
+  this.id = id;
+  this.maxHealth = hp;
+  this.health = hp;
+  this.baseSpeed = spd;
+  this.speed = spd;
+  this.path = path;
+  this.pathIndex = 0;
+  this.active = true;
+  this.effects = [];
+  const geo = new three.BoxGeometry(0.6, 0.6, 0.6);
+  const mat = new three.MeshStandardMaterial({ color: 0xff3333, roughness: 0.7 });
+  this.mesh = new three.Mesh(geo, mat);
+  if (path.length > 0) this.mesh.position.set(path[0].x - 9.5, 0.3, path[0].z - 9.5);
+  const hpGeo = new three.PlaneGeometry(0.8, 0.1);
+  const hpMat = new three.MeshBasicMaterial({ color: 0x00ff00, side: three.DoubleSide });
+  this.hpBar = new three.Mesh(hpGeo, hpMat);
+  this.hpBar.position.y = 0.8;
+  this.mesh.add(this.hpBar);
+  scene.add(this.mesh);
+@@Enemy.constructor.end
+
+@Enemy.update{delta: number, scene: any, grid: Grid}: boolean
+@@Enemy.update.code
+  if (!this.active) return false;
+  this.speed = this.baseSpeed;
+  for(let i = this.effects.length - 1; i >= 0; i--) {
+    let eff = this.effects[i];
+    eff.duration -= delta;
+    if (eff.duration <= 0) { this.effects.splice(i, 1); continue; }
+    if (eff.type === 'slow') this.speed *= 0.5;
+    else if (eff.type === 'poison' || eff.type === 'fire') this.takeDamage(eff.amount * delta, scene);
+  }
+  if (this.health <= 0) return true;
+  if (this.pathIndex < this.path.length - 1) {
+    const target = this.path[this.pathIndex + 1];
+    const tx = target.x - 9.5;
+    const tz = target.z - 9.5;
+    const dx = tx - this.mesh.position.x;
+    const dz = tz - this.mesh.position.z;
+    const dist = Math.sqrt(dx*dx + dz*dz);
+    if (dist < 0.1) {
+      this.pathIndex++;
+    } else {
+      this.mesh.position.x += (dx / dist) * this.speed * delta;
+      this.mesh.position.z += (dz / dist) * this.speed * delta;
+      this.mesh.rotation.y = Math.atan2(dx, dz);
+    }
+  } else return true;
+  this.hpBar.scale.x = Math.max(0, this.health / this.maxHealth);
+  this.hpBar.rotation.x = -Math.PI / 4;
+  return false;
+@@Enemy.update.end
+
+@Enemy.takeDamage{amount: number, scene: any}: void
+@@Enemy.takeDamage.code
+  this.health -= amount;
+  if (this.health <= 0 && this.active) {
+    this.active = false;
+    scene.remove(this.mesh);
+  }
+@@Enemy.takeDamage.end
+
+@Enemy.addEffect{type: string, duration: number, amount: number}: void
+@@Enemy.addEffect.code
+  let existing = this.effects.find(e => e.type === type);
+  if (existing) { existing.duration = duration; existing.amount = amount; }
+  else { this.effects.push({ type, duration, amount }); }
+@@Enemy.addEffect.end
+
+Projectile[Projectile.ts{mesh: any, type: string, target: Enemy, speed: number, damage: number, active: boolean, effectDur: number, effectAmt: number}]
+@Projectile.constructor{scene: any, x: number, y: number, z: number, target: Enemy, type: string, dmg: number}
+@@Projectile.constructor.code
+  this.target = target;
+  this.type = type;
+  this.damage = dmg;
+  this.speed = 15;
+  this.active = true;
+  let color = 0xffffff;
+  if (type === 'fire') { color = 0xff4400; this.effectDur = 2.0; this.effectAmt = dmg * 0.5; }
+  else if (type === 'ice') { color = 0x00aaff; this.effectDur = 3.0; }
+  else if (type === 'poison') { color = 0x00ff00; this.effectDur = 5.0; this.effectAmt = dmg * 0.2; }
+  const geo = new three.SphereGeometry(0.15, 8, 8);
+  const mat = new three.MeshBasicMaterial({ color: color });
+  this.mesh = new three.Mesh(geo, mat);
+  this.mesh.position.set(x, y, z);
+  scene.add(this.mesh);
+@@Projectile.constructor.end
+
+@Projectile.update{delta: number, scene: any}: boolean
+@@Projectile.update.code
+  if (!this.active || !this.target || !this.target.active) {
+    scene.remove(this.mesh);
+    return true;
+  }
+  const dx = this.target.mesh.position.x - this.mesh.position.x;
+  const dy = this.target.mesh.position.y - this.mesh.position.y;
+  const dz = this.target.mesh.position.z - this.mesh.position.z;
+  const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+  if (dist < 0.5) {
+    this.target.takeDamage(this.damage, scene);
+    if (this.type === 'ice') this.target.addEffect('slow', this.effectDur, 0);
+    if (this.type === 'poison') this.target.addEffect('poison', this.effectDur, this.effectAmt);
+    scene.remove(this.mesh);
+    return true;
+  }
+  this.mesh.position.x += (dx/dist) * this.speed * delta;
+  this.mesh.position.y += (dy/dist) * this.speed * delta;
+  this.mesh.position.z += (dz/dist) * this.speed * delta;
+  return false;
+@@Projectile.update.end
+
+Tower[Tower.ts{gridX: number, gridZ: number, type: string, level: number, damage: number, range: number, fireRate: number, fireCooldown: number, mesh: any, active: boolean}]
+@Tower.constructor{scene: any, type: string, gx: number, gz: number}
+@@Tower.constructor.code
+  this.gridX = gx; this.gridZ = gz; this.type = type; this.level = 1; this.fireCooldown = 0; this.active = true;
+  let color = 0x4444ff;
+  if (type === 'fire') { color = 0xff4400; this.damage = 20; this.range = 4; this.fireRate = 1.0; }
+  else if (type === 'ice') { color = 0x00aaff; this.damage = 5; this.range = 3; this.fireRate = 0.5; }
+  this.mesh = new three.Group();
+  this.mesh.position.set(gx - 9.5, 0, gz - 9.5);
+  const base = new three.Mesh(new three.CylinderGeometry(0.4, 0.5, 0.4, 8), new three.MeshStandardMaterial({ color: 0x555555 }));
+  base.position.y = 0.2;
+  this.mesh.add(base);
+  const top = new three.Mesh(new three.BoxGeometry(0.5, 0.6, 0.5), new three.MeshStandardMaterial({ color: color }));
+  top.position.y = 0.7;
+  this.mesh.add(top);
+  this.mesh.userData = { isTower: true, tower: this };
+  scene.add(this.mesh);
+@@Tower.constructor.end
+
+@Tower.upgrade{}: void
+@@Tower.upgrade.code
+  this.level++; this.damage *= 1.5; this.range += 0.5; this.fireRate *= 0.9;
+  this.mesh.scale.set(1 + 0.1*this.level, 1 + 0.1*this.level, 1 + 0.1*this.level);
+@@Tower.upgrade.end
+
+@Tower.update{delta: number, scene: any, enemies: Enemy[], projectiles: Projectile[]}: void
+@@Tower.update.code
+  this.fireCooldown -= delta;
+  if (this.fireCooldown <= 0) {
+    let target = null;
+    let closestDist = this.range * this.range;
+    for(let e of enemies) {
+      if (!e.active) continue;
+      const dx = e.mesh.position.x - this.mesh.position.x;
+      const dz = e.mesh.position.z - this.mesh.position.z;
+      const distSq = dx*dx + dz*dz;
+      if (distSq < closestDist) { closestDist = distSq; target = e; }
+    }
+    if (target) {
+      projectiles.push(new Projectile(scene, this.mesh.position.x, 0.8, this.mesh.position.z, target, this.type, this.damage));
+      this.fireCooldown = this.fireRate;
+    }
+  }
+@@Tower.update.end
+
+TDGame[TDGame.ts{scene: any, camera: any, renderer: any, grid: Grid, towers: Tower[], enemies: Enemy[], projectiles: Projectile[], clock: any, mouse: any, raycaster: any, hoverMesh: any, gold: number, lives: number, wave: number, isWaveActive: boolean, enemiesToSpawn: number, spawnTimer: number, pathIndicators: any[], uiGold: any, uiLives: any, uiWave: any, btnWave: any, ctxMenu: any, selectedTowerUI: any}]
+TDGame *-- Grid
+TDGame *-- Enemy
+TDGame *-- Tower
+TDGame *-- Projectile
+
+@TDGame.constructor{}
+@@TDGame.constructor.code
+  this.scene = new three.Scene();
+  this.scene.background = new three.Color(0x111111);
+  this.pathIndicators = [];
+  this.clock = new three.Clock();
+  this.camera = new three.PerspectiveCamera(23, window.innerWidth / window.innerHeight, 0.1, 2000);
+  this.camera.position.set(0, 45, 55);
+  this.camera.lookAt(0, 0, 0);
+  this.renderer = new three.WebGLRenderer({ antialias: true });
+  this.renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(this.renderer.domElement);
+  
+  const sun = new three.DirectionalLight(0xffffff, 0.8);
+  sun.position.set(5, 20, 10);
+  this.scene.add(sun);
+  this.scene.add(new three.AmbientLight(0xffffff, 0.4));
+
+  this.grid = new Grid(20, 20);
+  this.towers = []; this.enemies = []; this.projectiles = [];
+  this.gold = 100; this.lives = 20; this.wave = 1; this.isWaveActive = false;
+
+  this.buildEnvironment();
+  this.setupUI();
+
+  this.raycaster = new three.Raycaster();
+  this.mouse = new three.Vector2();
+  const hGeo = new three.PlaneGeometry(1, 1);
+  const hMat = new three.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.5, side: three.DoubleSide });
+  this.hoverMesh = new three.Mesh(hGeo, hMat);
+  this.hoverMesh.rotation.x = -Math.PI / 2;
+  this.hoverMesh.position.y = 0.05;
+  this.scene.add(this.hoverMesh);
+
+  window.addEventListener('mousemove', (e) => this.onMouseMove(e));
+  window.addEventListener('mousedown', (e) => this.onMouseDown(e));
+  this.animate();
+@@TDGame.constructor.end
+
+@TDGame.buildEnvironment{}
+@@TDGame.buildEnvironment.code
+  const ground = new three.Mesh(new three.BoxGeometry(20, 0.5, 20), new three.MeshStandardMaterial({ color: 0x222222 }));
+  ground.position.y = -0.25;
+  this.scene.add(ground);
+  this.scene.add(new three.GridHelper(20, 20, 0x444444, 0x444444));
+
+  const startGeo = new three.PlaneGeometry(0.9, 0.9);
+  const startMat = new three.MeshBasicMaterial({ color: 0x4ade80, side: three.DoubleSide });
+  const startZone = new three.Mesh(startGeo, startMat);
+  startZone.rotation.x = -Math.PI/2;
+  startZone.position.set(0 - 9.5, 0.03, 0 - 9.5);
+  this.scene.add(startZone);
+
+  const endMat = new three.MeshBasicMaterial({ color: 0xf87171, side: three.DoubleSide });
+  const endZone = new three.Mesh(startGeo, endMat);
+  endZone.rotation.x = -Math.PI/2;
+  endZone.position.set(19 - 9.5, 0.03, 19 - 9.5);
+  this.scene.add(endZone);
+@@TDGame.buildEnvironment.end
+
+@TDGame.setupUI{}
+@@TDGame.setupUI.code
+  this.uiGold = document.getElementById('gold-display');
+  this.uiLives = document.getElementById('lives-display');
+  this.uiWave = document.getElementById('wave-display');
+  this.btnWave = document.getElementById('wave-btn');
+  this.ctxMenu = document.getElementById('context-menu');
+  if(this.btnWave) this.btnWave.onclick = () => this.startWave();
+@@TDGame.setupUI.end
+
+@TDGame.startWave{}
+@@TDGame.startWave.code
+  if (this.isWaveActive) return;
+  this.isWaveActive = true;
+  // SCALE ENEMY COUNT: 5 + wave*3 + quadratic scaling for high waves
+  this.enemiesToSpawn = 5 + (this.wave * 3) + Math.floor(Math.pow(this.wave, 1.5));
+  this.spawnTimer = 0;
+  if(this.btnWave) this.btnWave.disabled = true;
+@@TDGame.startWave.end
+
+@TDGame.updateUI{}
+@@TDGame.updateUI.code
+  if(this.uiGold) this.uiGold.innerText = this.gold;
+  if(this.uiLives) this.uiLives.innerText = this.lives;
+  if(this.uiWave) this.uiWave.innerText = this.wave;
+@@TDGame.updateUI.end
+
+@TDGame.onMouseMove{e: any}
+@@TDGame.onMouseMove.code
+  this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+  this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+  this.raycaster.setFromCamera(this.mouse, this.camera);
+  const plane = new three.Plane(new three.Vector3(0, 1, 0), 0);
+  const target = new three.Vector3();
+  this.raycaster.ray.intersectPlane(plane, target);
+  if (target) {
+    const gx = Math.floor(target.x + 10);
+    const gz = Math.floor(target.z + 10);
+    if (gx >= 0 && gx < 20 && gz >= 0 && gz < 20) {
+      this.hoverMesh.position.set(gx - 9.5, 0.05, gz - 9.5);
+      this.hoverMesh.visible = true;
+    }
+  }
+@@TDGame.onMouseMove.end
+
+@TDGame.onMouseDown{e: any}
+@@TDGame.onMouseDown.code
+  if (e.button !== 0 || e.target.tagName !== 'CANVAS') return;
+  this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+  this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+  this.raycaster.setFromCamera(this.mouse, this.camera);
+
+  const towerMeshes = this.towers.map(t => t.mesh);
+  const intersects = this.raycaster.intersectObjects(towerMeshes, true);
+  if (intersects.length > 0) {
+    let obj = intersects[0].object;
+    while(obj && !obj.userData.isTower) obj = obj.parent;
+    if (obj) {
+      const tower = obj.userData.tower;
+      this.selectedTowerUI = tower;
+      const vector = intersects[0].point.project(this.camera);
+      this.ctxMenu.style.left = `${(vector.x * .5 + .5) * window.innerWidth}px`;
+      this.ctxMenu.style.top = `${-(vector.y * .5 - .5) * window.innerHeight}px`;
+      this.ctxMenu.style.display = 'flex';
+      document.getElementById('ctx-title')!.innerText = `${tower.type} Lvl ${tower.level}`;
+      const upgBtn = document.getElementById('btn-upgrade')!;
+      upgBtn.innerText = `Upgrade (${tower.level * 50}g)`;
+      upgBtn.onclick = () => this.upgradeSelectedTower();
+      document.getElementById('btn-sell')!.onclick = () => this.sellSelectedTower();
+      return;
+    }
+  }
+
+  this.ctxMenu.style.display = 'none';
+  const plane = new three.Plane(new three.Vector3(0, 1, 0), 0);
+  const target = new three.Vector3();
+  this.raycaster.ray.intersectPlane(plane, target);
+  if (target) {
+    const gx = Math.floor(target.x + 10);
+    const gz = Math.floor(target.z + 10);
+    const type = (window as any).selectedTowerType;
+    if (gx >= 0 && gx < 20 && gz >= 0 && gz < 20 && type && this.gold >= 20) {
+      if (this.grid.canPlaceTower(gx, gz, 0, 0, 19, 19)) {
+        this.gold -= 20; this.grid.cells[gx][gz] = 1;
+        this.towers.push(new Tower(this.scene, type, gx, gz));
+        this.recalculateEnemyPaths(); this.updateUI();
+      }
+    }
+  }
+@@TDGame.onMouseDown.end
+
+@TDGame.upgradeSelectedTower{}
+@@TDGame.upgradeSelectedTower.code
+  if (!this.selectedTowerUI) return;
+  const cost = this.selectedTowerUI.level * 50;
+  if (this.gold >= cost) {
+    this.gold -= cost; this.selectedTowerUI.upgrade();
+    this.ctxMenu.style.display = 'none'; this.updateUI();
+  }
+@@TDGame.upgradeSelectedTower.end
+
+@TDGame.sellSelectedTower{}
+@@TDGame.sellSelectedTower.code
+  if (!this.selectedTowerUI) return;
+  this.gold += Math.floor(this.selectedTowerUI.level * 25);
+  this.scene.remove(this.selectedTowerUI.mesh);
+  this.grid.cells[this.selectedTowerUI.gridX][this.selectedTowerUI.gridZ] = 0;
+  this.towers = this.towers.filter(t => t !== this.selectedTowerUI);
+  this.ctxMenu.style.display = 'none';
+  this.recalculateEnemyPaths(); this.updateUI();
+@@TDGame.sellSelectedTower.end
+
+@TDGame.recalculateEnemyPaths{}
+@@TDGame.recalculateEnemyPaths.code
+  for(let e of this.enemies) {
+    if(!e.active) continue;
+    let cx = Math.floor(e.mesh.position.x + 10);
+    let cz = Math.floor(e.mesh.position.z + 10);
+    const newPath = this.grid.getShortestPath(cx, cz, 19, 19);
+    if (newPath.length > 0) { e.path = newPath; e.pathIndex = 0; }
+  }
+  this.updatePathIndicators();
+@@TDGame.recalculateEnemyPaths.end
+
+@TDGame.updatePathIndicators{}
+@@TDGame.updatePathIndicators.code
+  this.pathIndicators.forEach(i => this.scene.remove(i));
+  this.pathIndicators = [];
+  const drawnTiles = new Set();
+  this.enemies.forEach(e => {
+    if (!e.active) return;
+    for (let i = e.pathIndex; i < e.path.length; i++) {
+      const tile = e.path[i];
+      if ((tile.x === 0 && tile.z === 0) || (tile.x === 19 && tile.z === 19)) continue;
+      const key = `${tile.x},${tile.z}`;
+      if (drawnTiles.has(key)) continue;
+      drawnTiles.add(key);
+      const ind = new three.Mesh(new three.PlaneGeometry(0.3, 0.3), new three.MeshBasicMaterial({ color: 0xffa500, transparent: true, opacity: 0.5 }));
+      ind.rotation.x = -Math.PI / 2;
+      ind.position.set(tile.x - 9.5, 0.04, tile.z - 9.5);
+      this.scene.add(ind); this.pathIndicators.push(ind);
+    }
+  });
+@@TDGame.updatePathIndicators.end
+
+@TDGame.animate{}
+@@TDGame.animate.code
+  requestAnimationFrame(() => this.animate());
+  const delta = Math.min(this.clock.getDelta(), 0.1);
+  if (this.isWaveActive) {
+    this.spawnTimer -= delta;
+    if (this.spawnTimer <= 0 && this.enemiesToSpawn > 0) {
+      this.spawnTimer = 0.8; // Slightly faster spawning
+      this.enemiesToSpawn--;
+      
+      // SCALE HP AND SPEED: Health grows 20% every wave. Speed increases slightly.
+      const hp = 50 * Math.pow(1.2, this.wave - 1);
+      const spd = 2 + (this.wave * 0.1);
+      
+      this.enemies.push(new Enemy(this.scene, Math.random(), hp, spd, this.grid.getShortestPath(0, 0, 19, 19)));
+      this.updatePathIndicators();
+    }
+    let active = 0;
+    for(let i=this.enemies.length-1; i>=0; i--) {
+      let e = this.enemies[i];
+      if (e.active) {
+        active++;
+        if (e.update(delta, this.scene, this.grid)) {
+          if (e.health > 0) this.lives--; else this.gold += 15; // Increased bounty slightly
+          e.active = false; this.scene.remove(e.mesh); this.updateUI();
+        }
+      } else this.enemies.splice(i, 1);
+    }
+    if (this.enemiesToSpawn <= 0 && active === 0) {
+      this.isWaveActive = false; this.wave++; this.gold += 50 + (this.wave * 10); // Escalating wave bonus
+      this.updateUI(); if(this.btnWave) this.btnWave.disabled = false;
+    }
+  }
+  for(let i=this.projectiles.length-1; i>=0; i--) if (this.projectiles[i].update(delta, this.scene)) this.projectiles.splice(i, 1);
+  for(let t of this.towers) t.update(delta, this.scene, this.enemies, this.projectiles);
+  this.renderer.render(this.scene, this.camera);
+@@TDGame.animate.end
+
+Rollup->{Grid.ts, Enemy.ts, Projectile.ts, Tower.ts, TDGame.ts}
+@@main.code
+  new TDGame();
+@@main.end
