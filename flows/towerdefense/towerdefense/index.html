@@ -181,12 +181,61 @@
       opacity: 0;
       transition: opacity 0.5s;
     }
+     .cam-btn {
+        width: 40px;
+        height: 40px;
+        background: rgba(15, 23, 42, 0.8);
+        border: 2px solid rgba(56, 189, 248, 0.5);
+        border-radius: 50%;
+        color: white;
+        font-size: 1.5rem;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        backdrop-filter: blur(5px);
+    }
+    .cam-btn:active {
+        background: #38bdf8;
+        transform: scale(0.9);
+    }
+    .dpad-btn {
+        width: 50px !important;
+        height: 50px !important;
+        font-size: 1.2rem !important;
+    }
+    @media (max-width: 768px) {
+    #top-bar { font-size: 0.9rem; padding: 10px; }
+    .tower-btn { padding: 8px 12px; font-size: 0.8rem; }
+    #talent-overlay h1 { font-size: 2rem !important; }
+    }
+
+    .tower-btn-small {
+        width: 50px; height: 50px; border-radius: 8px; border: none;
+        background: #1e293b; color: white; font-size: 1.5rem; cursor: pointer;
+    }
+    .tower-btn-small:active { background: #38bdf8; }
   </style>
 </head>
 
 <body>
 
   <div id="ui-layer">
+
+    <div id="dpad" style="position: absolute; left: calc(100% / 2 - 80px); bottom: 20px; display: grid; grid-template-columns: repeat(3, 50px); grid-template-rows: repeat(3, 50px); gap: 5px; pointer-events: auto;">
+    <div></div>
+    <button class="cam-btn dpad-btn" onpointerdown="startPan(0, -1)" onpointerup="stopPan()">▲</button>
+    <div></div>
+    
+    <button class="cam-btn dpad-btn" onpointerdown="startPan(-1, 0)" onpointerup="stopPan()">◀</button>
+    <div style="background: rgba(56, 189, 248, 0.2); border-radius: 50%;"></div>
+    <button class="cam-btn dpad-btn" onpointerdown="startPan(1, 0)" onpointerup="stopPan()">▶</button>
+    
+    <div></div>
+    <button class="cam-btn dpad-btn" onpointerdown="startPan(0, 1)" onpointerup="stopPan()">▼</button>
+    <div></div>
+</div>
+
     <div id="top-bar" class="panel">
       <div class="stat"><span style="color:#fbbf24">💰 Gold:</span> <span id="gold-display">100</span></div>
       <div class="stat"><span style="color:#f87171">❤️ Lives:</span> <span id="lives-display"></span></div>
@@ -194,38 +243,30 @@
       <button id="wave-btn">Start Wave</button>
     </div>
 
-    <div id="bottom-bar" class="panel">
-      <button class="tower-btn" data-type="fire" onclick="selectTower('fire')">
-        🔥 Fire Tower
-        <span class="cost">20g</span>
-      </button>
-      <button class="tower-btn" data-type="ice" onclick="selectTower('ice')">
-        ❄️ Ice Tower
-        <span class="cost">20g</span>
-      </button>
-      <button class="tower-btn" data-type="poison" onclick="selectTower('poison')">
-        ☠️ Poison Tower
-        <span class="cost">20g</span>
-      </button>
-      <button class="tower-btn" data-type="electric" onclick="selectTower('electric')">
-        ⚡ Electric Tower
-        <span class="cost">20g</span>
-      </button>
-    </div>
-  </div>
-
-  <div id="context-menu">
+    <div id="camera-controls" style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 15px; pointer-events: auto;">
+    <button class="cam-btn" onclick="window.tdGameInstance.adjustZoom(-5)">➕</button>
+    <button class="cam-btn" onclick="window.tdGameInstance.adjustZoom(5)">➖</button>
+    <div style="height: 10px;"></div>
+    <button class="cam-btn" onclick="window.tdGameInstance.rotateCamera(-15)">🔄</button>
+    <button class="cam-btn" onclick="window.tdGameInstance.rotateCamera(15)">🔃</button>
+  
+</div>
+ 
+    <div id="context-menu">
     <div id="ctx-title" style="color: white; font-weight: bold; text-align: center; margin-bottom: 5px;">Tower lvl 1
     </div>
     <button id="btn-upgrade" class="ctx-btn upgrade">Upgrade (50g)</button>
     <button id="btn-sell" class="ctx-btn sell">Sell (25g)</button>
     <button id="btn-close" class="ctx-btn" onclick="closeContextMenu()">Close</button>
   </div>
+  </div>
+
+
 
   <div id="message-overlay">GAME OVER</div>
 
   <div id="talent-overlay"
-    style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.95); z-index:20000; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; font-family:sans-serif;">
+    style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,1.0); z-index:20000; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; font-family:sans-serif;">
     <h1 style="color:#38bdf8; font-size:3rem; margin-bottom:10px;">TALENT TREE</h1>
     <div style="margin-bottom:20px; font-size:1.5rem;">Available XP: <span id="xp-count" style="color:#4ade80">0</span>
     </div>
@@ -240,6 +281,17 @@
       style="padding:15px 40px; font-size:1.5rem; background:#4ade80; color:#0f172a; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">START
       GAME</button>
   </div>
+
+  <div id="build-menu" style="position: absolute; display: none; flex-direction: column; gap: 5px; pointer-events: auto; z-index: 100; transform: translate(-50%, -50%);">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: rgba(15, 23, 42, 0.9); padding: 10px; border-radius: 12px; border: 1px solid #38bdf8;">
+        <button class="tower-btn-small" onclick="placeTowerAtSelected('fire')">🔥</button>
+        <button class="tower-btn-small" onclick="placeTowerAtSelected('ice')">❄️</button>
+        <button class="tower-btn-small" onclick="placeTowerAtSelected('poison')">☠️</button>
+        <button class="tower-btn-small" onclick="placeTowerAtSelected('electric')">⚡</button>
+    </div>
+</div>
+
+
 
   <!-- We will bundle main.ts into dist/bundle.js or similar based on flow Rollup config -->
   <!-- Assuming SoT's Rollup config for flows produces an IIFE or ES module -->
@@ -333,6 +385,26 @@
       }
     };
 
+    window.placeTowerAtSelected = function(type) {
+    const game = window.tdGameInstance;
+    const menu = document.getElementById('build-menu');
+    
+    if (game && game.pendingGridPos) {
+        const {x, z} = game.pendingGridPos;
+        
+        // Call the internal method we just created
+        const success = game.spawnTower(type, x, z);
+        
+        if (!success) {
+            // If spawnTower returned false, it was either gold or pathing
+            window.showAlert("Cannot build here (Check gold/path)!");
+        }
+    }
+    
+    // Hide menu regardless of success
+    menu.style.display = 'none';
+};
+
     window.buyTalent = function (talentId) {
       const saved = JSON.parse(localStorage.getItem('td_meta_data') || '{"xp":0, "talents":{}}');
       const talent = TALENT_DATA.find(t => t.id === talentId);
@@ -403,6 +475,26 @@
 
     // Initial Load
     refreshTalentUI();
+
+    let panInterval = null;
+
+    window.startPan = function(dx, dz) {
+        if (panInterval) clearInterval(panInterval);
+        // Pan every 16ms (roughly 60fps)
+        panInterval = setInterval(() => {
+            if (window.tdGameInstance) {
+                window.tdGameInstance.pan(dx, dz);
+            }
+        }, 16);
+    };
+
+    window.stopPan = function() {
+        clearInterval(panInterval);
+        panInterval = null;
+    };
+
+    // Also stop panning if the finger leaves the button area
+    window.addEventListener('pointerup', window.stopPan);
   </script>
 
 

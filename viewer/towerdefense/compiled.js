@@ -27539,7 +27539,7 @@ var Tower = class {
       color = 16776960;
       this.damage = 2;
       this.range = 6;
-      this.fireRate = 0.1 - 0.05 * (meta?.towerAttackSpeed ?? 0);
+      this.fireRate = 0.3 - 0.05 * (meta?.towerAttackSpeed ?? 0);
     }
     this.mesh = new Group();
     this.mesh.position.set(gx - 9.5, 0, gz - 9.5);
@@ -27608,7 +27608,21 @@ var TDGame = class {
   btnWave;
   ctxMenu;
   selectedTowerUI;
+  currentZoom;
+  currentRotation;
+  minZoom;
+  maxZoom;
+  cameraTarget;
+  panSpeed;
+  pendingGridPos;
   constructor() {
+    this.cameraTarget = new Vector3(0, 0, 0);
+    this.panSpeed = 0.5;
+    this.currentZoom = 45;
+    this.currentRotation = 0;
+    this.minZoom = 10;
+    this.maxZoom = 80;
+    this.pendingGridPos = null;
     const meta = JSON.parse(localStorage.getItem("td_meta_data") || '{"xp":0, "talents":{"startingGold":0, "waveBonus":0}}');
     this.talents = meta.talents;
     this.gold = 100 + this.talents.startingGold * 50;
@@ -27617,7 +27631,7 @@ var TDGame = class {
     this.scene.background = new Color(1118481);
     this.pathIndicators = [];
     this.clock = new Clock();
-    this.camera = new PerspectiveCamera(23, window.innerWidth / window.innerHeight, 0.1, 2e3);
+    this.camera = new PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.1, 2e3);
     this.camera.position.set(0, 45, 55);
     this.camera.lookAt(0, 0, 0);
     this.renderer = new WebGLRenderer({ antialias: true });
@@ -27647,6 +27661,42 @@ var TDGame = class {
     window.addEventListener("mousedown", (e) => this.onMouseDown(e));
     this.animate();
     this.updateUI();
+  }
+  openBuildMenu(screenX, screenY, gx, gz) {
+    this.pendingGridPos = { x: gx, z: gz };
+    const menu = document.getElementById("build-menu");
+    if (menu) {
+      menu.style.left = screenX + "px";
+      menu.style.top = screenY + "px";
+      menu.style.display = "flex";
+    }
+  }
+  updateCamera() {
+    const radians = this.currentRotation * (Math.PI / 180);
+    const posX = this.cameraTarget.x + Math.sin(radians) * this.currentZoom;
+    const posZ = this.cameraTarget.z + Math.cos(radians) * this.currentZoom;
+    const posY = this.currentZoom * 0.8;
+    this.camera.position.set(posX, posY, posZ);
+    this.camera.lookAt(this.cameraTarget);
+    this.camera.updateProjectionMatrix();
+  }
+  pan(dx, dz) {
+    const radians = this.currentRotation * (Math.PI / 180);
+    const cos = Math.cos(radians);
+    const sin = Math.sin(radians);
+    this.cameraTarget.x += (dx * cos + dz * sin) * this.panSpeed;
+    this.cameraTarget.z += (dz * cos - dx * sin) * this.panSpeed;
+    this.cameraTarget.x = Math.max(-10, Math.min(10, this.cameraTarget.x));
+    this.cameraTarget.z = Math.max(-10, Math.min(10, this.cameraTarget.z));
+    this.updateCamera();
+  }
+  adjustZoom(amount) {
+    this.currentZoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.currentZoom + amount));
+    this.updateCamera();
+  }
+  rotateCamera(angle) {
+    this.currentRotation += angle;
+    this.updateCamera();
   }
   gameOver() {
     this.isWaveActive = false;
@@ -27716,45 +27766,43 @@ var TDGame = class {
     }
   }
   onMouseDown(e) {
-    if (e.button !== 0 || e.target.tagName !== "CANVAS") return;
+    if (e.button !== 0 || e.target.tagName !== "CANVAS" && e.target.id !== "ui-layer") return;
     this.mouse.x = e.clientX / window.innerWidth * 2 - 1;
     this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
     this.raycaster.setFromCamera(this.mouse, this.camera);
     const towerMeshes = this.towers.map((t) => t.mesh);
-    const intersects = this.raycaster.intersectObjects(towerMeshes, true);
-    if (intersects.length > 0) {
-      let obj = intersects[0].object;
+    const intersectsTowers = this.raycaster.intersectObjects(towerMeshes, true);
+    if (intersectsTowers.length > 0) {
+      let obj = intersectsTowers[0].object;
       while (obj && !obj.userData.isTower) obj = obj.parent;
       if (obj) {
         const tower = obj.userData.tower;
         this.selectedTowerUI = tower;
-        const vector = intersects[0].point.project(this.camera);
-        this.ctxMenu.style.left = `${(vector.x * 0.5 + 0.5) * window.innerWidth}px`;
-        this.ctxMenu.style.top = `${-(vector.y * 0.5 - 0.5) * window.innerHeight}px`;
+        document.getElementById("build-menu").style.display = "none";
+        const vector = intersectsTowers[0].point.project(this.camera);
+        this.ctxMenu.style.left = (vector.x * 0.5 + 0.5) * window.innerWidth + "px";
+        this.ctxMenu.style.top = -(vector.y * 0.5 - 0.5) * window.innerHeight + "px";
         this.ctxMenu.style.display = "flex";
-        document.getElementById("ctx-title").innerText = `${tower.type} Lvl ${tower.level}`;
+        document.getElementById("ctx-title").innerText = tower.type + " Lvl " + tower.level;
         const upgBtn = document.getElementById("btn-upgrade");
-        upgBtn.innerText = `Upgrade (${tower.level * 50}g)`;
+        upgBtn.innerText = "Upgrade (" + tower.level * 50 + "g)";
         upgBtn.onclick = () => this.upgradeSelectedTower();
         document.getElementById("btn-sell").onclick = () => this.sellSelectedTower();
         return;
       }
     }
     this.ctxMenu.style.display = "none";
+    const buildMenu = document.getElementById("build-menu");
+    buildMenu.style.display = "none";
     const plane = new Plane(new Vector3(0, 1, 0), 0);
     const target = new Vector3();
     this.raycaster.ray.intersectPlane(plane, target);
     if (target) {
       const gx = Math.floor(target.x + 10);
       const gz = Math.floor(target.z + 10);
-      const type = window.selectedTowerType;
-      if (gx >= 0 && gx < 20 && gz >= 0 && gz < 20 && type && this.gold >= 20) {
-        if (this.grid.canPlaceTower(gx, gz, 0, 0, 19, 19)) {
-          this.gold -= 20;
-          this.grid.cells[gx][gz] = 1;
-          this.towers.push(new Tower(this.scene, type, gx, gz, this.talents));
-          this.recalculateEnemyPaths();
-          this.updateUI();
+      if (gx >= 0 && gx < 20 && gz >= 0 && gz < 20) {
+        if (this.grid.cells[gx][gz] === 0) {
+          this.openBuildMenu(e.clientX, e.clientY, gx, gz);
         }
       }
     }
@@ -27811,6 +27859,21 @@ var TDGame = class {
         this.pathIndicators.push(ind);
       }
     });
+  }
+  spawnTower(type, x, z) {
+    const cost = 20;
+    if (this.gold >= cost) {
+      if (this.grid.canPlaceTower(x, z, 0, 0, 19, 19)) {
+        this.gold -= cost;
+        this.grid.cells[x][z] = 1;
+        const newTower = new Tower(this.scene, type, x, z);
+        this.towers.push(newTower);
+        this.recalculateEnemyPaths();
+        this.updateUI();
+        return true;
+      }
+    }
+    return false;
   }
   animate() {
     requestAnimationFrame(() => this.animate());
