@@ -155,9 +155,17 @@ Projectile[Projectile.ts{mesh: any, type: string, target: Enemy, speed: number, 
   this.speed = 15;
   this.active = true;
   let color = 0xffffff;
-  if (type === 'fire') { color = 0xff4400; this.effectDur = 2.0; this.effectAmt = dmg * 0.5; }
-  else if (type === 'ice') { color = 0x00aaff; this.effectDur = 3.0; }
-  else if (type === 'poison') { color = 0x00ff00; this.effectDur = 5.0; this.effectAmt = dmg * 0.2; }
+    
+    // Inside Projectile.ts constructor
+  if (type === 'fire') { 
+      color = 0xff4400; this.effectDur = 2.0; this.effectAmt = dmg * 0.5; 
+  } else if (type === 'ice') { 
+      color = 0x00aaff; this.effectDur = 3.0; 
+  } else if (type === 'poison') { 
+      color = 0x00ff00; this.effectDur = 15.0; this.effectAmt = dmg; 
+  } else if (type === 'electric') { 
+      color = 0xffff00; this.speed = 30; // Fast projectile [cite: 59]
+  }
   const geo = new three.SphereGeometry(0.15, 8, 8);
   const mat = new three.MeshBasicMaterial({ color: color });
   this.mesh = new three.Mesh(geo, mat);
@@ -175,6 +183,7 @@ Projectile[Projectile.ts{mesh: any, type: string, target: Enemy, speed: number, 
   const dy = this.target.mesh.position.y - this.mesh.position.y;
   const dz = this.target.mesh.position.z - this.mesh.position.z;
   const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+  
   if (dist < 0.5) {
     this.target.takeDamage(this.damage, scene);
     if (this.type === 'ice') this.target.addEffect('slow', this.effectDur, 0);
@@ -193,8 +202,11 @@ Tower[Tower.ts{gridX: number, gridZ: number, type: string, level: number, damage
 @@Tower.constructor.code
   this.gridX = gx; this.gridZ = gz; this.type = type; this.level = 1; this.fireCooldown = 0; this.active = true;
   let color = 0x4444ff;
-  if (type === 'fire') { color = 0xff4400; this.damage = 20; this.range = 4; this.fireRate = 1.0; }
+  if (type === 'fire') { color = 0xff4400; this.damage = 10; this.range = 4; this.fireRate = 1.0; }
   else if (type === 'ice') { color = 0x00aaff; this.damage = 5; this.range = 3; this.fireRate = 0.5; }
+  else if (type === 'poison') { color = 0x00ff00; this.damage = 3; this.range = 3; this.fireRate = 0.5; }
+  else if (type === 'electric') { color = 0xffff00; this.damage = 2; this.range = 6; this.fireRate = 0.1; }
+
   this.mesh = new three.Group();
   this.mesh.position.set(gx - 9.5, 0, gz - 9.5);
   const base = new three.Mesh(new three.CylinderGeometry(0.4, 0.5, 0.4, 8), new three.MeshStandardMaterial({ color: 0x555555 }));

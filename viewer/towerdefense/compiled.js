@@ -27465,8 +27465,11 @@ var Projectile = class {
       this.effectDur = 3;
     } else if (type === "poison") {
       color = 65280;
-      this.effectDur = 5;
-      this.effectAmt = dmg * 0.2;
+      this.effectDur = 15;
+      this.effectAmt = dmg;
+    } else if (type === "electric") {
+      color = 16776960;
+      this.speed = 30;
     }
     const geo = new SphereGeometry(0.15, 8, 8);
     const mat = new MeshBasicMaterial({ color });
@@ -27519,7 +27522,7 @@ var Tower = class {
     let color = 4474111;
     if (type === "fire") {
       color = 16729088;
-      this.damage = 20;
+      this.damage = 10;
       this.range = 4;
       this.fireRate = 1;
     } else if (type === "ice") {
@@ -27527,6 +27530,16 @@ var Tower = class {
       this.damage = 5;
       this.range = 3;
       this.fireRate = 0.5;
+    } else if (type === "poison") {
+      color = 65280;
+      this.damage = 3;
+      this.range = 3;
+      this.fireRate = 0.5;
+    } else if (type === "electric") {
+      color = 16776960;
+      this.damage = 2;
+      this.range = 6;
+      this.fireRate = 0.1;
     }
     this.mesh = new Group();
     this.mesh.position.set(gx - 9.5, 0, gz - 9.5);
