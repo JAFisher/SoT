@@ -14,6 +14,25 @@
       user-select: none;
     }
 
+    /* Custom Horizontal Scrollbar */
+    #talent-viewport::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    #talent-viewport::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+    }
+
+    #talent-viewport::-webkit-scrollbar-thumb {
+      background: #38bdf8;
+      border-radius: 10px;
+    }
+
+    #talent-viewport::-webkit-scrollbar-thumb:hover {
+      background: #2563eb;
+    }
+
     #ui-layer {
       position: absolute;
       top: 0;
@@ -170,7 +189,7 @@
   <div id="ui-layer">
     <div id="top-bar" class="panel">
       <div class="stat"><span style="color:#fbbf24">💰 Gold:</span> <span id="gold-display">100</span></div>
-      <div class="stat"><span style="color:#f87171">❤️ Lives:</span> <span id="lives-display">20</span></div>
+      <div class="stat"><span style="color:#f87171">❤️ Lives:</span> <span id="lives-display"></span></div>
       <div class="stat"><span style="color:#60a5fa">🌊 Wave:</span> <span id="wave-display">1</span></div>
       <button id="wave-btn">Start Wave</button>
     </div>
@@ -205,9 +224,95 @@
 
   <div id="message-overlay">GAME OVER</div>
 
+  <div id="talent-overlay"
+    style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.95); z-index:20000; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; font-family:sans-serif;">
+    <h1 style="color:#38bdf8; font-size:3rem; margin-bottom:10px;">TALENT TREE</h1>
+    <div style="margin-bottom:20px; font-size:1.5rem;">Available XP: <span id="xp-count" style="color:#4ade80">0</span>
+    </div>
+    <div id="talent-viewport"
+      style="width: 90%; max-width: 1200px; overflow-x: auto; padding: 20px 0; margin-bottom: 30px; scroll-behavior: smooth;">
+      <div id="talent-container" style="display: flex; gap: 20px; flex-wrap: nowrap; align-items: flex-start;">
+      </div>
+    </div>
+
+
+    <button onclick="startGame()"
+      style="padding:15px 40px; font-size:1.5rem; background:#4ade80; color:#0f172a; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">START
+      GAME</button>
+  </div>
+
   <!-- We will bundle main.ts into dist/bundle.js or similar based on flow Rollup config -->
   <!-- Assuming SoT's Rollup config for flows produces an IIFE or ES module -->
   <script type="module">
+    import { TDGame } from "./compiled.js";
+
+    const TALENT_DATA = [
+      {
+        id: 'startingGold',
+        name: 'Deep Pockets',
+        description: 'Start each game with extra gold.',
+        bonusPerLevel: 50,
+        baseCost: 10,
+        icon: '💰'
+      },
+      {
+        id: 'waveBonus',
+        name: 'Veteran Bonus',
+        description: 'Earn more gold at the end of each wave.',
+        bonusPerLevel: 20,
+        baseCost: 15,
+        icon: '🌊'
+      },
+      {
+        id: 'towerRange',
+        name: 'Eagle Eye',
+        description: 'All towers gain +5% attack range.',
+        bonusPerLevel: 0.05,
+        baseCost: 25,
+        icon: '🎯'
+      },
+      {
+        id: 'towerAttackSpeed',
+        name: 'Cheetah Speed',
+        description: 'All towers gain +5% attack speed.',
+        bonusPerLevel: 0.05,
+        baseCost: 25,
+        icon: '🐆'
+      },
+      {
+        id: "chillingTouch",
+        name: "Chilling Touch",
+        description: "Ice towers apply greater slow to enemies.",
+        bonusPerLevel: 0.1,
+        baseCost: 20,
+        icon: "❄️"
+      },
+      {
+        id: "burningTouch",
+        name: "Burning Touch",
+        description: "Fire towers apply greater burn to enemies.",
+        bonusPerLevel: 0.1,
+        baseCost: 20,
+        icon: "🔥"
+      },
+      {
+        id: "corrosiveTouch",
+        name: "Corrosive Touch",
+        description: "Poison towers apply greater poison to enemies.",
+        bonusPerLevel: 0.1,
+        baseCost: 20,
+        icon: "☠️"
+      },
+      {
+        id: "electrifyingTouch",
+        name: "Electrifying Touch",
+        description: "Electric towers apply greater shock to enemies.",
+        bonusPerLevel: 0.1,
+        baseCost: 20,
+        icon: "⚡"
+      },
+
+    ];
     // Expose UI functions to global scope so the flow game can access them, or just use events.
     window.selectedTowerType = null;
 
@@ -227,12 +332,88 @@
         window.tdGameInstance.deselectTower();
       }
     };
+
+    window.buyTalent = function (talentId) {
+      const saved = JSON.parse(localStorage.getItem('td_meta_data') || '{"xp":0, "talents":{}}');
+      const talent = TALENT_DATA.find(t => t.id === talentId);
+
+      const level = saved.talents[talentId] || 0;
+      const cost = Math.floor(talent.baseCost * Math.pow(3.5, level));
+
+      if (saved.xp >= cost) {
+        saved.xp -= cost;
+        saved.talents[talentId] = level + 1;
+        localStorage.setItem('td_meta_data', JSON.stringify(saved));
+        refreshTalentUI();
+        window.showAlert("Upgraded " + talent.name + "!", true);
+      } else {
+        window.showAlert("Need " + cost + " XP for next level!");
+      }
+    };
+
+    window.refreshTalentUI = function () {
+      const saved = JSON.parse(localStorage.getItem('td_meta_data') || '{"xp":0, "talents":{}, "gold":100, "lives":20}');
+      document.getElementById('xp-count').innerText = saved.xp;
+
+      const container = document.getElementById('talent-container');
+      container.innerHTML = '';
+
+      TALENT_DATA.forEach(talent => {
+        const level = saved.talents[talent.id] || 0;
+        const cost = Math.floor(talent.baseCost * Math.pow(3.5, level));
+
+        const card = document.createElement('div');
+        card.className = 'panel';
+        // CRITICAL: flex-shrink: 0 keeps the card at 220px regardless of how many there are
+        card.style.cssText = 'width: 220px; flex-shrink: 0; text-align: center; margin: 0;';
+
+        card.innerHTML = `
+            <div style="font-size:2rem;">${talent.icon}</div>
+            <h3>${talent.name}</h3>
+            <p style="font-size:0.8rem; color:#94a3b8; height:40px;">${talent.description}</p>
+            <div style="margin-bottom:10px; font-weight:bold; color:#38bdf8;">Lvl: ${level}</div>
+            <button onclick="buyTalent('${talent.id}')" style="background:#3b82f6; color:white; border:none; padding:10px; border-radius:5px; cursor:pointer; width:100%;">
+                <span id="btn-${talent.id}-text">Upgrade (${cost} XP)</span>
+            </button>
+        `;
+        container.appendChild(card);
+      });
+    };
+
+    window.startGame = function () {
+      document.getElementById('talent-overlay').style.display = 'none';
+      // The TDGame constructor in your .flow file will read these stats from localStorage
+      if (!window.tdGameInstance) {
+        window.tdGameInstance = new TDGame();
+      }
+    };
+
+    window.showAlert = function (message) {
+      const alertBox = document.getElementById('custom-alert');
+      const messageEl = document.getElementById('alert-message');
+
+      messageEl.innerText = message;
+      alertBox.style.transform = 'translateX(0)'; // Slide in
+
+      // Hide it automatically after 3 seconds
+      setTimeout(() => {
+        alertBox.style.transform = 'translateX(150%)'; // Slide out
+      }, 3000);
+    };
+
+    // Initial Load
+    refreshTalentUI();
   </script>
 
-  <script type="module">
-    import { TDGame } from "./compiled.js";
-    const game = new TDGame();
-  </script>
+
+
+  <div id="custom-alert"
+    style="position: fixed; bottom: 20px; right: 20px; background: rgba(248, 113, 113, 0.95); color: white; padding: 15px 25px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 4px 15px rgba(0,0,0,0.5); font-weight: bold; transform: translateX(150%); transition: transform 0.3s ease-out; z-index: 30000; display: flex; align-items: center; gap: 10px;">
+    <span style="font-size: 1.5rem;">⚠️</span>
+    <span id="alert-message">Not enough XP!</span>
+  </div>
+
+
 </body>
 
 </html>

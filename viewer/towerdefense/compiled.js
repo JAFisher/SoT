@@ -27512,7 +27512,7 @@ var Tower = class {
   fireCooldown;
   mesh;
   active;
-  constructor(scene, type, gx, gz) {
+  constructor(scene, type, gx, gz, meta) {
     this.gridX = gx;
     this.gridZ = gz;
     this.type = type;
@@ -27524,22 +27524,22 @@ var Tower = class {
       color = 16729088;
       this.damage = 10;
       this.range = 4;
-      this.fireRate = 1;
+      this.fireRate = 1 - 0.05 * (meta?.towerAttackSpeed ?? 0);
     } else if (type === "ice") {
       color = 43775;
       this.damage = 5;
       this.range = 3;
-      this.fireRate = 0.5;
+      this.fireRate = 0.5 - 0.05 * (meta?.towerAttackSpeed ?? 0);
     } else if (type === "poison") {
       color = 65280;
       this.damage = 3;
       this.range = 3;
-      this.fireRate = 0.5;
+      this.fireRate = 0.5 - 0.05 * (meta?.towerAttackSpeed ?? 0);
     } else if (type === "electric") {
       color = 16776960;
       this.damage = 2;
       this.range = 6;
-      this.fireRate = 0.1;
+      this.fireRate = 0.1 - 0.05 * (meta?.towerAttackSpeed ?? 0);
     }
     this.mesh = new Group();
     this.mesh.position.set(gx - 9.5, 0, gz - 9.5);
@@ -27609,6 +27609,10 @@ var TDGame = class {
   ctxMenu;
   selectedTowerUI;
   constructor() {
+    const meta = JSON.parse(localStorage.getItem("td_meta_data") || '{"xp":0, "talents":{"startingGold":0, "waveBonus":0}}');
+    this.talents = meta.talents;
+    this.gold = 100 + this.talents.startingGold * 50;
+    this.lives = 10;
     this.scene = new Scene();
     this.scene.background = new Color(1118481);
     this.pathIndicators = [];
@@ -27627,8 +27631,6 @@ var TDGame = class {
     this.towers = [];
     this.enemies = [];
     this.projectiles = [];
-    this.gold = 100;
-    this.lives = 20;
     this.wave = 1;
     this.isWaveActive = false;
     this.buildEnvironment();
@@ -27644,6 +27646,7 @@ var TDGame = class {
     window.addEventListener("mousemove", (e) => this.onMouseMove(e));
     window.addEventListener("mousedown", (e) => this.onMouseDown(e));
     this.animate();
+    this.updateUI();
   }
   gameOver() {
     this.isWaveActive = false;
@@ -27655,6 +27658,9 @@ var TDGame = class {
     overlay.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;flex-direction:column;justify-content:center;align-items:center;color:white;z-index:10000;font-family:sans-serif;";
     overlay.innerHTML = '<h1 style="font-size:4rem;color:#f87171;">GAME OVER</h1><p style="font-size:1.5rem;">You survived until Wave ' + this.wave + '</p><button onclick="window.location.reload()" style="padding:1rem 2rem;font-size:1.2rem;cursor:pointer;background:#38bdf8;border:none;border-radius:5px;color:white;margin-top:20px;">Try Again</button>';
     document.body.appendChild(overlay);
+    const meta = JSON.parse(localStorage.getItem("td_meta_data") || '{"xp":0, "talents":{"startingGold":0, "waveBonus":0}}');
+    meta.xp += this.wave * 2;
+    localStorage.setItem("td_meta_data", JSON.stringify(meta));
   }
   buildEnvironment() {
     const ground = new Mesh(new BoxGeometry(20, 0.5, 20), new MeshStandardMaterial({ color: 2236962 }));
@@ -27746,7 +27752,7 @@ var TDGame = class {
         if (this.grid.canPlaceTower(gx, gz, 0, 0, 19, 19)) {
           this.gold -= 20;
           this.grid.cells[gx][gz] = 1;
-          this.towers.push(new Tower(this.scene, type, gx, gz));
+          this.towers.push(new Tower(this.scene, type, gx, gz, this.talents));
           this.recalculateEnemyPaths();
           this.updateUI();
         }
@@ -27840,9 +27846,11 @@ var TDGame = class {
         } else this.enemies.splice(i, 1);
       }
       if (this.enemiesToSpawn <= 0 && active === 0) {
+        const baseBonus = 50;
+        const talentBonus = (this.talents.waveBonus || 1) * 20;
+        this.gold += baseBonus + talentBonus + this.wave * 10;
         this.isWaveActive = false;
         this.wave++;
-        this.gold += 50 + this.wave * 10;
         this.updateUI();
         if (this.btnWave) this.btnWave.disabled = false;
       }
