@@ -500,8 +500,8 @@ graph TD
     return null;
   @@ChessGame.getPieceAt.end
 
-  @ChessGame.getValidMovesFor{piece: any}: any[]
-  @@ChessGame.getValidMovesFor.code
+  @ChessGame.getPseudoLegalMovesFor{piece: any}: any[]
+  @@ChessGame.getPseudoLegalMovesFor.code
     const moves = [];
     const cx = piece.gridX;
     const cz = piece.gridZ;
@@ -618,6 +618,63 @@ graph TD
     }
     
     return moves;
+  @@ChessGame.getPseudoLegalMovesFor.end
+
+  @ChessGame.isInCheck{color: string}: boolean
+  @@ChessGame.isInCheck.code
+    const king = this.pieces.find(p => p.active && p.color === color && p.type === 'king');
+    if (!king) return false;
+    
+    const kx = king.gridX;
+    const kz = king.gridZ;
+    const enemyCol = color === 'white' ? 'black' : 'white';
+    
+    const enemies = this.pieces.filter(p => p.active && p.color === enemyCol);
+    var inCheck = false;
+    for (const enemy of enemies) {
+      const rawMoves = this.getPseudoLegalMovesFor(enemy);
+      for (const m of rawMoves) {
+        if (m.x === kx && m.z === kz) {
+          inCheck = true;
+          break;
+        }
+      }
+    }
+    return inCheck;
+  @@ChessGame.isInCheck.end
+
+  @ChessGame.getValidMovesFor{piece: any}: any[]
+  @@ChessGame.getValidMovesFor.code
+    const pseudoMoves = this.getPseudoLegalMovesFor(piece);
+    const legalMoves = [];
+    
+    for (const m of pseudoMoves) {
+      const oldX = piece.gridX;
+      const oldZ = piece.gridZ;
+      
+      const targetPiece = this.getPieceAt(m.x, m.z);
+      
+      // Simulate move
+      piece.gridX = m.x;
+      piece.gridZ = m.z;
+      if (targetPiece) {
+        targetPiece.active = false;
+      }
+      
+      const inCheck = this.isInCheck(piece.color);
+      
+      // Backtrack simulation
+      piece.gridX = oldX;
+      piece.gridZ = oldZ;
+      if (targetPiece) {
+        targetPiece.active = true;
+      }
+      
+      if (!inCheck) {
+        legalMoves.push(m);
+      }
+    }
+    return legalMoves;
   @@ChessGame.getValidMovesFor.end
 
   @ChessGame.onMouseDown{e: any}: void
@@ -720,16 +777,20 @@ graph TD
     
     // Check if there is an enemy piece at the target square
     const enemy = this.getPieceAt(x, z);
-    let isCapture = false;
     
     if (enemy) {
+      // If enemy is the king, declare checkmate instead of capturing
+      if (enemy.type === 'king') {
+        this.isGameOver = true;
+        this.winner = this.turn; // current player wins
+        this.updateUIStatus();
+        this.triggerSound('capture');
+        return; // early exit, no move performed
+      }
       enemy.capture();
-      isCapture = true;
       this.triggerExplosion(x, z, enemy.color === 'white' ? 0xfffbeb : 0xc084fc);
-      this.triggerSound('capture');
-    } else {
-      this.triggerSound('move');
     }
+
     
     // Save to history stack
     this.history.push({
@@ -753,6 +814,20 @@ graph TD
     this.turn = this.turn === 'white' ? 'black' : 'white';
     
     this.checkGameStatus();
+
+    console.log('Player ' + this.turn + ' is in check: ', this.isInCheck(this.turn));
+    
+    // Trigger proper sound effects
+    if (this.isGameOver) {
+      this.triggerSound('capture');
+    } else if (this.isInCheck(this.turn)) {
+      this.triggerSound('check');
+    } else if (enemy) {
+      this.triggerSound('capture');
+    } else {
+      this.triggerSound('move');
+    }
+    
     this.updateUIStatus();
     
     // Trigger AI if play mode vs AI
@@ -889,16 +964,23 @@ graph TD
 
   @ChessGame.checkGameStatus{}: void
   @@ChessGame.checkGameStatus.code
-    // Simple check: is a King captured?
-    const whiteKing = this.pieces.find(p => p.type === 'king' && p.color === 'white');
-    const blackKing = this.pieces.find(p => p.type === 'king' && p.color === 'black');
+    const nextPlayer = this.turn;
+    const activePieces = this.pieces.filter(p => p.active && p.color === nextPlayer);
     
-    if (!whiteKing || !whiteKing.active) {
+    let totalMoves = 0;
+    for (const p of activePieces) {
+      totalMoves += this.getValidMovesFor(p).length;
+    }
+    
+    const inCheck = this.isInCheck(nextPlayer);
+    
+    if (totalMoves === 0) {
       this.isGameOver = true;
-      this.winner = 'black';
-    } else if (!blackKing || !blackKing.active) {
-      this.isGameOver = true;
-      this.winner = 'white';
+      if (inCheck) {
+        this.winner = nextPlayer === 'white' ? 'black' : 'white';
+      } else {
+        this.winner = 'draw';
+      }
     }
   @@ChessGame.checkGameStatus.end
 
@@ -908,15 +990,34 @@ graph TD
     const turnEl = document.getElementById('turn-badge');
     const overlayEl = document.getElementById('victory-overlay');
     const winnerEl = document.getElementById('winner-txt');
+    const descEl = document.getElementById('winner-desc');
+    const checkEl = document.getElementById('check-warning');
+    
+    const inCheck = !this.isGameOver && this.isInCheck(this.turn);
+    console.log(inCheck, 'in check', this.turn)
+    if (checkEl) {
+      checkEl.style.display = inCheck ? 'inline-block' : 'none';
+    }
     
     if (statusEl && turnEl) {
       if (this.isGameOver) {
         statusEl.innerText = "Game Over!";
-        turnEl.innerText = `Winner: ${this.winner.toUpperCase()}`;
-        turnEl.style.background = '#10b981';
+        if (this.winner === 'draw') {
+          turnEl.innerText = "STALEMATE DRAW";
+          turnEl.style.background = '#6b7280';
+        } else {
+          turnEl.innerText = 'Winner: ' + this.winner.toUpperCase();
+          turnEl.style.background = '#10b981';
+        }
         
         if (overlayEl && winnerEl) {
-          winnerEl.innerText = this.winner === 'white' ? "White Wins!" : "Black Wins!";
+          if (this.winner === 'draw') {
+            winnerEl.innerText = "Stalemate! It's a Draw.";
+            if (descEl) descEl.innerText = "No legal moves available.";
+          } else {
+            winnerEl.innerText = this.winner === 'white' ? "CHECKMATE! White Wins!" : "CHECKMATE! Black Wins!";
+            if (descEl) descEl.innerText = "The opponent's king is trapped.";
+          }
           overlayEl.style.display = 'flex';
         }
       } else {
@@ -984,6 +1085,14 @@ graph TD
       gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.35);
       osc.start();
       osc.stop(this.audioCtx.currentTime + 0.35);
+    } else if (type === 'check') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(440, this.audioCtx.currentTime);
+      osc.frequency.setValueAtTime(554.37, this.audioCtx.currentTime + 0.08);
+      gain.gain.setValueAtTime(0.25, this.audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.22);
+      osc.start();
+      osc.stop(this.audioCtx.currentTime + 0.22);
     }
   @@ChessGame.triggerSound.end
 

@@ -93,6 +93,26 @@
             box-shadow: 0 0 10px rgba(250, 204, 21, 0.3);
         }
 
+        .check-badge {
+            display: none;
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid #ef4444;
+            color: #f87171;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+            animation: pulse-alert 1s infinite alternate;
+        }
+
+        @keyframes pulse-alert {
+            from { transform: scale(1); box-shadow: 0 0 8px rgba(239, 68, 68, 0.4); }
+            to { transform: scale(1.05); box-shadow: 0 0 16px rgba(239, 68, 68, 0.8); }
+        }
+
         /* Action Buttons */
         .btn-stack {
             display: flex;
@@ -250,7 +270,10 @@
 
         <div class="status-container">
             <div class="status-label" id="status-txt">Active Turn:</div>
-            <div class="turn-badge" id="turn-badge">WHITE</div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="check-badge" id="check-warning">CHECK!</span>
+                <div class="turn-badge" id="turn-badge">WHITE</div>
+            </div>
         </div>
 
         <div class="btn-stack">
@@ -287,15 +310,14 @@
     <div id="victory-overlay">
         <div class="victory-card">
             <div class="crown-icon">👑</div>
-            <div class="victory-title" id="winner-txt">White Wins!</div>
-            <div class="victory-desc">The opponent's king has been completely dethroned.</div>
+            <div class="victory-title" id="winner-txt">CHECKMATE! White Wins!</div>
+            <div class="victory-desc" id="winner-desc">The opponent's king has been completely dethroned.</div>
             <button class="btn btn-primary" style="width: 100%;" id="btn-play-again">Play Again</button>
         </div>
     </div>
 
-    <!-- App Initialization -->
     <script type="module">
-        import { ChessGame } from './compiled.js';
+        import { ChessGame } from './compiled.js?v=2';
         
         const game = new ChessGame();
         game.animate();
