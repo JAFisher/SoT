@@ -290,6 +290,26 @@ TDGame *-- Projectile
   this.animate();
 @@TDGame.constructor.end
 
+@TDGame.gameOver{}
+@@TDGame.gameOver.code
+  this.isWaveActive = false;
+  // Stop spawning and clear enemies
+  this.enemiesToSpawn = 0;
+  this.enemies.forEach(e => this.scene.remove(e.mesh));
+  this.enemies = [];
+  
+  // Show a simple overlay
+  const overlay = document.createElement('div');
+  overlay.id = 'game-over-screen';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;flex-direction:column;justify-content:center;align-items:center;color:white;z-index:10000;font-family:sans-serif;';
+  
+  // Converted to single quotes with concatenation
+  overlay.innerHTML = '<h1 style="font-size:4rem;color:#f87171;">GAME OVER</h1>' +
+                     '<p style="font-size:1.5rem;">You survived until Wave ' + this.wave + '</p>' +
+                     '<button onclick="window.location.reload()" style="padding:1rem 2rem;font-size:1.2rem;cursor:pointer;background:#38bdf8;border:none;border-radius:5px;color:white;margin-top:20px;">Try Again</button>';
+  document.body.appendChild(overlay);
+@@TDGame.gameOver.end
+
 @TDGame.buildEnvironment{}
 @@TDGame.buildEnvironment.code
   const ground = new three.Mesh(new three.BoxGeometry(20, 0.5, 20), new three.MeshStandardMaterial({ color: 0x222222 }));
@@ -459,6 +479,15 @@ TDGame *-- Projectile
 @TDGame.animate{}
 @@TDGame.animate.code
   requestAnimationFrame(() => this.animate());
+
+  
+  if (this.lives <= 0) {
+    if (!document.getElementById('game-over-screen')) {
+      this.gameOver();
+    }
+    return; // Stop processing the rest of the frame
+  }
+
   const delta = Math.min(this.clock.getDelta(), 0.1);
   if (this.isWaveActive) {
     this.spawnTimer -= delta;

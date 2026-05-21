@@ -27645,6 +27645,17 @@ var TDGame = class {
     window.addEventListener("mousedown", (e) => this.onMouseDown(e));
     this.animate();
   }
+  gameOver() {
+    this.isWaveActive = false;
+    this.enemiesToSpawn = 0;
+    this.enemies.forEach((e) => this.scene.remove(e.mesh));
+    this.enemies = [];
+    const overlay = document.createElement("div");
+    overlay.id = "game-over-screen";
+    overlay.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;flex-direction:column;justify-content:center;align-items:center;color:white;z-index:10000;font-family:sans-serif;";
+    overlay.innerHTML = '<h1 style="font-size:4rem;color:#f87171;">GAME OVER</h1><p style="font-size:1.5rem;">You survived until Wave ' + this.wave + '</p><button onclick="window.location.reload()" style="padding:1rem 2rem;font-size:1.2rem;cursor:pointer;background:#38bdf8;border:none;border-radius:5px;color:white;margin-top:20px;">Try Again</button>';
+    document.body.appendChild(overlay);
+  }
   buildEnvironment() {
     const ground = new Mesh(new BoxGeometry(20, 0.5, 20), new MeshStandardMaterial({ color: 2236962 }));
     ground.position.y = -0.25;
@@ -27797,6 +27808,12 @@ var TDGame = class {
   }
   animate() {
     requestAnimationFrame(() => this.animate());
+    if (this.lives <= 0) {
+      if (!document.getElementById("game-over-screen")) {
+        this.gameOver();
+      }
+      return;
+    }
     const delta = Math.min(this.clock.getDelta(), 0.1);
     if (this.isWaveActive) {
       this.spawnTimer -= delta;
