@@ -136,6 +136,21 @@ Enemy[Enemy.ts{id: number, mesh: any, health: number, maxHealth: number, baseSpe
   if (this.health <= 0 && this.active) {
     this.active = false;
     scene.remove(this.mesh);
+    
+    // Core Leak Fix: Dispose GPU resources
+    if (this.mesh.geometry) this.mesh.geometry.dispose();
+    if (this.mesh.material) {
+      if (Array.isArray(this.mesh.material)) {
+        this.mesh.material.forEach(m => m.dispose());
+      } else {
+        this.mesh.material.dispose();
+      }
+    }
+    // Also clean up the nested floating HP health bar
+    if (this.hpBar) {
+      if (this.hpBar.geometry) this.hpBar.geometry.dispose();
+      if (this.hpBar.material) this.hpBar.material.dispose();
+    }
   }
 @@Enemy.takeDamage.end
 
@@ -177,6 +192,8 @@ Projectile[Projectile.ts{mesh: any, type: string, target: Enemy, speed: number, 
 @@Projectile.update.code
   if (!this.active || !this.target || !this.target.active) {
     scene.remove(this.mesh);
+    if (this.mesh.geometry) this.mesh.geometry.dispose();
+    if (this.mesh.material) this.mesh.material.dispose();
     return true;
   }
   const dx = this.target.mesh.position.x - this.mesh.position.x;
@@ -189,6 +206,10 @@ Projectile[Projectile.ts{mesh: any, type: string, target: Enemy, speed: number, 
     if (this.type === 'ice') this.target.addEffect('slow', this.effectDur, 0);
     if (this.type === 'poison') this.target.addEffect('poison', this.effectDur, this.effectAmt);
     scene.remove(this.mesh);
+    
+    // Core Leak Fix: Dispose payload memory upon impact 
+    if (this.mesh.geometry) this.mesh.geometry.dispose();
+    if (this.mesh.material) this.mesh.material.dispose();
     return true;
   }
   this.mesh.position.x += (dx/dist) * this.speed * delta;
@@ -551,9 +572,15 @@ TDGame *-- Projectile
 
 @TDGame.updatePathIndicators{}
 @@TDGame.updatePathIndicators.code
-  this.pathIndicators.forEach(i => this.scene.remove(i));
+  // Clean old instances completely from physical GPU memory pools
+  this.pathIndicators.forEach(i => {
+    this.scene.remove(i);
+    if (i.geometry) i.geometry.dispose();
+    if (i.material) i.material.dispose();
+  });
   this.pathIndicators = [];
   const drawnTiles = new Set();
+  
   this.enemies.forEach(e => {
     if (!e.active) return;
     for (let i = e.pathIndex; i < e.path.length; i++) {
@@ -563,9 +590,11 @@ TDGame *-- Projectile
       if (drawnTiles.has(key)) continue;
       drawnTiles.add(key);
       const ind = new three.Mesh(new three.PlaneGeometry(0.3, 0.3), new three.MeshBasicMaterial({ color: 0xffa500, transparent: true, opacity: 0.5 }));
+    
       ind.rotation.x = -Math.PI / 2;
       ind.position.set(tile.x - 9.5, 0.04, tile.z - 9.5);
-      this.scene.add(ind); this.pathIndicators.push(ind);
+      this.scene.add(ind); 
+      this.pathIndicators.push(ind);
     }
   });
 @@TDGame.updatePathIndicators.end
